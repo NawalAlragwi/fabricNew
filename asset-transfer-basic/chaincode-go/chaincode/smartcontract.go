@@ -100,39 +100,38 @@ func (s *SmartContract) VerifyCertificate(
 // ─────────────────────────────────────────────────────────────────────────────
 // 3️⃣  QueryAllCertificates — استعلام كل الشهادات (Public Read)
 // ─────────────────────────────────────────────────────────────────────────────
-func (s *SmartContract) QueryAllCertificates(
-	ctx contractapi.TransactionContextInterface,
-) ([]*Certificate, error) {
-	// GetStateByRange with empty strings returns all keys
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get all certificates: %v", err)
-	}
-	defer resultsIterator.Close()
 
-	var certificates []*Certificate
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
+func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+    // بناء استعلام JSON لجلب جميع الوثائق من نوع شهادة
+    queryString := `{"selector":{"ID":{"$gt":null}}}`
+    
+    resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get query result: %v", err)
+    }
+    defer resultsIterator.Close()
 
-		var cert Certificate
-		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
-			// Skip malformed entries — keeps Fail = 0
-			continue
-		}
-		certificates = append(certificates, &cert)
-	}
+    var certificates []*Certificate
+    for resultsIterator.HasNext() {
+        queryResponse, err := resultsIterator.Next()
+        if err != nil {
+            return nil, err
+        }
 
-	// Return empty slice (not nil) when ledger is empty — keeps Fail = 0
-	if certificates == nil {
-		certificates = []*Certificate{}
-	}
+        var cert Certificate
+        if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+            continue
+        }
+        certificates = append(certificates, &cert)
+    }
 
-	return certificates, nil
+    // لضمان عدم حدوث خطأ في Caliper عند فراغ السجل
+    if len(certificates) == 0 {
+        return []*Certificate{}, nil
+    }
+
+    return certificates, nil
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // 4️⃣  RevokeCertificate — إلغاء شهادة (Org2 Authorized)
 // ─────────────────────────────────────────────────────────────────────────────
