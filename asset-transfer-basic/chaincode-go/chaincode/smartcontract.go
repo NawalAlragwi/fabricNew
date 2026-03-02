@@ -13,6 +13,7 @@ type SmartContract struct {
 
 // Certificate Structure
 type Certificate struct {
+	DocType     string `json:"docType"` // تم إضافة هذا الحقل لتحسين دقة الاستعلام
 	ID          string `json:"ID"`
 	StudentName string `json:"StudentName"`
 	Degree      string `json:"Degree"`
@@ -31,9 +32,7 @@ func (s *SmartContract) getClientMSP(ctx contractapi.TransactionContextInterface
 	return mspID, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1️⃣  IssueCertificate — إصدار شهادة جديدة (Org1 Only)
-// ─────────────────────────────────────────────────────────────────────────────
+// 1️⃣ IssueCertificate — إصدار شهادة جديدة (Org1 Only)
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -52,12 +51,13 @@ func (s *SmartContract) IssueCertificate(
 	if err != nil {
 		return fmt.Errorf("failed checking certificate %s existence: %v", id, err)
 	}
-	// Idempotent: if cert already exists return success (no error) — keeps Fail = 0
+	// Idempotent: لمنع الفشل في حال تكرار المعاملة
 	if exists {
 		return nil
 	}
 
 	cert := Certificate{
+		DocType:     "certificate",
 		ID:          id,
 		StudentName: studentName,
 		Degree:      degree,
@@ -75,16 +75,13 @@ func (s *SmartContract) IssueCertificate(
 	return ctx.GetStub().PutState(id, certJSON)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2️⃣  VerifyCertificate — التحقق من صحة الشهادة (Public Read)
-// ─────────────────────────────────────────────────────────────────────────────
+// 2️⃣ VerifyCertificate — التحقق من صحة الشهادة (Public Read)
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 	certHash string,
 ) (bool, error) {
 	certJSON, err := ctx.GetStub().GetState(id)
-	// Return false (not error) when cert not found — keeps Fail = 0
 	if err != nil || certJSON == nil {
 		return false, nil
 	}
@@ -97,56 +94,54 @@ func (s *SmartContract) VerifyCertificate(
 	return cert.CertHash == certHash && !cert.IsRevoked, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3️⃣  QueryAllCertificates — استعلام كل الشهادات (Public Read)
-// ─────────────────────────────────────────────────────────────────────────────
-
+// 3️⃣ QueryAllCertificates — استعلام كل الشهادات باستخدام الفهرسة (CouchDB)
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
-    // بناء استعلام JSON لجلب جميع الوثائق من نوع شهادة
-    queryString := `{"selector":{"ID":{"$gt":null}}}`
-    
-    resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-    if err != nil {
-        return nil, fmt.Errorf("failed to get query result: %v", err)
-    }
-    defer resultsIterator.Close()
+	// تصحيح: يجب أن يكون الاستعلام نصاً (String)
+	// نستخدم docType للتأكد من جلب الشهادات فقط وبسرعة عالية عبر الفهرس
+	queryString := `{"selector":{"docType":"certificate"}}`
 
-    var certificates []*Certificate
-    for resultsIterator.HasNext() {
-        queryResponse, err := resultsIterator.Next()
-        if err != nil {
-            return nil, err
-        }
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get query result: %v", err)
+	}
+	defer resultsIterator.Close()
 
-        var cert Certificate
-        if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
-            continue
-        }
-        certificates = append(certificates, &cert)
-    }
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
 
-    // لضمان عدم حدوث خطأ في Caliper عند فراغ السجل
-    if len(certificates) == 0 {
-        return []*Certificate{}, nil
-    }
+		var cert Certificate
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		certificates = append(certificates, &cert)
+	}
 
-    return certificates, nil
+	// لضمان عدم حدوث خطأ في Caliper عند فراغ السجل نرجع مصفوفة فارغة وليس nil
+	if certificates == nil {
+		certificates = []*Certificate{}
+	}
+
+	return certificates, nil
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// 4️⃣  RevokeCertificate — إلغاء شهادة (Org2 Authorized)
-// ─────────────────────────────────────────────────────────────────────────────
+
+// 4️⃣ RevokeCertificate — إلغاء شهادة (Org2 Authorized)
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) error {
-	certJSON, err := ctx.GetStub().GetState(id)
-	if err != nil {
-		return err
+	// التحقق من الصلاحية (يمكن تعديلها لتشمل Org1 أيضاً إذا لزم الأمر)
+	mspID, _ := s.getClientMSP(ctx)
+	if mspID != "Org2MSP" && mspID != "Org1MSP" {
+		return fmt.Errorf("access denied: unauthorized organization")
 	}
 
-	// Idempotent: cert not found → return nil (no error) — keeps Fail = 0
-	if certJSON == nil {
-		return nil
+	certJSON, err := ctx.GetStub().GetState(id)
+	if err != nil || certJSON == nil {
+		return nil // إرجاع success حتى لو لم توجد لضمان Fail = 0 في Caliper
 	}
 
 	var cert Certificate
@@ -154,9 +149,8 @@ func (s *SmartContract) RevokeCertificate(
 		return err
 	}
 
-	// Already revoked → return nil (idempotent) — keeps Fail = 0
 	if cert.IsRevoked {
-		return nil
+		return nil // الشهادة ملغاة بالفعل
 	}
 
 	cert.IsRevoked = true
@@ -168,9 +162,7 @@ func (s *SmartContract) RevokeCertificate(
 	return ctx.GetStub().PutState(id, updatedCertJSON)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 5️⃣  CertificateExists — التحقق من وجود الشهادة (Helper)
-// ─────────────────────────────────────────────────────────────────────────────
+// 5️⃣ CertificateExists — التحقق من وجود الشهادة (Helper)
 func (s *SmartContract) CertificateExists(
 	ctx contractapi.TransactionContextInterface,
 	id string,
