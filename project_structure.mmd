@@ -1,0 +1,31 @@
+graph TD
+    subgraph "Project Root"
+        A["setup_and_run_all.sh<br>One-Click Script"] --> B["test-network"]
+        A --> C["asset-transfer-basic"]
+        A --> D["caliper-workspace"]
+        A --> E["PROJECT_README.md<br>Main Documentation"]
+    end
+
+    subgraph "test-network (Fabric Network)"
+        B1["network.sh<br>Network Manager"] --> B2["compose/<br>Docker Files"]
+        B1 --> B3["organizations/<br>Crypto & Keys"]
+        B1 --> B4["scripts/<br>Deployment Scripts"]
+    end
+
+    subgraph "asset-transfer-basic (Smart Contract)"
+        C1["chaincode-go/<br>Go Code"] --> C2["smartcontract.go<br>Core Logic"]
+        C3["chaincode-javascript/<br>JavaScript Code"]
+        C4["chaincode-typescript/<br>TypeScript Code"]
+    end
+
+    subgraph "caliper-workspace (Performance Testing)"
+        D1["fix_and_run_caliper.sh<br>Caliper Script"] --> D2["benchmarks/<br>Test Config"]
+        D1 --> D3["workload/<br>Test Scenarios"]
+        D1 --> D4["package.json<br>Dependencies"]
+        D5["report.html<br>Final Report"]
+    end
+
+    style A fill:#c9f7f5,stroke:#1bc5bd,stroke-width:2px
+    style E fill:#fff4de,stroke:#ffa800,stroke-width:2px
+    style D5 fill:#ffe2e5,stroke:#f64e60,stroke-width:2px
+    style C1 fill:#e1f0ff,stroke:#3699ff,stroke-width:2px

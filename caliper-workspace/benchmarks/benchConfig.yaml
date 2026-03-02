@@ -1,0 +1,67 @@
+test:
+  name: certificate-benchmark-v3
+  description: "RBAC Certificate System - Full Benchmark (IssueCertificate, VerifyCertificate, QueryAllCertificates, RevokeCertificate)"
+  workers:
+    type: local
+    number: 4
+  rounds:
+    # ------------------------------------------------
+    # 1️⃣ IssueCertificate (Org1 Only) - إصدار الشهادات
+    # ------------------------------------------------
+    - label: IssueCertificate
+      description: "Org1 issues certificates to the ledger (RBAC: Org1MSP only)"
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ------------------------------------------------
+    # 2️⃣ VerifyCertificate (Public Read) - التحقق من الشهادات
+    # ------------------------------------------------
+    - label: VerifyCertificate
+      description: "Verify certificate authenticity and integrity via SHA-256 hash comparison (readOnly)"
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/verifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ------------------------------------------------
+    # 3️⃣ QueryAllCertificates (Public Read) - استعلام كل الشهادات
+    # ------------------------------------------------
+    - label: QueryAllCertificates
+      description: "Rich ledger query returning all certificates via GetStateByRange (readOnly)"
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ------------------------------------------------
+    # 4️⃣ RevokeCertificate (Org2 Only) - إلغاء الشهادات
+    # ------------------------------------------------
+    - label: RevokeCertificate
+      description: "Org2 revokes certificates (RBAC: Org2MSP authorized)"
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com
+      postIterationWaitTime: 3000

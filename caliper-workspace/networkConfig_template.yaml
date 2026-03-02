@@ -1,0 +1,39 @@
+name: Caliper Test
+version: "2.0.0"
+caliper:
+  blockchain: fabric
+channels:
+  - channelName: mychannel
+    contracts:
+      - id: basic
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: 'User1@org1.example.com'
+          clientPrivateKey:
+            # IMPORTANT: This path is dynamically resolved at runtime by the setup script.
+            # The private key filename contains a random hash and changes every time
+            # the network is recreated. Use `find ... -name "*_sk"` to locate it.
+            path: '{{ORG1_PRIVATE_KEY}}'
+          clientSignedCert:
+            # Certificate path — may be cert.pem or User1@org1.example.com-cert.pem
+            # depending on whether -ca flag was used with network.sh
+            path: '{{ORG1_SIGNED_CERT}}'
+    connectionProfile:
+      path: 'networks/connection-org1.yaml'
+      # CRITICAL: Must be false when using manual connection profiles
+      # Setting to true causes DiscoveryService errors in containerized environments
+      discover: false
+
+  - mspid: Org2MSP
+    identities:
+      certificates:
+        - name: 'User1@org2.example.com'
+          clientPrivateKey:
+            path: '{{ORG2_PRIVATE_KEY}}'
+          clientSignedCert:
+            path: '{{ORG2_SIGNED_CERT}}'
+    connectionProfile:
+      path: 'networks/connection-org2.yaml'
+      discover: false
