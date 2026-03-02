@@ -1,7 +1,0 @@
-{
-    "index": {
-        "fields": ["ID"]
-    },
-    "name": "indexCertID",
-    "type": "json"
-}
