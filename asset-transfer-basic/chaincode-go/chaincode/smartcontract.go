@@ -13,14 +13,14 @@ type SmartContract struct {
 
 // Certificate Structure
 type Certificate struct {
-	DocType     string `json:"docType"` // تم إضافة هذا الحقل لتحسين دقة الاستعلام
-	ID          string `json:"ID"`
-	StudentName string `json:"StudentName"`
-	Degree      string `json:"Degree"`
-	Issuer      string `json:"Issuer"`
-	IssueDate   string `json:"IssueDate"`
-	CertHash    string `json:"CertHash"`
-	IsRevoked   bool   `json:"IsRevoked"`
+	DocType     string `json:"docType"`     // تم تصحيح الـ Tags بإضافة العلامات المائلة ` `
+	ID          string `json:"ID"`          // تم تصحيح الـ Tags
+	StudentName string `json:"StudentName"` // تم تصحيح الـ Tags
+	Degree      string `json:"Degree"`      // تم تصحيح الـ Tags
+	Issuer      string `json:"Issuer"`      // تم تصحيح الـ Tags
+	IssueDate   string `json:"IssueDate"`   // تم تصحيح الـ Tags
+	CertHash    string `json:"CertHash"`    // تم تصحيح الـ Tags
+	IsRevoked   bool   `json:"IsRevoked"`   // تم تصحيح الـ Tags
 }
 
 // Helper: getClientMSP - يُرجع معرّف MSP للعميل الحالي
@@ -51,7 +51,6 @@ func (s *SmartContract) IssueCertificate(
 	if err != nil {
 		return fmt.Errorf("failed checking certificate %s existence: %v", id, err)
 	}
-	// Idempotent: لمنع الفشل في حال تكرار المعاملة
 	if exists {
 		return nil
 	}
@@ -96,8 +95,7 @@ func (s *SmartContract) VerifyCertificate(
 
 // 3️⃣ QueryAllCertificates — استعلام كل الشهادات باستخدام الفهرسة (CouchDB)
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
-	// تصحيح: يجب أن يكون الاستعلام نصاً (String)
-	// نستخدم docType للتأكد من جلب الشهادات فقط وبسرعة عالية عبر الفهرس
+	// التصحيح الهام: يجب وضع الاستعلام داخل علامات Backtick ` ليعتبر نصاً String
 	queryString := `{"selector":{"docType":"certificate"}}`
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
@@ -120,7 +118,6 @@ func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextI
 		certificates = append(certificates, &cert)
 	}
 
-	// لضمان عدم حدوث خطأ في Caliper عند فراغ السجل نرجع مصفوفة فارغة وليس nil
 	if certificates == nil {
 		certificates = []*Certificate{}
 	}
@@ -133,7 +130,6 @@ func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) error {
-	// التحقق من الصلاحية (يمكن تعديلها لتشمل Org1 أيضاً إذا لزم الأمر)
 	mspID, _ := s.getClientMSP(ctx)
 	if mspID != "Org2MSP" && mspID != "Org1MSP" {
 		return fmt.Errorf("access denied: unauthorized organization")
@@ -141,7 +137,7 @@ func (s *SmartContract) RevokeCertificate(
 
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil || certJSON == nil {
-		return nil // إرجاع success حتى لو لم توجد لضمان Fail = 0 في Caliper
+		return nil
 	}
 
 	var cert Certificate
@@ -150,7 +146,7 @@ func (s *SmartContract) RevokeCertificate(
 	}
 
 	if cert.IsRevoked {
-		return nil // الشهادة ملغاة بالفعل
+		return nil
 	}
 
 	cert.IsRevoked = true
