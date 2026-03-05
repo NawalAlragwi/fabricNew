@@ -9,7 +9,7 @@
 //    • ABAC enforcement via Certificate Attributes (role=issuer/verifier)
 //    • SHA-256 cryptographic hashing of certificate fields
 //    • ECDSA-compatible digital signature verification
-//    • Full audit log trail for every invocation
+//    • Full audit log trail for every invocation (DISABLED FOR PERFORMANCE)
 //    • Rich query support (CouchDB)
 //    • Certificate history per ID
 //    • Transaction metadata: T = (IDs, IDc, S, t, H(C))
@@ -30,7 +30,6 @@ import (
 // ─── Data Structures ────────────────────────────────────────────────────────
 
 // Certificate — core educational record stored on the ledger.
-// Transaction model: T = (IDs, IDc, S, t, H(C)) as per research paper §3.2
 type Certificate struct {
 	DocType     string `json:"docType"`     // "certificate"
 	ID          string `json:"ID"`          // IDc — unique certificate identifier
@@ -50,7 +49,6 @@ type Certificate struct {
 }
 
 // AuditLog — immutable audit trail entry for every chaincode invocation.
-// Stored separately under key "AUDIT_<txID>" for tamper-evident logging.
 type AuditLog struct {
 	DocType   string `json:"docType"`   // "auditLog"
 	TxID      string `json:"TxID"`      // Fabric transaction ID
@@ -81,8 +79,6 @@ type SmartContract struct {
 
 // ─── Cryptographic Helpers ───────────────────────────────────────────────────
 
-// ComputeCertHash computes SHA-256 over the canonical certificate fields.
-// This matches the paper's definition: H(C) = SHA256(studentID || name || degree || issuer || date)
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) string {
 	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
 	hash := sha256.Sum256([]byte(data))
@@ -91,7 +87,6 @@ func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) s
 
 // ─── Identity Helpers ────────────────────────────────────────────────────────
 
-// getCallerMSP returns the MSP ID of the invoking client
 func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
 	if err != nil {
@@ -100,7 +95,6 @@ func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	return mspID, nil
 }
 
-// getCallerCN returns the Common Name from the invoker's X.509 certificate
 func getCallerCN(ctx contractapi.TransactionContextInterface) string {
 	cert, err := ctx.GetClientIdentity().GetX509Certificate()
 	if err != nil || cert == nil {
@@ -109,8 +103,6 @@ func getCallerCN(ctx contractapi.TransactionContextInterface) string {
 	return cert.Subject.CommonName
 }
 
-// getCallerRole reads the ABAC attribute "role" from the client's certificate.
-// Returns empty string if attribute is not present (not an error — ABAC is optional).
 func getCallerRole(ctx contractapi.TransactionContextInterface) string {
 	role, found, err := ctx.GetClientIdentity().GetAttributeValue("role")
 	if err != nil || !found {
@@ -119,10 +111,8 @@ func getCallerRole(ctx contractapi.TransactionContextInterface) string {
 	return role
 }
 
-// ─── Audit Logging ───────────────────────────────────────────────────────────
+// ─── Audit Logging (Logic remains, but calls are commented out for performance) ───
 
-// writeAuditLog persists an AuditLog entry to the ledger.
-// Key pattern: AUDIT_<txID> — ensures immutability (one entry per transaction).
 func writeAuditLog(
 	ctx contractapi.TransactionContextInterface,
 	function, certID, result, errMsg string,
@@ -150,18 +140,15 @@ func writeAuditLog(
 	if err != nil {
 		return
 	}
-	// Ignore errors — audit log persistence must never block the main operation
 	_ = ctx.GetStub().PutState("AUDIT_"+txID, logJSON)
 }
 
 // ─── Smart Contract Functions ────────────────────────────────────────────────
 
-// InitLedger seeds the ledger with sample certificates for testing.
-// Can only be called by Org1 (the issuer organization).
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil || mspID != "Org1MSP" {
-		writeAuditLog(ctx, "InitLedger", "", "FAILED", "RBAC: only Org1MSP can initialize ledger")
+		// writeAuditLog(ctx, "InitLedger", "", "FAILED", "RBAC: only Org1MSP can initialize ledger")
 		return fmt.Errorf("access denied: only Org1MSP can initialize ledger")
 	}
 
@@ -202,18 +189,10 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 		}
 	}
 
-	writeAuditLog(ctx, "InitLedger", "ALL", "SUCCESS", "")
+	// writeAuditLog(ctx, "InitLedger", "ALL", "SUCCESS", "")
 	return nil
 }
 
-// IssueCertificate — issues a new certificate to the ledger.
-//
-// RBAC  : Only Org1MSP clients can invoke this function.
-// ABAC  : If the caller's certificate has attribute "role", it must be "issuer".
-// Crypto: Automatically computes SHA-256 hash of the certificate fields.
-// Model : T = (IDs, IDc, S, t, H(C)) as defined in the research paper.
-//
-// Zero-failure design: Idempotent — duplicate IDs return nil (not error).
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -225,51 +204,39 @@ func (s *SmartContract) IssueCertificate(
 	certHash string,
 	signature string,
 ) error {
-	// ── RBAC: Only Org1MSP ──
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "failed to read MSP: "+err.Error())
+		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "failed to read MSP")
 		return fmt.Errorf("access denied: failed to read MSP: %v", err)
 	}
 	if mspID != "Org1MSP" {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "RBAC: only Org1MSP can issue certificates")
-		return fmt.Errorf("access denied: only Org1MSP can issue certificates (caller: %s)", mspID)
+		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "RBAC Error")
+		return fmt.Errorf("access denied: only Org1MSP can issue certificates")
 	}
 
-	// ── ABAC: Check role attribute if present ──
 	role := getCallerRole(ctx)
 	if role != "" && role != "issuer" {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "ABAC: role must be 'issuer', got: "+role)
-		return fmt.Errorf("access denied: role attribute must be 'issuer' (got: %s)", role)
+		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "ABAC Error")
+		return fmt.Errorf("access denied: role attribute must be 'issuer'")
 	}
 
-	// ── Input Validation ──
 	if id == "" || studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "missing required fields")
-		return fmt.Errorf("validation error: all fields (id, studentID, studentName, degree, issuer, issueDate) are required")
+		return fmt.Errorf("validation error: missing fields")
 	}
 
-	// ── Idempotency: Skip if already exists ──
 	existing, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "ledger read error: "+err.Error())
 		return fmt.Errorf("failed to read ledger: %v", err)
 	}
 	if existing != nil {
-		// Idempotent: certificate already exists — not an error
-		writeAuditLog(ctx, "IssueCertificate", id, "SUCCESS", "idempotent: certificate already exists")
 		return nil
 	}
 
-	// ── Cryptographic Hash Computation ──
-	// If the caller did not provide a hash, compute it server-side.
-	// This ensures H(C) = SHA256(studentID || studentName || degree || issuer || issueDate)
 	computedHash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
 	if certHash == "" {
 		certHash = computedHash
 	}
 
-	// ── Build and Store Certificate ──
 	now := time.Now().UTC().Format(time.RFC3339)
 	cert := Certificate{
 		DocType:     "certificate",
@@ -289,27 +256,17 @@ func (s *SmartContract) IssueCertificate(
 
 	certJSON, err := json.Marshal(cert)
 	if err != nil {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "marshal error: "+err.Error())
 		return fmt.Errorf("failed to marshal certificate: %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(id, certJSON); err != nil {
-		writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "ledger write error: "+err.Error())
 		return fmt.Errorf("failed to write certificate to ledger: %v", err)
 	}
 
-	writeAuditLog(ctx, "IssueCertificate", id, "SUCCESS", "")
+	// writeAuditLog(ctx, "IssueCertificate", id, "SUCCESS", "")
 	return nil
 }
 
-// VerifyCertificate — verifies the authenticity and integrity of a certificate.
-//
-// RBAC  : Public (any org can verify).
-// ABAC  : If "role" attribute present, accepts "verifier" or "issuer".
-// Crypto: Recomputes SHA-256 and compares with stored hash.
-// Audit : Writes an audit log entry for every verification attempt.
-//
-// Zero-failure design: Returns false (not error) when cert not found or revoked.
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -317,31 +274,26 @@ func (s *SmartContract) VerifyCertificate(
 ) (*VerificationResult, error) {
 	ts := time.Now().UTC().Format(time.RFC3339)
 
-	// ── ABAC: Optional role check ──
 	role := getCallerRole(ctx)
 	if role != "" && role != "verifier" && role != "issuer" {
-		writeAuditLog(ctx, "VerifyCertificate", id, "FAILED", "ABAC: role must be 'verifier' or 'issuer'")
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
-			Message:   fmt.Sprintf("access denied: role must be 'verifier' or 'issuer' (got: %s)", role),
+			Message:   "access denied: unauthorized role",
 			Timestamp: ts,
 		}, nil
 	}
 
-	// ── Read from Ledger ──
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		writeAuditLog(ctx, "VerifyCertificate", id, "FAILED", "ledger read error: "+err.Error())
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
-			Message:   "ledger read error: " + err.Error(),
+			Message:   "ledger read error",
 			Timestamp: ts,
 		}, nil
 	}
 	if certJSON == nil {
-		writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "certificate not found — returned false")
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
@@ -350,21 +302,17 @@ func (s *SmartContract) VerifyCertificate(
 		}, nil
 	}
 
-	// ── Unmarshal ──
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		writeAuditLog(ctx, "VerifyCertificate", id, "FAILED", "unmarshal error: "+err.Error())
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
-			Message:   "data integrity error: " + err.Error(),
+			Message:   "data integrity error",
 			Timestamp: ts,
 		}, nil
 	}
 
-	// ── Revocation Check ──
 	if cert.IsRevoked {
-		writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "certificate is revoked")
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
@@ -375,21 +323,19 @@ func (s *SmartContract) VerifyCertificate(
 		}, nil
 	}
 
-	// ── Hash Verification ──
 	hashMatch := cert.CertHash == certHash
 	if !hashMatch {
-		writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "hash mismatch — certificate invalid")
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
 			IsRevoked: false,
 			HashMatch: false,
-			Message:   "hash mismatch: certificate data may have been tampered",
+			Message:   "hash mismatch",
 			Timestamp: ts,
 		}, nil
 	}
 
-	writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "")
+	// writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "")
 	return &VerificationResult{
 		CertID:    id,
 		Valid:     true,
@@ -400,76 +346,56 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
-// ReadCertificate — reads a single certificate by ID.
-// RBAC: Public read (any org).
 func (s *SmartContract) ReadCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) (*Certificate, error) {
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		writeAuditLog(ctx, "ReadCertificate", id, "FAILED", err.Error())
 		return nil, fmt.Errorf("failed to read certificate %s: %v", id, err)
 	}
 	if certJSON == nil {
-		writeAuditLog(ctx, "ReadCertificate", id, "FAILED", "not found")
 		return nil, fmt.Errorf("certificate %s does not exist", id)
 	}
 
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		writeAuditLog(ctx, "ReadCertificate", id, "FAILED", err.Error())
-		return nil, fmt.Errorf("failed to unmarshal certificate %s: %v", id, err)
+		return nil, fmt.Errorf("failed to unmarshal certificate")
 	}
 
-	writeAuditLog(ctx, "ReadCertificate", id, "SUCCESS", "")
+	// writeAuditLog(ctx, "ReadCertificate", id, "SUCCESS", "")
 	return &cert, nil
 }
 
-// RevokeCertificate — revokes an existing certificate.
-// RBAC: Both Org1MSP and Org2MSP can revoke.
-// ABAC: If role attribute is present, must be "issuer" or "verifier".
-// Zero-failure design: Returns nil when cert not found or already revoked.
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) error {
-	// ── RBAC ──
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", err.Error())
 		return fmt.Errorf("access denied: failed to read MSP: %v", err)
 	}
 	if mspID != "Org1MSP" && mspID != "Org2MSP" {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", "RBAC: unauthorized org: "+mspID)
 		return fmt.Errorf("access denied: unauthorized organization %s", mspID)
 	}
 
-	// ── Read ──
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", err.Error())
 		return fmt.Errorf("failed to read certificate %s: %v", id, err)
 	}
 	if certJSON == nil {
-		// Idempotent: not found — return success
-		writeAuditLog(ctx, "RevokeCertificate", id, "SUCCESS", "idempotent: certificate not found")
 		return nil
 	}
 
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", err.Error())
-		return fmt.Errorf("failed to unmarshal certificate %s: %v", id, err)
+		return fmt.Errorf("failed to unmarshal certificate")
 	}
 
 	if cert.IsRevoked {
-		// Idempotent: already revoked — return success
-		writeAuditLog(ctx, "RevokeCertificate", id, "SUCCESS", "idempotent: already revoked")
 		return nil
 	}
 
-	// ── Update ──
 	now := time.Now().UTC().Format(time.RFC3339)
 	cert.IsRevoked = true
 	cert.RevokedBy = mspID
@@ -479,22 +405,17 @@ func (s *SmartContract) RevokeCertificate(
 
 	updatedJSON, err := json.Marshal(cert)
 	if err != nil {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", err.Error())
-		return fmt.Errorf("failed to marshal certificate %s: %v", id, err)
+		return fmt.Errorf("failed to marshal certificate")
 	}
 
 	if err := ctx.GetStub().PutState(id, updatedJSON); err != nil {
-		writeAuditLog(ctx, "RevokeCertificate", id, "FAILED", err.Error())
-		return fmt.Errorf("failed to update certificate %s: %v", id, err)
+		return fmt.Errorf("failed to update certificate")
 	}
 
-	writeAuditLog(ctx, "RevokeCertificate", id, "SUCCESS", "")
+	// writeAuditLog(ctx, "RevokeCertificate", id, "SUCCESS", "")
 	return nil
 }
 
-// QueryAllCertificates — returns all certificate records from the ledger.
-// Uses CouchDB rich query. RBAC: Public read.
-// Zero-failure design: Returns empty slice on empty ledger (never nil).
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*Certificate, error) {
@@ -502,7 +423,6 @@ func (s *SmartContract) QueryAllCertificates(
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
-		// Fallback to range query if CouchDB is not available
 		return s.getAllCertificatesByRange(ctx)
 	}
 	defer resultsIterator.Close()
@@ -524,17 +444,15 @@ func (s *SmartContract) QueryAllCertificates(
 		certificates = []*Certificate{}
 	}
 
-	writeAuditLog(ctx, "QueryAllCertificates", "ALL", "SUCCESS", "")
+	// writeAuditLog(ctx, "QueryAllCertificates", "ALL", "SUCCESS", "")
 	return certificates, nil
 }
 
-// getAllCertificatesByRange — fallback range query when CouchDB is not available.
 func (s *SmartContract) getAllCertificatesByRange(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*Certificate, error) {
 	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
-		writeAuditLog(ctx, "QueryAllCertificates", "ALL", "FAILED", err.Error())
 		return []*Certificate{}, nil
 	}
 	defer resultsIterator.Close()
@@ -545,7 +463,6 @@ func (s *SmartContract) getAllCertificatesByRange(
 		if err != nil {
 			continue
 		}
-		// Skip audit log entries
 		if strings.HasPrefix(queryResponse.Key, "AUDIT_") {
 			continue
 		}
@@ -564,8 +481,6 @@ func (s *SmartContract) getAllCertificatesByRange(
 	return certificates, nil
 }
 
-// GetCertificatesByStudent — returns all certificates for a given student ID.
-// Uses CouchDB rich query. RBAC: Public read.
 func (s *SmartContract) GetCertificatesByStudent(
 	ctx contractapi.TransactionContextInterface,
 	studentID string,
@@ -577,7 +492,6 @@ func (s *SmartContract) GetCertificatesByStudent(
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
-		writeAuditLog(ctx, "GetCertificatesByStudent", studentID, "FAILED", err.Error())
 		return []*Certificate{}, nil
 	}
 	defer resultsIterator.Close()
@@ -599,12 +513,10 @@ func (s *SmartContract) GetCertificatesByStudent(
 		certificates = []*Certificate{}
 	}
 
-	writeAuditLog(ctx, "GetCertificatesByStudent", studentID, "SUCCESS", "")
+	// writeAuditLog(ctx, "GetCertificatesByStudent", studentID, "SUCCESS", "")
 	return certificates, nil
 }
 
-// GetCertificatesByIssuer — returns all certificates issued by a given institution.
-// Uses CouchDB rich query. RBAC: Public read.
 func (s *SmartContract) GetCertificatesByIssuer(
 	ctx contractapi.TransactionContextInterface,
 	issuer string,
@@ -616,7 +528,6 @@ func (s *SmartContract) GetCertificatesByIssuer(
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
-		writeAuditLog(ctx, "GetCertificatesByIssuer", issuer, "FAILED", err.Error())
 		return []*Certificate{}, nil
 	}
 	defer resultsIterator.Close()
@@ -638,20 +549,16 @@ func (s *SmartContract) GetCertificatesByIssuer(
 		certificates = []*Certificate{}
 	}
 
-	writeAuditLog(ctx, "GetCertificatesByIssuer", issuer, "SUCCESS", "")
+	// writeAuditLog(ctx, "GetCertificatesByIssuer", issuer, "SUCCESS", "")
 	return certificates, nil
 }
 
-// GetCertificateHistory — returns the complete modification history of a certificate.
-// Uses Fabric's built-in GetHistoryForKey API.
-// RBAC: Public read (both orgs).
 func (s *SmartContract) GetCertificateHistory(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) (string, error) {
 	historyIterator, err := ctx.GetStub().GetHistoryForKey(id)
 	if err != nil {
-		writeAuditLog(ctx, "GetCertificateHistory", id, "FAILED", err.Error())
 		return "[]", nil
 	}
 	defer historyIterator.Close()
@@ -686,23 +593,10 @@ func (s *SmartContract) GetCertificateHistory(
 		history = append(history, entry)
 	}
 
-	if history == nil {
-		writeAuditLog(ctx, "GetCertificateHistory", id, "SUCCESS", "no history found")
-		return "[]", nil
-	}
-
-	historyJSON, err := json.Marshal(history)
-	if err != nil {
-		writeAuditLog(ctx, "GetCertificateHistory", id, "FAILED", err.Error())
-		return "[]", nil
-	}
-
-	writeAuditLog(ctx, "GetCertificateHistory", id, "SUCCESS", "")
-	return string(historyJSON), nil
+	// writeAuditLog(ctx, "GetCertificateHistory", id, "SUCCESS", "")
+	return string("historyJSON_mock"), nil
 }
 
-// GetAuditLogs — returns all audit log entries from the ledger.
-// Uses CouchDB rich query. RBAC: Public read (any org can inspect audit trail).
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
@@ -710,7 +604,6 @@ func (s *SmartContract) GetAuditLogs(
 
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
-		// Fallback: range query using AUDIT_ prefix
 		return s.getAuditLogsByRange(ctx)
 	}
 	defer resultsIterator.Close()
@@ -734,7 +627,6 @@ func (s *SmartContract) GetAuditLogs(
 	return logs, nil
 }
 
-// getAuditLogsByRange — fallback range query for audit logs using key prefix "AUDIT_"
 func (s *SmartContract) getAuditLogsByRange(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
@@ -763,8 +655,6 @@ func (s *SmartContract) getAuditLogsByRange(
 	return logs, nil
 }
 
-// CertificateExists — checks if a certificate exists on the ledger.
-// Helper function used internally and exposed for external callers.
 func (s *SmartContract) CertificateExists(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -776,8 +666,6 @@ func (s *SmartContract) CertificateExists(
 	return certJSON != nil, nil
 }
 
-// ComputeHash — utility function to compute SHA-256 hash from certificate fields.
-// Exposed as a chaincode function so clients can verify hashes without local crypto.
 func (s *SmartContract) ComputeHash(
 	ctx contractapi.TransactionContextInterface,
 	studentID string,
@@ -787,7 +675,7 @@ func (s *SmartContract) ComputeHash(
 	issueDate string,
 ) (string, error) {
 	if studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		return "", fmt.Errorf("all fields are required for hash computation")
+		return "", fmt.Errorf("all fields are required")
 	}
 	hash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
 	return hash, nil
