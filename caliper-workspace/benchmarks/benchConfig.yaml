@@ -143,38 +143,38 @@ test:
     # Round 5: GetCertificatesByStudent — Student-Indexed Query
     # Tests targeted query performance for per-student certificate lookup
     # ──────────────────────────────────────────────────────────────────
-   # - label: GetCertificatesByStudent
-    #  description: >
-     #   Query all certificates for a specific student using CouchDB rich query.
-      #  Selector: {docType: "certificate", StudentID: "<id>"}.
-       # Public read — any organization can query.
-       # Zero-failure design: returns empty slice (never nil).
-      #txDuration: 30
-     # rateControl:
-      #  type: fixed-rate
-       # opts:
-        #  tps: 75
-      #workload:
-       # module: workload/getCertificatesByStudent.js
-      #txOptions:
-       # invokerIdentity: User1@org1.example.com
+    - label: GetCertificatesByStudent
+      description: >
+        Query all certificates for a specific student using CouchDB rich query.
+        Selector: {docType: "certificate", StudentID: "<id>"}.
+        Public read — any organization can query.
+        Zero-failure design: returns empty slice (never nil).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+         opts:
+          tps: 75
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
     # Round 6: GetAuditLogs — Audit Trail Query
     # Tests audit log retrieval — key feature of the BCMS framework
     # ──────────────────────────────────────────────────────────────────
-   # - label: GetAuditLogs
-    #  description: >
-     #   Query the immutable audit log trail from the ledger.
-      #  Returns all AuditLog entries sorted by timestamp descending.
-       # Public read — any organization can inspect the audit trail.
-        #Zero-failure design: returns empty slice (never nil).
-      #txDuration: 30
-      #rateControl:
-       # type: fixed-rate
-        #opts:
-         # tps: 30
-      #workload:
-       # module: workload/getAuditLogs.js
-      #txOptions:
-       # invokerIdentity: User1@org1.example.com
+    - label: GetAuditLogs
+      description: >
+        Query the immutable audit log trail from the ledger.
+        Returns all AuditLog entries sorted by timestamp descending.
+        Public read — any organization can inspect the audit trail.
+        Zero-failure design: returns empty slice (never nil).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/getAuditLogs.js
+      txOptions:
+       invokerIdentity: User1@org1.example.com
