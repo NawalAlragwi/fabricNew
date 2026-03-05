@@ -15,7 +15,36 @@
 #  All rounds designed for 0 failures:
 #    - Write rounds: idempotent chaincode (duplicate = nil, not error)
 #    - Read rounds:  readOnly=true bypasses orderer, returns empty not error
+#
+#  Resource Monitoring:
+#    - Docker monitor enabled for all Fabric network containers
+#    - Captures CPU % and Memory (MB) per container per round
+#    - Interval: 1000ms (1 second) sampling rate
 # ============================================================================
+
+# ============================================================================
+# RESOURCE MONITORS — Docker Container CPU & Memory Monitoring
+# This section is REQUIRED for Resource Utilization data to appear in report
+# Without this, Caliper skips all container monitoring entirely
+# ============================================================================
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          # Orderer
+          - orderer.example.com
+          # Org1 Peer & CouchDB
+          - peer0.org1.example.com
+          - couchdb0
+          # Org2 Peer & CouchDB
+          - peer0.org2.example.com
+          - couchdb1
+          # Certificate Authorities
+          - ca_org1
+          - ca_org2
+          - ca_orderer
 
 test:
   name: bcms-certificate-benchmark-v4
