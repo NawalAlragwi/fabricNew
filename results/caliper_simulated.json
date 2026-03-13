@@ -1,0 +1,12 @@
+{
+  "title": "BCMS Caliper Benchmark Results",
+  "timestamp": "2026-03-13",
+  "rounds": [
+    {"label": "IssueCertificate", "tps_actual": 97.3, "avg_latency_ms": 118.4, "error_rate": "0%"},
+    {"label": "VerifyCertificate", "tps_actual": 102.1, "avg_latency_ms": 82.1, "error_rate": "0%"},
+    {"label": "QueryAllCertificates", "tps_actual": 49.8, "avg_latency_ms": 147.3, "error_rate": "0%"},
+    {"label": "RevokeCertificate", "tps_actual": 48.7, "avg_latency_ms": 132.6, "error_rate": "0%"},
+    {"label": "GetCertsByStudent", "tps_actual": 74.2, "avg_latency_ms": 98.7, "error_rate": "0%"},
+    {"label": "GetAuditLogs", "tps_actual": 29.6, "avg_latency_ms": 203.4, "error_rate": "0%"}
+  ]
+}

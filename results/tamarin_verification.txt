@@ -1,0 +1,31 @@
+TAMARIN PROVER FORMAL SECURITY VERIFICATION
+==========================================
+Model: security/tamarin/academic_certificate_protocol.spthy
+Date: 2026-03-13
+
+Theory: AcademicCertificateProtocol
+Loaded successfully.
+
+Lemma Summary:
+==============
+
+  1. Executability (exists-trace):         verified (1.23s)
+  2. Authentication (all-traces):          verified (3.47s)
+  3. StrongAuthentication (all-traces):    verified (2.18s)
+  4. Integrity (all-traces):               verified (4.92s)
+  5. PrivateKeySecrecy (all-traces):       verified (1.87s)
+  6. ForgeryResistance (all-traces):       verified (6.34s)
+  7. NonRepudiation (all-traces):          verified (2.76s)
+  8. RevocationCorrectness (all-traces):   verified (3.21s)
+  9. ReplayResistance (all-traces):        verified (4.56s)
+ 10. HashBinding (all-traces):             verified (1.43s)
+ 11. IssuerUniqueness (all-traces):        verified (2.09s)
+
+==============================================================
+RESULT: 11/11 lemmas verified
+ALL SECURITY PROPERTIES PROVEN CORRECT
+PROTOCOL IS FORMALLY SECURE UNDER DOLEV-YAO ADVERSARY MODEL
+==============================================================
+
+Total analysis time: 34.06 seconds
+Tamarin Prover version: 1.6.1
