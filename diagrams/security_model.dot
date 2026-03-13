@@ -1,0 +1,122 @@
+
+digraph SecurityModel {
+    graph [
+        label="BCMS Security Model — Dolev-Yao Attacker & Tamarin Lemmas"
+        labelloc="t"
+        fontsize=15
+        fontname="Helvetica-Bold"
+        bgcolor="#F9FBE7"
+        rankdir=TB
+        splines=ortho
+        nodesep=0.7
+        ranksep=0.9
+        pad=0.5
+    ]
+    
+    node [fontname="Helvetica" fontsize=10]
+    edge [fontname="Helvetica" fontsize=9]
+    
+    // ── HONEST PARTIES ───────────────────────────────────────────────────
+    
+    subgraph cluster_honest {
+        label="Honest Parties"
+        style=filled fillcolor="#E8F5E9" color="#2E7D32"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        KEYGEN [label="Key Generation\n(Org1MSP)\npk_U = pk(sk_U)"
+                shape=ellipse style=filled fillcolor="#4CAF50" fontcolor=white]
+        
+        ISSUE [label="IssueCertificate Rule\nC = cert(ID, fields...)\nH(C) = SHA256(fields)\nSig = Sign(sk_U, H(C))"
+               shape=rectangle style=filled fillcolor="#388E3C" fontcolor=white]
+        
+        STORE [label="BlockchainStore Rule\n(CertID, H(C), Sig) → Ledger\nImmutable write"
+               shape=rectangle style=filled fillcolor="#2E7D32" fontcolor=white]
+        
+        VERIFY [label="VerifyCertificate Rule\nH_check = SHA256(fields)\nH_check == H_stored?\nVerify(pk_U, Sig, H_check)?"
+                shape=rectangle style=filled fillcolor="#1B5E20" fontcolor=white]
+    }
+    
+    // ── ATTACKER ─────────────────────────────────────────────────────────
+    
+    subgraph cluster_attacker {
+        label="Dolev-Yao Adversary"
+        style=filled fillcolor="#FFEBEE" color="#B71C1C"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        ATK_NET [label="Network Control\nIntercept / Modify\nReplay / Delay"
+                 shape=hexagon style=filled fillcolor="#D32F2F" fontcolor=white]
+        
+        ATK_FORGE [label="Forgery Attempt\nGenerate fake cert\n(without sk_U)"
+                   shape=hexagon style=filled fillcolor="#C62828" fontcolor=white]
+        
+        ATK_REPLAY [label="Replay Attack\nReuse old (certID, Sig)"
+                    shape=hexagon style=filled fillcolor="#B71C1C" fontcolor=white]
+        
+        ATK_KNOWS [label="Attacker Knows:\n✓ pk_U (public key)\n✓ All messages\n✗ sk_U (BLOCKED)"
+                   shape=note style=filled fillcolor="#FFCDD2" fontcolor="#B71C1C"]
+    }
+    
+    // ── SECURITY PROPERTIES ──────────────────────────────────────────────
+    
+    subgraph cluster_lemmas {
+        label="Tamarin Security Lemmas — ALL VERIFIED ✓"
+        style=filled fillcolor="#E3F2FD" color="#0D47A1"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        L1 [label="L1: Authentication\nVerifier accepts ONLY\nuniversity-issued certs"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L2 [label="L2: Integrity\nH(C) binds content\nafter issuance"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L3 [label="L3: Key Secrecy\nsk_U never reaches\nattacker"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L4 [label="L4: Forgery Resistance\nAttacker cannot generate\nvalid certificate"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L5 [label="L5: Non-Repudiation\nTx committed BEFORE\nverification"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L6 [label="L6: Revocation\nRevoked certs\nfail verification"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+        
+        L7 [label="L7: Replay Resistance\nCertID must exist\non-chain"
+            shape=rectangle style="filled,rounded" fillcolor="#1565C0" fontcolor=white]
+    }
+    
+    // ── PUBLIC CHANNEL ───────────────────────────────────────────────────
+    
+    CHANNEL [label="Public Channel (Internet)\nAttacker controls all communication"
+             shape=rectangle style="filled,dashed" fillcolor="#FFFDE7" color="#F57F17"
+             fontsize=10]
+    
+    // ── CONNECTIONS ──────────────────────────────────────────────────────
+    
+    KEYGEN -> ISSUE [label="1. sk_U used for signing" color="#2E7D32" style=bold]
+    ISSUE -> STORE [label="2. Store to blockchain" color="#2E7D32" style=bold]
+    STORE -> VERIFY [label="3. Read on verification" color="#2E7D32" style=bold]
+    
+    // Attacker intercepts public channel
+    ISSUE -> CHANNEL [label="Msg exposed to attacker" style=dashed color="#9E9E9E"]
+    CHANNEL -> ATK_NET [color="#D32F2F" style=bold]
+    
+    // Attacker capabilities
+    ATK_NET -> ATK_FORGE [label="Has pk_U\nTries forgery" color="#D32F2F"]
+    ATK_NET -> ATK_REPLAY [label="Has old msgs\nTries replay" color="#D32F2F"]
+    
+    // Attacker blocked by lemmas
+    ATK_FORGE -> L4 [label="BLOCKED by" color="#D32F2F" style=bold arrowhead=tee]
+    ATK_REPLAY -> L7 [label="BLOCKED by" color="#D32F2F" style=bold arrowhead=tee]
+    
+    // Lemma connections
+    KEYGEN -> L3 [label="Key secrecy" color="#1565C0" style=dashed]
+    STORE -> L1 [label="RBAC enforcement" color="#1565C0" style=dashed]
+    STORE -> L2 [label="Hash immutability" color="#1565C0" style=dashed]
+    STORE -> L5 [label="Tx ordering" color="#1565C0" style=dashed]
+    VERIFY -> L6 [label="Revocation check" color="#1565C0" style=dashed]
+    
+    { rank=same; L1; L2; L3; L4 }
+    { rank=same; L5; L6; L7 }
+    { rank=same; KEYGEN; ATK_NET }
+}

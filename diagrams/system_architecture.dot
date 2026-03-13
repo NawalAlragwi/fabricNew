@@ -1,0 +1,143 @@
+
+digraph SystemArchitecture {
+    graph [
+        label="BCMS Complete System Architecture\nHyperledger Fabric v2.5 | Go Chaincode | Node.js API"
+        labelloc="t"
+        fontsize=15
+        fontname="Helvetica-Bold"
+        bgcolor="#F3F4F6"
+        rankdir=TB
+        splines=ortho
+        nodesep=0.6
+        ranksep=0.9
+        pad=0.5
+    ]
+    
+    node [fontname="Helvetica" fontsize=10]
+    edge [fontname="Helvetica" fontsize=9]
+    
+    // ── LAYER 0: USERS ────────────────────────────────────────────────────
+    
+    subgraph cluster_users {
+        label="Users / Actors"
+        style=filled fillcolor="#F8F9FA" color="#6C757D"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        U1 [label="🎓 University\n(Issuer)" shape=rectangle style="filled,rounded"
+            fillcolor="#2196F3" fontcolor=white]
+        U2 [label="👨‍🎓 Student\n(Holder)" shape=rectangle style="filled,rounded"
+            fillcolor="#4CAF50" fontcolor=white]
+        U3 [label="🔍 Employer\n(Verifier)" shape=rectangle style="filled,rounded"
+            fillcolor="#9C27B0" fontcolor=white]
+    }
+    
+    // ── LAYER 1: API / CLI ────────────────────────────────────────────────
+    
+    subgraph cluster_api {
+        label="Application Layer"
+        style=filled fillcolor="#E8EAF6" color="#3F51B5"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        API [label="REST API (Node.js)\nbcms-api/\nExpress + Helmet + Winston"
+             shape=rectangle style=filled fillcolor="#3F51B5" fontcolor=white width=2.2]
+        
+        GATEWAY [label="Fabric Gateway\n(@hyperledger/fabric-gateway)\ngRPC connection"
+                 shape=rectangle style=filled fillcolor="#5C6BC0" fontcolor=white width=2.2]
+    }
+    
+    // ── LAYER 2: FABRIC NETWORK ───────────────────────────────────────────
+    
+    subgraph cluster_fabric {
+        label="Hyperledger Fabric Network (mychannel)"
+        style=filled fillcolor="#FFF8E1" color="#F57F17"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        subgraph cluster_org1net {
+            label="Org1 (University)"
+            style=filled fillcolor="#E3F2FD" color="#0D47A1"
+            
+            P1 [label="peer0.org1\n:7051" shape=rectangle style=filled fillcolor="#1565C0" fontcolor=white]
+            DB1 [label="CouchDB\n:5984" shape=cylinder style=filled fillcolor="#64B5F6"]
+        }
+        
+        subgraph cluster_org2net {
+            label="Org2 (Employer)"
+            style=filled fillcolor="#E8F5E9" color="#1B5E20"
+            
+            P2 [label="peer0.org2\n:9051" shape=rectangle style=filled fillcolor="#2E7D32" fontcolor=white]
+            DB2 [label="CouchDB\n:7984" shape=cylinder style=filled fillcolor="#81C784"]
+        }
+        
+        subgraph cluster_orderernet {
+            label="Orderer"
+            style=filled fillcolor="#FFF3E0" color="#E65100"
+            
+            ORD [label="orderer\n:7050" shape=rectangle style=filled fillcolor="#E64A19" fontcolor=white]
+        }
+        
+        subgraph cluster_chaincode {
+            label="BCMS Chaincode (Go)"
+            style=filled fillcolor="#F3E5F5" color="#6A1B9A"
+            
+            CC [label="SmartContract.go\n• InitLedger()\n• IssueCertificate()\n• VerifyCertificate()\n• RevokeCertificate()\n• QueryAllCertificates()\n• GetCertificateHistory()"
+                shape=component style=filled fillcolor="#7B1FA2" fontcolor=white width=2.2 height=1.5]
+        }
+    }
+    
+    // ── LAYER 3: STORAGE ──────────────────────────────────────────────────
+    
+    subgraph cluster_storage {
+        label="Persistent Storage"
+        style=filled fillcolor="#EFEBE9" color="#4E342E"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        LEDGER [label="Blockchain Ledger\n(CertID → {H(C), Sig, Meta})"
+                shape=cylinder style=filled fillcolor="#5D4037" fontcolor=white width=2.5]
+        
+        AUDIT [label="Audit Trail\n(AUDIT_<txID> → AuditLog)"
+               shape=cylinder style=filled fillcolor="#795548" fontcolor=white]
+    }
+    
+    // ── LAYER 4: MONITORING ───────────────────────────────────────────────
+    
+    subgraph cluster_monitor {
+        label="Monitoring & Benchmarking"
+        style=filled fillcolor="#E0F2F1" color="#004D40"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        CALIPER [label="Hyperledger Caliper\nbenchmark suite"
+                 shape=rectangle style=filled fillcolor="#00695C" fontcolor=white]
+        
+        PROM [label="Prometheus Metrics\nbcms_fabric_*"
+              shape=rectangle style=filled fillcolor="#00897B" fontcolor=white]
+    }
+    
+    // ── CONNECTIONS ──────────────────────────────────────────────────────
+    
+    U1 -> API [label="Issue cert" color="#2196F3" style=bold]
+    U3 -> API [label="Verify cert" color="#9C27B0" style=bold]
+    U2 -> API [label="Get cert" color="#4CAF50" style=dashed]
+    
+    API -> GATEWAY [label="SDK calls" color="#3F51B5" style=bold]
+    GATEWAY -> P1 [label="gRPC:7051\nOrg1 TX" color="#0D47A1" style=bold]
+    GATEWAY -> P2 [label="gRPC:9051\nOrg2 TX" color="#1B5E20" style=bold]
+    
+    P1 -> CC [label="Invoke" color="#7B1FA2" style=bold]
+    P2 -> CC [label="Invoke" color="#7B1FA2" style=bold]
+    P1 -> ORD [label="Order TX" color="#E65100"]
+    P2 -> ORD [label="Order TX" color="#E65100"]
+    
+    P1 -> DB1 [color="#0D47A1"]
+    P2 -> DB2 [color="#1B5E20"]
+    
+    CC -> LEDGER [label="PutState/GetState" color="#5D4037" style=bold]
+    CC -> AUDIT [label="WriteAuditLog" color="#795548" style=dashed]
+    
+    CALIPER -> P1 [label="Benchmark" style=dashed color="#00695C"]
+    CALIPER -> P2 [label="Benchmark" style=dashed color="#00695C"]
+    API -> PROM [label="Metrics" style=dashed color="#00897B"]
+    
+    { rank=same; U1; U2; U3 }
+    { rank=same; P1; ORD; P2 }
+    { rank=same; LEDGER; AUDIT }
+}
