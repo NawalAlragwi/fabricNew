@@ -484,6 +484,124 @@ generate_diagrams() {
     fi
 }
 
+# ─── Caliper Connection Profiles ─────────────────────────────────────────────
+
+generate_connection_profiles() {
+    local PEER1_TLS="$1"
+    local PEER2_TLS="$2"
+    local ORDERER_TLS="$3"
+
+    # connection-org1.yaml — Caliper 0.6.0 compatible connection profile
+    cat > networks/connection-org1.yaml << CONN1EOF
+name: test-network-org1
+version: "1.0.0"
+client:
+  organization: Org1
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+      orderer: '300'
+
+channels:
+  mychannel:
+    orderers:
+      - orderer.example.com
+    peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: false
+        ledgerQuery: false
+        eventSource: false
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+
+orderers:
+  orderer.example.com:
+    url: grpcs://localhost:7050
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+      hostnameOverride: orderer.example.com
+    tlsCACerts:
+      path: '${ORDERER_TLS}'
+
+peers:
+  peer0.org1.example.com:
+    url: grpcs://localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      hostnameOverride: peer0.org1.example.com
+    tlsCACerts:
+      path: '${PEER1_TLS}'
+  peer0.org2.example.com:
+    url: grpcs://localhost:9051
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+      hostnameOverride: peer0.org2.example.com
+    tlsCACerts:
+      path: '${PEER2_TLS}'
+CONN1EOF
+
+    # connection-org2.yaml
+    cat > networks/connection-org2.yaml << CONN2EOF
+name: test-network-org2
+version: "1.0.0"
+client:
+  organization: Org2
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+      orderer: '300'
+
+channels:
+  mychannel:
+    orderers:
+      - orderer.example.com
+    peers:
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+organizations:
+  Org2:
+    mspid: Org2MSP
+    peers:
+      - peer0.org2.example.com
+
+orderers:
+  orderer.example.com:
+    url: grpcs://localhost:7050
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+      hostnameOverride: orderer.example.com
+    tlsCACerts:
+      path: '${ORDERER_TLS}'
+
+peers:
+  peer0.org2.example.com:
+    url: grpcs://localhost:9051
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+      hostnameOverride: peer0.org2.example.com
+    tlsCACerts:
+      path: '${PEER2_TLS}'
+CONN2EOF
+
+    log "✓ Connection profiles generated: connection-org1.yaml, connection-org2.yaml"
+}
+
 # ─── Caliper Benchmarks ──────────────────────────────────────────────────────
 
 run_caliper_benchmarks() {
@@ -498,107 +616,96 @@ run_caliper_benchmarks() {
     if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/caliper" ]; then
         info "Installing Caliper dependencies..."
         npm install 2>&1 | tee -a "$LOG_FILE" || warn "npm install had some issues"
-        
-        info "Binding Caliper to Fabric 2.5..."
-        npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee -a "$LOG_FILE" || warn "Caliper bind may need manual intervention"
     else
         log "✓ Caliper dependencies already installed"
+    fi
+
+    # Bind Caliper to Fabric 2.5 SDK
+    # NOTE: fabric:2.5 instructs Caliper to install the Fabric 2.x SDK packages
+    # (fabric-network, fabric-ca-client). This is separate from npm install above.
+    # Always re-bind to ensure the correct SDK version is loaded.
+    if [ ! -d "node_modules/fabric-network" ]; then
+        info "Binding Caliper to Fabric 2.5 SDK..."
+        npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee -a "$LOG_FILE" \
+            || warn "Caliper bind fabric:2.5 had issues — continuing with pre-installed fabric-network"
+    else
+        log "✓ Fabric SDK already bound (fabric-network found)"
     fi
     
     # Generate network configuration
     info "Generating Caliper network configuration..."
     
-    # Dynamic certificate path detection
+    # ── Dynamic certificate path detection ────────────────────────────────────
+    # TLS CA certs (for gRPC TLS)
     PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
     PEER2_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com" -name "ca.crt" | grep "peer0.org2" | head -1)
     ORDERER_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" -name "*.pem" | grep "tlsca" | head -1)
-    ORG1_ADMIN_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts" -name "*.pem" | head -1)
-    ORG1_ADMIN_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" | head -1)
-    ORG2_ADMIN_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts" -name "*.pem" | head -1)
-    ORG2_ADMIN_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" | head -1)
-    
-    # Generate networkConfig.yaml
+    # User1 identity keys/certs (Caliper 0.6.0 uses User1, not Admin)
+    ORG1_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
+    ORG1_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
+    ORG2_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
+    ORG2_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
+    # Also generate connection profiles for each org
+    generate_connection_profiles "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
+
+    # Generate networkConfig.yaml — Caliper 0.6.0 format
+    # ══════════════════════════════════════════════════════════════════════════
+    # ROOT CAUSE FIX #1: caliper.blockchain attribute MUST be present.
+    #   Caliper 0.6.0 src: caliper-utils.js assertConfigurationFilePaths()
+    #   throws: "missing its caliper.blockchain string attribute"
+    #
+    # ROOT CAUSE FIX #2: Use Caliper 0.6.0 ARRAY-based organizations format
+    #   (with identities.certificates[]) NOT Fabric SDK 1.x map-based format
+    #   (with adminPrivateKey/signedCert). The v2/FabricGateway connector
+    #   reads: connectorConfiguration.organizations (array) + identityManager.
+    # ══════════════════════════════════════════════════════════════════════════
     cat > networks/networkConfig.yaml << NETEOF
 name: bcms-test-network
-version: 1.0.0
+version: "2.0.0"
 
+# ── FIX: REQUIRED BY CALIPER 0.6.0 — DO NOT REMOVE ──────────────────────────
+# Error if absent: "missing its caliper.blockchain string attribute"
+caliper:
+  blockchain: fabric
+
+# ── CHANNELS ─────────────────────────────────────────────────────────────────
 channels:
-  mychannel:
-    created: false
-    orderers:
-      - orderer.example.com
-    peers:
-      peer0.org1.example.com:
-        endorsingPeer: true
-        chaincodeQuery: true
-        ledgerQuery: true
-        eventSource: true
-      peer0.org2.example.com:
-        endorsingPeer: true
-        chaincodeQuery: true
-        ledgerQuery: true
-        eventSource: true
-    chaincodes:
+  - channelName: mychannel
+    contracts:
       - id: basic
-        version: 1.0
 
+# ── ORGANIZATIONS (Caliper 0.6.0 array format) ───────────────────────────────
 organizations:
-  Org1:
-    mspid: Org1MSP
-    peers:
-      - peer0.org1.example.com
-    certificateAuthorities:
-      - ca.org1.example.com
-    adminPrivateKey:
-      path: ${ORG1_ADMIN_KEY}
-    signedCert:
-      path: ${ORG1_ADMIN_CERT}
-  Org2:
-    mspid: Org2MSP
-    peers:
-      - peer0.org2.example.com
-    adminPrivateKey:
-      path: ${ORG2_ADMIN_KEY}
-    signedCert:
-      path: ${ORG2_ADMIN_CERT}
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: 'User1@org1.example.com'
+          clientPrivateKey:
+            path: '${ORG1_USER1_KEY}'
+          clientSignedCert:
+            path: '${ORG1_USER1_CERT}'
+    connectionProfile:
+      path: 'networks/connection-org1.yaml'
+      discover: false
 
-orderers:
-  orderer.example.com:
-    url: grpcs://localhost:7050
-    grpcOptions:
-      ssl-target-name-override: orderer.example.com
-      hostnameOverride: orderer.example.com
-    tlsCACerts:
-      path: ${ORDERER_TLS_CERT}
-
-peers:
-  peer0.org1.example.com:
-    url: grpcs://localhost:7051
-    grpcOptions:
-      ssl-target-name-override: peer0.org1.example.com
-      hostnameOverride: peer0.org1.example.com
-    tlsCACerts:
-      path: ${PEER1_TLS_CERT}
-  peer0.org2.example.com:
-    url: grpcs://localhost:9051
-    grpcOptions:
-      ssl-target-name-override: peer0.org2.example.com
-      hostnameOverride: peer0.org2.example.com
-    tlsCACerts:
-      path: ${PEER2_TLS_CERT}
-
-certificateAuthorities:
-  ca.org1.example.com:
-    url: https://localhost:7054
-    httpOptions:
-      verify: false
-    tlsCACerts:
-      path: ${PEER1_TLS_CERT}
+  - mspid: Org2MSP
+    identities:
+      certificates:
+        - name: 'User1@org2.example.com'
+          clientPrivateKey:
+            path: '${ORG2_USER1_KEY}'
+          clientSignedCert:
+            path: '${ORG2_USER1_CERT}'
+    connectionProfile:
+      path: 'networks/connection-org2.yaml'
+      discover: false
 NETEOF
     
     info "Running Caliper benchmark suite..."
     
-    # Run Caliper
+    # Run Caliper with Fabric 2.5 adapter
+    # --caliper-flow-only-test : skip init/end phases (network already up)
+    # --caliper-fabric-gateway-enabled : use new Fabric Gateway SDK (Fabric 2.4+)
     npx caliper launch manager \
         --caliper-workspace . \
         --caliper-networkconfig networks/networkConfig.yaml \
