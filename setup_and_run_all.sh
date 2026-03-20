@@ -409,6 +409,25 @@ TAMARIN_EOF
     cp "$TAMARIN_RESULTS" "results/tamarin_verification.txt"
     
     log "✓ Security verification report: results/tamarin_verification.txt"
+
+    # Generate HTML security report (matches uploaded reference design)
+    generate_tamarin_html_report
+}
+
+# ─── Tamarin HTML Report Generator ──────────────────────────────────────────
+
+generate_tamarin_html_report() {
+    step "Generating Tamarin Security HTML Report"
+    cd "$ROOT_DIR"
+    mkdir -p results
+
+    if [ -f "generate_tamarin_report.py" ]; then
+        python3 generate_tamarin_report.py && \
+            log "✓ Tamarin HTML report: results/security_tamarin_report.html" || \
+            warn "Python report generator failed — report not updated"
+    else
+        warn "generate_tamarin_report.py not found — skipping HTML report generation"
+    fi
 }
 
 # ─── Hash Benchmarks ─────────────────────────────────────────────────────────
