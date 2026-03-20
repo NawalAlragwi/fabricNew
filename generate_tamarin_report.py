@@ -1,4 +1,31 @@
-<!DOCTYPE html>
+#!/usr/bin/env python3
+"""
+generate_tamarin_report.py
+Generates results/security_tamarin_report.html — a pixel-faithful replica of the
+uploaded BCMS Tamarin Security Report (SHA-256 vs BLAKE2b).
+
+Structure:
+  Sidebar + 9 sections:
+    1. Executive Summary  (metric cards + 11-lemma table)
+    2. Protocol Flow Diagram  (SVG)
+    3. Security Lemmas — Detailed Analysis  (11 lemma cards + Spthy snippets)
+    4. Hash Algorithm Security  (side-by-side + full matrix + Tamarin timing table)
+    5. Performance Comparison  (micro-bench + Caliper tables + 6 Chart.js charts)
+    6. Decision Framework
+    7. Threat & Attack Surface Analysis
+    8. Compliance Assessment
+    9. Conclusion & Final Verdict
+"""
+
+import os, datetime
+
+OUT = "/home/user/webapp/results/security_tamarin_report.html"
+TODAY = "2026-03-13"   # keep original date as in uploaded file
+
+# ── Inline Chart.js from local copy ──────────────────────────────────────────
+CHART_SRC = "/home/user/webapp/results/chart.umd.min.js"
+
+html = r"""<!DOCTYPE html>
 <html lang="ar-SA">
 <head>
   <meta charset="UTF-8">
@@ -1179,4 +1206,14 @@
 })();
 </script>
 </body>
-</html>
+</html>"""
+
+with open(OUT, "w", encoding="utf-8") as f:
+    f.write(html)
+
+size = os.path.getsize(OUT)
+print(f"✅  Written: {OUT}")
+print(f"    Size  : {size:,} bytes ({size//1024} KB)")
+print(f"    Sections: 9 (Executive Summary → Conclusion)")
+print(f"    Charts  : 6 (Chart.js from chart.umd.min.js)")
+print(f"    Lemmas  : 11 (L1–L11 with Spthy code snippets)")
