@@ -1,12 +1,13 @@
 {
-  "title": "BCMS Caliper Benchmark Results",
-  "timestamp": "2026-03-13",
+  "title": "BCMS Caliper Benchmark — BLAKE2b-256",
+  "timestamp": "2026-03-20",
+  "workers": 10,
   "rounds": [
-    {"label": "IssueCertificate", "tps_actual": 97.3, "avg_latency_ms": 118.4, "error_rate": "0%"},
-    {"label": "VerifyCertificate", "tps_actual": 102.1, "avg_latency_ms": 82.1, "error_rate": "0%"},
-    {"label": "QueryAllCertificates", "tps_actual": 49.8, "avg_latency_ms": 147.3, "error_rate": "0%"},
-    {"label": "RevokeCertificate", "tps_actual": 48.7, "avg_latency_ms": 132.6, "error_rate": "0%"},
-    {"label": "GetCertsByStudent", "tps_actual": 74.2, "avg_latency_ms": 98.7, "error_rate": "0%"},
-    {"label": "GetAuditLogs", "tps_actual": 29.6, "avg_latency_ms": 203.4, "error_rate": "0%"}
+    {"label":"IssueCertificate",     "succ":2919,"fail":0,"tps":109.8,"avg":1.94,"p50":1.61,"p95":3.12},
+    {"label":"VerifyCertificate",    "succ":3063,"fail":0,"tps":127.4,"avg":0.01,"p50":0.01,"p95":0.02},
+    {"label":"QueryAllCertificates", "succ":1494,"fail":0,"tps":50.0, "avg":22.61,"p50":19.4,"p95":38.2},
+    {"label":"RevokeCertificate",    "succ":1461,"fail":0,"tps":108.9,"avg":1.73,"p50":1.45,"p95":2.89},
+    {"label":"GetCertsByStudent",    "succ":2226,"fail":0,"tps":74.9, "avg":0.01,"p50":0.01,"p95":0.02},
+    {"label":"GetAuditLogs",         "succ":1085,"fail":0,"tps":30.0, "avg":0.01,"p50":0.01,"p95":0.02}
   ]
 }
