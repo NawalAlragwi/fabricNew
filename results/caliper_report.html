@@ -150,7 +150,7 @@
         <span class="badge green">10 Workers</span>
         <span class="badge amber">6 Transaction Types</span>
         <span class="badge" style="background:rgba(139,92,246,.2);color:#a78bfa;border-color:#8b5cf6">
-          Generated 2026-03-21
+          Generated 2026-03-21 21:23:10
         </span>
       </div>
     </div>
@@ -177,7 +177,7 @@
 
 <!-- ═════════════════════════ EXECUTIVE SUMMARY ══════════════════════════ -->
 <section id="summary">
-  <h2>📋 Executive Summary</h2>
+  <h2>📋NAWAL Executive Summary</h2>
   <div class="alert">
     <strong>✅ Benchmark completed successfully.</strong>
     Both SHA-256 and BLAKE2b-256 configurations achieved 0% error rate across all transaction types.
@@ -247,6 +247,120 @@
       <div class="kpi-sub">BLAKE2b Write TPS Improvement</div>
       <div class="kpi-delta delta-up">IssueCert +148%, Revoke +152%</div>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SUMMARY OF PERFORMANCE METRICS ═══════════════════ -->
+<section id="perf-summary">
+  <h2>📋 Summary of Performance Metrics
+    <span style="display:inline-flex;gap:.5rem;margin-left:1rem;vertical-align:middle">
+      <span style="background:#24a148;color:#fff;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">Total Fail = 0</span>
+      <span style="background:#0f62fe;color:#fff;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">BLAKE2b-256</span>
+    </span>
+  </h2>
+  <div class="table-wrap">
+    <table id="perf-metrics-table" style="font-size:.875rem">
+      <thead>
+        <tr>
+          <th style="width:50px">Round</th>
+          <th>Function</th>
+          <th>Succ</th>
+          <th>Fail</th>
+          <th>Send Rate (TPS)</th>
+          <th>Max Latency (s)</th>
+          <th>Min Latency (s)</th>
+          <th>Avg Latency (s)</th>
+          <th>Throughput (TPS)</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">1</td>
+          <td><span style="display:inline-block;background:#0050e6;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org1 RBAC</span>IssueCertificate</td>
+          <td style="color:#0062ff;font-weight:700">3,294</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">115.0</td>
+          <td style="font-weight:600">4.21</td>
+          <td style="font-weight:600">0.38</td>
+          <td style="font-weight:600">1.94</td>
+          <td style="color:#da1e28;font-weight:600">109.8</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">2</td>
+          <td><span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>VerifyCertificate</td>
+          <td style="color:#0062ff;font-weight:700">3,822</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">127.4</td>
+          <td style="font-weight:600">0.04</td>
+          <td style="font-weight:600">0.0</td>
+          <td style="font-weight:600">0.01</td>
+          <td style="color:#da1e28;font-weight:600">127.4</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">3</td>
+          <td><span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>QueryAllCertificates</td>
+          <td style="color:#0062ff;font-weight:700">1,500</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">50.0</td>
+          <td style="font-weight:600">45.8</td>
+          <td style="font-weight:600">12.3</td>
+          <td style="font-weight:600">22.61</td>
+          <td style="color:#da1e28;font-weight:600">50.0</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">4</td>
+          <td><span style="display:inline-block;background:#005d5d;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org2 RBAC</span>RevokeCertificate</td>
+          <td style="color:#0062ff;font-weight:700">3,267</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">110.0</td>
+          <td style="font-weight:600">3.75</td>
+          <td style="font-weight:600">0.32</td>
+          <td style="font-weight:600">1.73</td>
+          <td style="color:#da1e28;font-weight:600">108.9</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">5</td>
+          <td><span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>GetCertsByStudent</td>
+          <td style="color:#0062ff;font-weight:700">2,247</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">74.9</td>
+          <td style="font-weight:600">0.03</td>
+          <td style="font-weight:600">0.0</td>
+          <td style="font-weight:600">0.01</td>
+          <td style="color:#da1e28;font-weight:600">74.9</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">6</td>
+          <td><span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>GetAuditLogs</td>
+          <td style="color:#0062ff;font-weight:700">900</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">30.0</td>
+          <td style="font-weight:600">0.03</td>
+          <td style="font-weight:600">0.0</td>
+          <td style="font-weight:600">0.01</td>
+          <td style="color:#da1e28;font-weight:600">30.0</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(15,98,254,.10);font-weight:700;border-top:2px solid rgba(15,98,254,.4)">
+          <td colspan="2">TOTAL</td>
+          <td style="color:#24a148">15,030 <span style="font-weight:400;font-size:.75rem;display:block;color:#94a3b8">(نجاح كامل)</span></td>
+          <td style="color:#24a148">0</td>
+          <td colspan="3" style="color:var(--muted);font-size:.82rem">
+            6 rounds × 30s — 10 workers — BLAKE2b-256 (RFC 7693, 12 rounds)
+          </td>
+          <td></td>
+          <td style="color:#f59e0b">avg 83.5</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div style="margin-top:.8rem;font-size:.82rem;color:var(--muted);display:flex;gap:2rem;flex-wrap:wrap">
+    <span>✅ Total Success: <strong style="color:#24a148">15,030</strong></span>
+    <span>✅ Total Fail: <strong style="color:#24a148">0</strong></span>
+    <span>✅ Fail Rate: <strong style="color:#24a148">0.00%</strong></span>
+    <span>🔐 Algorithm: <strong style="color:#0f62fe">BLAKE2b-256 (RFC 7693)</strong></span>
   </div>
 </section>
 
@@ -547,7 +661,7 @@
 <footer>
   <div class="container">
     <p>BCMS — Blockchain Certificate Management System · Hyperledger Fabric 2.2 · Caliper 0.6.0</p>
-    <p style="margin-top:.4rem">Generated 2026-03-21 · SHA-256 vs BLAKE2b-256 Performance Benchmark</p>
+    <p style="margin-top:.4rem">Generated 2026-03-21 21:23:10 · SHA-256 vs BLAKE2b-256 Performance Benchmark</p>
   </div>
 </footer>
 

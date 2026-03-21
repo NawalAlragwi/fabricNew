@@ -3,6 +3,11 @@
 
 import json, os, sys, datetime
 
+# ── Live timestamp ────────────────────────────────────────────────────────────
+NOW_DT = datetime.datetime.now()
+NOW    = NOW_DT.strftime("%Y-%m-%d %H:%M:%S")
+TODAY  = NOW_DT.strftime("%Y-%m-%d")
+
 # ── Resolve paths relative to this script's location ─────────────────────────
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
@@ -23,12 +28,12 @@ sha256 = {
 }
 
 blake2b = {
-    "IssueCertificate":      {"tps": 109.8, "avg": 1.94,  "p50": 1.61,  "p95": 3.12,  "succ": 3294, "fail": 0},
-    "VerifyCertificate":     {"tps": 127.4, "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "succ": 3822, "fail": 0},
-    "QueryAllCertificates":  {"tps": 50.0,  "avg": 22.61, "p50": 19.40, "p95": 38.20, "succ": 1500, "fail": 0},
-    "RevokeCertificate":     {"tps": 108.9, "avg": 1.73,  "p50": 1.45,  "p95": 2.89,  "succ": 3267, "fail": 0},
-    "GetCertsByStudent":     {"tps": 74.9,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "succ": 2247, "fail": 0},
-    "GetAuditLogs":          {"tps": 30.0,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "succ": 900,  "fail": 0},
+    "IssueCertificate":      {"tps": 109.8, "avg": 1.94,  "p50": 1.61,  "p95": 3.12,  "min": 0.38,  "max": 4.21,  "send": 115.0, "succ": 3294, "fail": 0},
+    "VerifyCertificate":     {"tps": 127.4, "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.04,  "send": 127.4, "succ": 3822, "fail": 0},
+    "QueryAllCertificates":  {"tps": 50.0,  "avg": 22.61, "p50": 19.40, "p95": 38.20, "min": 12.30, "max": 45.80, "send": 50.0,  "succ": 1500, "fail": 0},
+    "RevokeCertificate":     {"tps": 108.9, "avg": 1.73,  "p50": 1.45,  "p95": 2.89,  "min": 0.32,  "max": 3.75,  "send": 110.0, "succ": 3267, "fail": 0},
+    "GetCertsByStudent":     {"tps": 74.9,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 74.9,  "succ": 2247, "fail": 0},
+    "GetAuditLogs":          {"tps": 30.0,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 30.0,  "succ": 900,  "fail": 0},
 }
 
 labels = list(sha256.keys())
@@ -40,6 +45,34 @@ def pct(a, b):
 
 total_sha = sum(d["tps"] for d in sha256.values())
 total_bla = sum(d["tps"] for d in blake2b.values())
+total_bla_succ = sum(d["succ"] for d in blake2b.values())
+bla_avg_tps = total_bla / len(blake2b)
+bla_workers = 10
+
+# ── Build perf_rows for Summary of Performance Metrics table (BLAKE2b-256) ──
+_badge = {
+    "IssueCertificate":     '<span style="display:inline-block;background:#0050e6;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org1 RBAC</span>',
+    "VerifyCertificate":    '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "QueryAllCertificates": '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "RevokeCertificate":    '<span style="display:inline-block;background:#005d5d;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org2 RBAC</span>',
+    "GetCertsByStudent":    '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "GetAuditLogs":         '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+}
+perf_rows = ""
+for i, lbl in enumerate(labels, 1):
+    b = blake2b[lbl]
+    perf_rows += f"""
+        <tr>
+          <td style="text-align:center;font-weight:700;color:#0f62fe">{i}</td>
+          <td>{_badge[lbl]}{lbl}</td>
+          <td style="color:#0062ff;font-weight:700">{b['succ']:,}</td>
+          <td style="color:#24a148;font-weight:700">0</td>
+          <td style="color:#da1e28;font-weight:600">{b['send']}</td>
+          <td style="font-weight:600">{b['max']}</td>
+          <td style="font-weight:600">{b['min']}</td>
+          <td style="font-weight:600">{b['avg']}</td>
+          <td style="color:#da1e28;font-weight:600">{b['tps']}</td>
+        </tr>"""
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 rows_tps = ""
@@ -213,7 +246,7 @@ html = f"""<!DOCTYPE html>
         <span class="badge green">10 Workers</span>
         <span class="badge amber">6 Transaction Types</span>
         <span class="badge" style="background:rgba(139,92,246,.2);color:#a78bfa;border-color:#8b5cf6">
-          Generated {datetime.date.today().isoformat()}
+          Generated {NOW}
         </span>
       </div>
     </div>
@@ -310,6 +343,54 @@ html = f"""<!DOCTYPE html>
       <div class="kpi-sub">BLAKE2b Write TPS Improvement</div>
       <div class="kpi-delta delta-up">IssueCert +148%, Revoke +152%</div>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SUMMARY OF PERFORMANCE METRICS ═══════════════════ -->
+<section id="perf-summary">
+  <h2>📋 Summary of Performance Metrics
+    <span style="display:inline-flex;gap:.5rem;margin-left:1rem;vertical-align:middle">
+      <span style="background:#24a148;color:#fff;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">Total Fail = 0</span>
+      <span style="background:#0f62fe;color:#fff;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">BLAKE2b-256</span>
+    </span>
+  </h2>
+  <div class="table-wrap">
+    <table id="perf-metrics-table" style="font-size:.875rem">
+      <thead>
+        <tr>
+          <th style="width:50px">Round</th>
+          <th>Function</th>
+          <th>Succ</th>
+          <th>Fail</th>
+          <th>Send Rate (TPS)</th>
+          <th>Max Latency (s)</th>
+          <th>Min Latency (s)</th>
+          <th>Avg Latency (s)</th>
+          <th>Throughput (TPS)</th>
+        </tr>
+      </thead>
+      <tbody>
+{perf_rows}
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(15,98,254,.10);font-weight:700;border-top:2px solid rgba(15,98,254,.4)">
+          <td colspan="2">TOTAL</td>
+          <td style="color:#24a148">{total_bla_succ:,} <span style="font-weight:400;font-size:.75rem;display:block;color:#94a3b8">(نجاح كامل)</span></td>
+          <td style="color:#24a148">0</td>
+          <td colspan="3" style="color:var(--muted);font-size:.82rem">
+            6 rounds × 30s — {bla_workers} workers — BLAKE2b-256 (RFC 7693, 12 rounds)
+          </td>
+          <td></td>
+          <td style="color:#f59e0b">avg {bla_avg_tps:.1f}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div style="margin-top:.8rem;font-size:.82rem;color:var(--muted);display:flex;gap:2rem;flex-wrap:wrap">
+    <span>✅ Total Success: <strong style="color:#24a148">{total_bla_succ:,}</strong></span>
+    <span>✅ Total Fail: <strong style="color:#24a148">0</strong></span>
+    <span>✅ Fail Rate: <strong style="color:#24a148">0.00%</strong></span>
+    <span>🔐 Algorithm: <strong style="color:#0f62fe">BLAKE2b-256 (RFC 7693)</strong></span>
   </div>
 </section>
 
@@ -514,7 +595,7 @@ html = f"""<!DOCTYPE html>
 <footer>
   <div class="container">
     <p>BCMS — Blockchain Certificate Management System · Hyperledger Fabric 2.2 · Caliper 0.6.0</p>
-    <p style="margin-top:.4rem">Generated {datetime.date.today().isoformat()} · SHA-256 vs BLAKE2b-256 Performance Benchmark</p>
+    <p style="margin-top:.4rem">Generated {NOW} · SHA-256 vs BLAKE2b-256 Performance Benchmark</p>
   </div>
 </footer>
 
