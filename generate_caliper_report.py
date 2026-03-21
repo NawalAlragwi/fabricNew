@@ -240,7 +240,7 @@ html = f"""<!DOCTYPE html>
 
 <!-- ═════════════════════════ EXECUTIVE SUMMARY ══════════════════════════ -->
 <section id="summary">
-  <h2>📋 Executive Summary</h2>
+  <h2>📋NAWAL Executive Summary</h2>
   <div class="alert">
     <strong>✅ Benchmark completed successfully.</strong>
     Both SHA-256 and BLAKE2b-256 configurations achieved 0% error rate across all transaction types.
