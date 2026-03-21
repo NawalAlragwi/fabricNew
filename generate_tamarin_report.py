@@ -314,7 +314,7 @@ html = r"""<!DOCTYPE html>
   <div class="section-title green">1. Executive Summary</div>
 
   <div class="alert alert-green">
-    ✅ <strong>PROTOCOL IS FORMALLY SECURE.</strong>
+    ✅ <strong>PROTOCOL ISnawal FORMALLY SECURE.</strong>
     All 11 security lemmas verified under the full Dolev-Yao adversary model.
     An attacker who controls all network traffic and can intercept / modify / replay / forge messages
     <strong>cannot</strong> break authentication, integrity, or forge a valid certificate.
