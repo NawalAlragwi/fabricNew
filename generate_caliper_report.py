@@ -10,6 +10,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 
 OUT = os.path.join(RESULTS_DIR, "caliper_report.html")
 CHART_JS = "chart.umd.min.js"   # served from same directory
+CHART_SRC = os.path.join(RESULTS_DIR, "chart.umd.min.js")
 
 # ── Data ─────────────────────────────────────────────────────────────────────
 sha256 = {
@@ -76,6 +77,10 @@ sha_p95_list  = json.dumps([sha256[l]["p95"]  for l in labels])
 bla_p95_list  = json.dumps([blake2b[l]["p95"]  for l in labels])
 labels_json   = json.dumps(labels)
 
+# ── Inline Chart.js so HTML works without a web server ───────────────────────
+with open(CHART_SRC, "r", encoding="utf-8") as _cjs:
+    CHARTJS = _cjs.read()
+
 html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,7 +88,7 @@ html = f"""<!DOCTYPE html>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>BCMS — Caliper Benchmark Report | SHA-256 vs BLAKE2b-256</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>"/>
-  <script src="{CHART_JS}"></script>
+  <script>{CHARTJS}</script>
   <style>
     :root{{
       --blue:#3b82f6; --green:#10b981; --amber:#f59e0b;
