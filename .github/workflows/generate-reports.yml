@@ -1,40 +1,38 @@
-name: Generate Performance Reports
+name: Generate Performance and Security Reports
 
 on:
-  workflow_dispatch: # يتيح لكِ تشغيل التقرير يدوياً من تبويب Actions
+  workflow_dispatch:
 
 jobs:
   generate-reports:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. جلب الكود من المستودع (نسخة v4 لتجنب التحذير القديم)
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. إعداد بيئة بايثون
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-level: '3.x'
+          python-version: '3.x'
 
-      # 3. إنشاء المجلدات المطلوبة وتوفير مكتبة الرسوم البيانية
-      # ملاحظة: الكود الخاص بكِ يتطلب وجود ملف chart.umd.min.js محلياً
       - name: Prepare Report Environment
         run: |
           mkdir -p results
-          # تحميل مكتبة Chart.js لضمان عمل السكريبت دون أخطاء FileNotFoundError
+          # تحميل المكتبة الضرورية للرسوم البيانية
           curl -L https://cdn.jsdelivr.net/npm/chart.js -o results/chart.umd.min.js
 
-      # 4. تشغيل سكريبت توليد التقرير
-      - name: Run Report Generator
-        run: |
-          python3 generate_report.py # تأكدي أن هذا هو اسم ملف البايثون الخاص بكِ في المستودع
+      # تشغيل ملف تقرير Caliper (الأداء)
+      - name: Run Caliper Report Generator
+        run: python3 generate_caliper_report.py
 
-      # 5. رفع التقرير النهائي كملف مرفق (Artifact)
-      - name: Upload Final HTML Report
+      # تشغيل ملف تقرير Tamarin (الأمن)
+      - name: Run Tamarin Report Generator
+        run: python3 generate_tamarin_report.py
+
+      # رفع النتائج كملفات مرفقة
+      - name: Upload All Reports
         uses: actions/upload-artifact@v4
         with:
-          name: Caliper-Performance-Report
-          path: results/caliper_report.html
-          retention-days: 7 # سيحتفظ GitHub بالملف لمدة 7 أيام
+          name: Performance-and-Security-Reports
+          path: results/
