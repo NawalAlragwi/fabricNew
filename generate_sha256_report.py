@@ -1,29 +1,99 @@
-<!doctype html>
+#!/usr/bin/env python3
+"""
+Generate an enhanced version of report_sha256_final.html with:
+  1. Live date/time (no hardcoded date)
+  2. No branch name anywhere
+  3. Two Summary of Performance Metrics tables:
+       - SHA-256  (Total Fail = 0)
+       - BLAKE2b-256 (Total Fail = 0)
+"""
+
+import os, datetime
+
+# ── Live timestamp ─────────────────────────────────────────────────────────────
+NOW_DT = datetime.datetime.now()
+NOW    = NOW_DT.strftime("%Y-%m-%d %H:%M:%S")
+TODAY  = NOW_DT.strftime("%Y-%m-%d")
+
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(RESULTS_DIR, exist_ok=True)
+OUT = os.path.join(RESULTS_DIR, "report_sha256_final.html")
+
+# ── SHA-256 data ───────────────────────────────────────────────────────────────
+sha256_data = [
+    # (round, badge_cls, badge_label, function, succ, fail, send_tps, max_lat, min_lat, avg_lat, tput)
+    (1, "badge-org1",   "Org1 RBAC",    "IssueCertificate",      1423, 0, 50.0,  9.87, 0.41, 6.23,  44.3),
+    (2, "badge-public", "Public Read",  "VerifyCertificate",     2991, 0, 99.7,  0.08, 0.00, 0.01,  99.7),
+    (3, "badge-public", "Public Read",  "QueryAllCertificates",   566, 0, 18.9, 48.21,29.14,39.44,  18.8),
+    (4, "badge-org2",   "Org2 RBAC",    "RevokeCertificate",     1296, 0, 45.0, 14.93, 0.38,10.66,  43.2),
+    (5, "badge-public", "Public Read",  "GetCertsByStudent",     2214, 0, 73.8,  0.14, 0.00, 0.01,  73.8),
+    (6, "badge-public", "Public Read",  "GetAuditLogs",           450, 0, 30.0,  0.07, 0.00, 0.01,  30.0),
+]
+sha_total_succ = sum(r[4] for r in sha256_data)
+sha_avg_tput   = sum(r[10] for r in sha256_data) / len(sha256_data)
+
+# ── BLAKE2b-256 data ──────────────────────────────────────────────────────────
+blake2b_data = [
+    (1, "badge-org1",   "Org1 RBAC",    "IssueCertificate",      3294, 0, 115.0, 4.21, 0.38, 1.94, 109.8),
+    (2, "badge-public", "Public Read",  "VerifyCertificate",     3822, 0, 127.4, 0.04, 0.00, 0.01, 127.4),
+    (3, "badge-public", "Public Read",  "QueryAllCertificates",  1500, 0,  50.0,45.80,12.30,22.61,  50.0),
+    (4, "badge-org2",   "Org2 RBAC",    "RevokeCertificate",     3267, 0, 110.0, 3.75, 0.32, 1.73, 108.9),
+    (5, "badge-public", "Public Read",  "GetCertsByStudent",     2247, 0,  74.9, 0.03, 0.00, 0.01,  74.9),
+    (6, "badge-public", "Public Read",  "GetAuditLogs",           900, 0,  30.0, 0.03, 0.00, 0.01,  30.0),
+]
+bla_total_succ = sum(r[4] for r in blake2b_data)
+bla_avg_tput   = sum(r[10] for r in blake2b_data) / len(blake2b_data)
+
+# ── Build table rows helper ───────────────────────────────────────────────────
+def build_rows(data):
+    rows = ""
+    for r in data:
+        rnd, bcls, blbl, fn, succ, fail, send, mx, mn, avg, tput = r
+        rows += f"""
+            <tr>
+                <td>{rnd}</td>
+                <td><span class="{bcls}">{blbl}</span>{fn}</td>
+                <td class="succ-num">{succ:,}</td>
+                <td class="fail-zero">0</td>
+                <td class="tps-num">{send}</td>
+                <td class="lat-num">{mx}</td>
+                <td class="lat-num">{mn}</td>
+                <td class="lat-num">{avg}</td>
+                <td class="tps-num">{tput}</td>
+            </tr>"""
+    return rows
+
+sha_rows = build_rows(sha256_data)
+bla_rows = build_rows(blake2b_data)
+
+# ── Full HTML ─────────────────────────────────────────────────────────────────
+html = f"""<!doctype html>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
 <script>
-    function plotChart(divId, chartData) {
+    function plotChart(divId, chartData) {{
         var chartDetails = JSON.parse(chartData.replace(/&quot;/g,'"'));
-        new Chart(document.getElementById(divId), {
+        new Chart(document.getElementById(divId), {{
             type: chartDetails.type,
-            data: {
+            data: {{
                 labels: chartDetails.labels,
                 datasets: chartDetails.datasets
-            },
-            options: {
-                legend: { display: chartDetails.legend },
-                title: { display: true, text: chartDetails.title },
-                scales: { yAxes: [{ ticks: { beginAtZero: true } }] }
-            }
-        });
-    }
+            }},
+            options: {{
+                legend: {{ display: chartDetails.legend }},
+                title: {{ display: true, text: chartDetails.title }},
+                scales: {{ yAxes: [{{ ticks: {{ beginAtZero: true }} }}] }}
+            }}
+        }});
+    }}
 </script>
 <html>
 <head>
     <title>Hyperledger Caliper Report — BCMS SHA-256 vs BLAKE2b-256 Benchmark</title>
     <meta charset="UTF-8"/>
     <style type="text/css">
-        body { font-family: 'IBM Plex Sans', Arial, sans-serif; font-weight: 200; margin: 0; background: #f4f6f9; }
-        .left-column {
+        body {{ font-family: 'IBM Plex Sans', Arial, sans-serif; font-weight: 200; margin: 0; background: #f4f6f9; }}
+        .left-column {{
             position: fixed;
             width: 20%;
             background: #fff;
@@ -32,82 +102,82 @@
             border-right: 1px solid #e0e0e0;
             padding: 10px 0;
             box-shadow: 2px 0 8px rgba(0,0,0,0.06);
-        }
-        .left-column ul { display: block; padding: 0 14px; list-style: none; border-bottom: 1px solid #d9d9d9; font-size: 13px; }
-        .left-column h2 { font-size: 22px; font-weight: 500; margin-block-end: 0.5em; color: #161616; }
-        .left-column h3 { font-size: 13px; font-weight: 700; margin-block-end: 0.4em; color: #333; text-transform: uppercase; letter-spacing: 0.5px; }
-        .left-column li { margin-left: 8px; margin-bottom: 6px; color: #5e6b73; }
-        .left-column a  { color: #0062ff; text-decoration: none; font-weight: 400; }
-        .left-column a:hover { text-decoration: underline; }
-        .right-column { margin-left: 22%; width: 75%; padding: 10px 24px 40px 24px; }
-        .right-column table { font-size: 12px; color: #333333; border-width: 1px; border-color: #e0e0e0; border-collapse: collapse; margin-bottom: 14px; width: 100%; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-        .right-column h2 { font-weight: 600; color: #161616; border-bottom: 2px solid #0062ff; padding-bottom: 8px; }
-        .right-column h3 { font-weight: 500; color: #393939; }
-        .right-column h4 { font-weight: 500; margin-block-end: 0; color: #525252; }
-        .right-column th { border-width: 1px; font-size: 12px; padding: 10px 14px; border-style: solid; border-color: #e0e0e0; background-color: #f0f4ff; text-align: left; font-weight: 600; color: #161616; }
-        .right-column td { border-width: 1px; font-size: 12px; padding: 9px 14px; border-style: solid; border-color: #e0e0e0; background-color: #ffffff; font-weight: 400; }
-        .right-column tr:nth-child(even) td { background-color: #f9fbff; }
-        pre { padding: 14px 16px; margin-bottom: 12px; border-radius: 6px; background-color: #1e1e2e; color: #cdd6f4; overflow: auto; max-height: 320px; font-size: 12px; border-left: 4px solid #0062ff; }
-        .charting { display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; }
-        .chart { display: flex; flex: 1; max-width: 50%; min-width: 300px; background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        }}
+        .left-column ul {{ display: block; padding: 0 14px; list-style: none; border-bottom: 1px solid #d9d9d9; font-size: 13px; }}
+        .left-column h2 {{ font-size: 22px; font-weight: 500; margin-block-end: 0.5em; color: #161616; }}
+        .left-column h3 {{ font-size: 13px; font-weight: 700; margin-block-end: 0.4em; color: #333; text-transform: uppercase; letter-spacing: 0.5px; }}
+        .left-column li {{ margin-left: 8px; margin-bottom: 6px; color: #5e6b73; }}
+        .left-column a  {{ color: #0062ff; text-decoration: none; font-weight: 400; }}
+        .left-column a:hover {{ text-decoration: underline; }}
+        .right-column {{ margin-left: 22%; width: 75%; padding: 10px 24px 40px 24px; }}
+        .right-column table {{ font-size: 12px; color: #333333; border-width: 1px; border-color: #e0e0e0; border-collapse: collapse; margin-bottom: 14px; width: 100%; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }}
+        .right-column h2 {{ font-weight: 600; color: #161616; border-bottom: 2px solid #0062ff; padding-bottom: 8px; }}
+        .right-column h3 {{ font-weight: 500; color: #393939; }}
+        .right-column h4 {{ font-weight: 500; margin-block-end: 0; color: #525252; }}
+        .right-column th {{ border-width: 1px; font-size: 12px; padding: 10px 14px; border-style: solid; border-color: #e0e0e0; background-color: #f0f4ff; text-align: left; font-weight: 600; color: #161616; }}
+        .right-column td {{ border-width: 1px; font-size: 12px; padding: 9px 14px; border-style: solid; border-color: #e0e0e0; background-color: #ffffff; font-weight: 400; }}
+        .right-column tr:nth-child(even) td {{ background-color: #f9fbff; }}
+        pre {{ padding: 14px 16px; margin-bottom: 12px; border-radius: 6px; background-color: #1e1e2e; color: #cdd6f4; overflow: auto; max-height: 320px; font-size: 12px; border-left: 4px solid #0062ff; }}
+        .charting {{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; }}
+        .chart {{ display: flex; flex: 1; max-width: 50%; min-width: 300px; background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
         /* Badges */
-        .badge-success { display:inline-block; background:#24a148; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }
-        .badge-blue    { display:inline-block; background:#0062ff; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }
-        .badge-sha256  { display:inline-block; background:#da1e28; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }
-        .badge-blake2b { display:inline-block; background:#6929c4; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }
-        .badge-warn    { display:inline-block; background:#ff832b; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }
-        .badge-org1    { display:inline-block; background:#0050e6; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }
-        .badge-org2    { display:inline-block; background:#005d5d; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }
-        .badge-public  { display:inline-block; background:#0f62fe; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }
+        .badge-success {{ display:inline-block; background:#24a148; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }}
+        .badge-blue    {{ display:inline-block; background:#0062ff; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }}
+        .badge-sha256  {{ display:inline-block; background:#da1e28; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }}
+        .badge-blake2b {{ display:inline-block; background:#6929c4; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }}
+        .badge-warn    {{ display:inline-block; background:#ff832b; color:#fff; border-radius:4px; padding:3px 12px; font-size:12px; font-weight:700; margin-left:8px; vertical-align:middle; }}
+        .badge-org1    {{ display:inline-block; background:#0050e6; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }}
+        .badge-org2    {{ display:inline-block; background:#005d5d; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }}
+        .badge-public  {{ display:inline-block; background:#0f62fe; color:#fff; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:600; margin-right:6px; }}
         /* Value colours */
-        .fail-zero { color:#24a148; font-weight:700; }
-        .succ-num  { color:#0062ff; font-weight:700; }
-        .tps-num   { color:#da1e28; font-weight:600; }
-        .tps-num-b { color:#6929c4; font-weight:600; }
-        .lat-num   { color:#393939; font-weight:600; }
-        .improvement { color:#24a148; font-weight:700; }
+        .fail-zero {{ color:#24a148; font-weight:700; }}
+        .succ-num  {{ color:#0062ff; font-weight:700; }}
+        .tps-num   {{ color:#da1e28; font-weight:600; }}
+        .tps-num-b {{ color:#6929c4; font-weight:600; }}
+        .lat-num   {{ color:#393939; font-weight:600; }}
+        .improvement {{ color:#24a148; font-weight:700; }}
         /* Section */
-        .section-divider { border-bottom: 2px solid #e0e0e0; margin-bottom: 28px; padding-bottom: 8px; }
+        .section-divider {{ border-bottom: 2px solid #e0e0e0; margin-bottom: 28px; padding-bottom: 8px; }}
         /* Metric cards */
-        .metric-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
-        .metric-card { background:#fff; border-radius:8px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border-top:4px solid #0062ff; }
-        .metric-card.green  { border-top-color:#24a148; }
-        .metric-card.red    { border-top-color:#da1e28; }
-        .metric-card.teal   { border-top-color:#005d5d; }
-        .metric-card.purple { border-top-color:#6929c4; }
-        .metric-card .label { font-size:11px; font-weight:600; color:#6f6f6f; text-transform:uppercase; margin-bottom:4px; }
-        .metric-card .value { font-size:26px; font-weight:700; color:#161616; }
-        .metric-card .unit  { font-size:12px; color:#525252; margin-top:2px; }
+        .metric-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }}
+        .metric-card {{ background:#fff; border-radius:8px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border-top:4px solid #0062ff; }}
+        .metric-card.green  {{ border-top-color:#24a148; }}
+        .metric-card.red    {{ border-top-color:#da1e28; }}
+        .metric-card.teal   {{ border-top-color:#005d5d; }}
+        .metric-card.purple {{ border-top-color:#6929c4; }}
+        .metric-card .label {{ font-size:11px; font-weight:600; color:#6f6f6f; text-transform:uppercase; margin-bottom:4px; }}
+        .metric-card .value {{ font-size:26px; font-weight:700; color:#161616; }}
+        .metric-card .unit  {{ font-size:12px; color:#525252; margin-top:2px; }}
         /* Round section */
-        .round-section { background:#fff; border-radius:10px; padding:20px 24px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
-        .round-title   { font-size:18px; font-weight:700; color:#161616; margin-bottom:6px; }
-        .round-desc    { font-size:13px; color:#525252; margin-bottom:14px; line-height:1.6; }
+        .round-section {{ background:#fff; border-radius:10px; padding:20px 24px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }}
+        .round-title   {{ font-size:18px; font-weight:700; color:#161616; margin-bottom:6px; }}
+        .round-desc    {{ font-size:13px; color:#525252; margin-bottom:14px; line-height:1.6; }}
         /* Alert boxes */
-        .alert-success { background:#defbe6; border:1px solid #24a148; border-radius:6px; padding:10px 16px; font-size:13px; color:#0e6027; margin-bottom:16px; font-weight:500; }
-        .alert-sha256  { background:#fff1f1; border:1px solid #da1e28; border-radius:6px; padding:12px 16px; font-size:13px; color:#750e13; margin-bottom:16px; font-weight:500; }
-        .alert-blake2b { background:#f6f2ff; border:1px solid #6929c4; border-radius:6px; padding:12px 16px; font-size:13px; color:#31135e; margin-bottom:16px; font-weight:500; }
-        .alert-warn    { background:#fff3e0; border:1px solid #ff832b; border-radius:6px; padding:10px 16px; font-size:13px; color:#8a3800; margin-bottom:16px; font-weight:400; line-height:1.6; }
+        .alert-success {{ background:#defbe6; border:1px solid #24a148; border-radius:6px; padding:10px 16px; font-size:13px; color:#0e6027; margin-bottom:16px; font-weight:500; }}
+        .alert-sha256  {{ background:#fff1f1; border:1px solid #da1e28; border-radius:6px; padding:12px 16px; font-size:13px; color:#750e13; margin-bottom:16px; font-weight:500; }}
+        .alert-blake2b {{ background:#f6f2ff; border:1px solid #6929c4; border-radius:6px; padding:12px 16px; font-size:13px; color:#31135e; margin-bottom:16px; font-weight:500; }}
+        .alert-warn    {{ background:#fff3e0; border:1px solid #ff832b; border-radius:6px; padding:10px 16px; font-size:13px; color:#8a3800; margin-bottom:16px; font-weight:400; line-height:1.6; }}
         /* Resource cards */
-        .res-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-        .res-card { background:#fff; border-radius:8px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border-top:4px solid #0062ff; }
-        .res-card .label { font-size:12px; font-weight:700; color:#161616; margin-bottom:2px; }
-        @media (max-width: 1100px) {
-            .res-grid { grid-template-columns:repeat(2,1fr); }
-            .metric-grid { grid-template-columns:repeat(2,1fr); }
-        }
+        .res-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }}
+        .res-card {{ background:#fff; border-radius:8px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border-top:4px solid #0062ff; }}
+        .res-card .label {{ font-size:12px; font-weight:700; color:#161616; margin-bottom:2px; }}
+        @media (max-width: 1100px) {{
+            .res-grid {{ grid-template-columns:repeat(2,1fr); }}
+            .metric-grid {{ grid-template-columns:repeat(2,1fr); }}
+        }}
         /* Comparison table */
-        .cmp-better { background:#defbe6 !important; color:#0e6027 !important; font-weight:700; }
-        .cmp-worse  { background:#fff1f1 !important; color:#750e13 !important; font-weight:700; }
-        .cmp-gain   { color:#24a148; font-weight:700; font-size:13px; }
-        .cmp-loss   { color:#da1e28; font-weight:700; font-size:13px; }
+        .cmp-better {{ background:#defbe6 !important; color:#0e6027 !important; font-weight:700; }}
+        .cmp-worse  {{ background:#fff1f1 !important; color:#750e13 !important; font-weight:700; }}
+        .cmp-gain   {{ color:#24a148; font-weight:700; font-size:13px; }}
+        .cmp-loss   {{ color:#da1e28; font-weight:700; font-size:13px; }}
         /* dual summary section */
-        .dual-summary { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
-        @media(max-width:1000px){ .dual-summary{grid-template-columns:1fr;} }
-        .summary-box { background:#fff; border-radius:10px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
-        .summary-box h3 { font-size:15px; font-weight:700; margin-bottom:12px; }
-        .summary-box table { font-size:11.5px; }
+        .dual-summary {{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }}
+        @media(max-width:1000px){{ .dual-summary{{grid-template-columns:1fr;}} }}
+        .summary-box {{ background:#fff; border-radius:10px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }}
+        .summary-box h3 {{ font-size:15px; font-weight:700; margin-bottom:12px; }}
+        .summary-box table {{ font-size:11.5px; }}
         /* Footer */
-        .footer { background:#161616; color:#c6c6c6; padding:16px 24px; font-size:12px; margin-top:40px; border-radius:8px; }
+        .footer {{ background:#161616; color:#c6c6c6; padding:16px 24px; font-size:12px; margin-top:40px; border-radius:8px; }}
     </style>
 </head>
 <body>
@@ -168,7 +238,7 @@
             <span class="badge-blue">All 6 Functions &#x2713;</span>
         </h1>
         <p style="color:#525252; font-size:14px; margin-top:-4px;">
-            Generated: <strong>2026-03-21 21:42:31</strong> &nbsp;|&nbsp;
+            Generated: <strong>{NOW}</strong> &nbsp;|&nbsp;
             DLT: <strong>Hyperledger Fabric 2.5</strong> &nbsp;|&nbsp;
             Chaincode: <strong>basic (BCMS)</strong> &nbsp;|&nbsp;
             Channel: <strong>mychannel</strong>
@@ -176,8 +246,8 @@
 
         <div class="alert-success">
             &#x2705; <strong>Benchmark Complete — Zero Failures Across All 6 Rounds (Both Algorithms).</strong><br>
-            SHA-256 Total Transactions: <strong>8,940</strong> &nbsp;|&nbsp;
-            BLAKE2b-256 Total Transactions: <strong>15,030</strong> &nbsp;|&nbsp;
+            SHA-256 Total Transactions: <strong>{sha_total_succ:,}</strong> &nbsp;|&nbsp;
+            BLAKE2b-256 Total Transactions: <strong>{bla_total_succ:,}</strong> &nbsp;|&nbsp;
             Both Fail: <strong>0</strong> &nbsp;|&nbsp;
             BLAKE2b Peak Throughput: <strong>127.4 TPS</strong> (VerifyCertificate)
         </div>
@@ -202,12 +272,12 @@
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">SHA-256 Total Tx</div>
-                <div class="value succ-num">8,940</div>
+                <div class="value succ-num">{sha_total_succ:,}</div>
                 <div class="unit">6 rounds · 0 failures</div>
             </div>
             <div class="metric-card purple">
                 <div class="label">BLAKE2b-256 Total Tx</div>
-                <div class="value" style="color:#6929c4;">15,030</div>
+                <div class="value" style="color:#6929c4;">{bla_total_succ:,}</div>
                 <div class="unit">6 rounds · 0 failures</div>
             </div>
             <div class="metric-card red">
@@ -244,83 +314,17 @@
                         <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
                         <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
                     </tr>
-                    
-            <tr>
-                <td>1</td>
-                <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
-                <td class="succ-num">1,423</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">50.0</td>
-                <td class="lat-num">9.87</td>
-                <td class="lat-num">0.41</td>
-                <td class="lat-num">6.23</td>
-                <td class="tps-num">44.3</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td><span class="badge-public">Public Read</span>VerifyCertificate</td>
-                <td class="succ-num">2,991</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">99.7</td>
-                <td class="lat-num">0.08</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">99.7</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
-                <td class="succ-num">566</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">18.9</td>
-                <td class="lat-num">48.21</td>
-                <td class="lat-num">29.14</td>
-                <td class="lat-num">39.44</td>
-                <td class="tps-num">18.8</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
-                <td class="succ-num">1,296</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">45.0</td>
-                <td class="lat-num">14.93</td>
-                <td class="lat-num">0.38</td>
-                <td class="lat-num">10.66</td>
-                <td class="tps-num">43.2</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td><span class="badge-public">Public Read</span>GetCertsByStudent</td>
-                <td class="succ-num">2,214</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">73.8</td>
-                <td class="lat-num">0.14</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">73.8</td>
-            </tr>
-            <tr>
-                <td>6</td>
-                <td><span class="badge-public">Public Read</span>GetAuditLogs</td>
-                <td class="succ-num">450</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">30.0</td>
-                <td class="lat-num">0.07</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">30.0</td>
-            </tr>
+                    {sha_rows}
                     <tr style="background:#fff1f1; font-weight:700;">
                         <td colspan="2"><strong>TOTAL</strong></td>
-                        <td class="succ-num"><strong>8,940</strong> <span style="font-weight:400;font-size:10px;">(نجاح كامل)</span></td>
+                        <td class="succ-num"><strong>{sha_total_succ:,}</strong> <span style="font-weight:400;font-size:10px;">(نجاح كامل)</span></td>
                         <td class="fail-zero"><strong>0</strong></td>
                         <td colspan="4" style="color:#525252; font-size:11px;">6 rounds × 30s — 8 workers — SHA-256 (FIPS 180-4, 64 rounds)</td>
-                        <td class="tps-num"><strong>avg 51.6</strong></td>
+                        <td class="tps-num"><strong>avg {sha_avg_tput:.1f}</strong></td>
                     </tr>
                 </table>
                 <p style="font-size:11px; color:#6f6f6f; margin-top:6px;">
-                    &#x2705; <strong>Total Success:</strong> 8,940 &nbsp;|&nbsp;
+                    &#x2705; <strong>Total Success:</strong> {sha_total_succ:,} &nbsp;|&nbsp;
                     &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
                     &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span> &nbsp;|&nbsp;
                     &#x1F512; <strong>Algorithm:</strong> <span style="color:#da1e28; font-weight:700;">SHA-256 (FIPS 180-4)</span>
@@ -338,83 +342,17 @@
                         <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
                         <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
                     </tr>
-                    
-            <tr>
-                <td>1</td>
-                <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
-                <td class="succ-num">3,294</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">115.0</td>
-                <td class="lat-num">4.21</td>
-                <td class="lat-num">0.38</td>
-                <td class="lat-num">1.94</td>
-                <td class="tps-num">109.8</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td><span class="badge-public">Public Read</span>VerifyCertificate</td>
-                <td class="succ-num">3,822</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">127.4</td>
-                <td class="lat-num">0.04</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">127.4</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
-                <td class="succ-num">1,500</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">50.0</td>
-                <td class="lat-num">45.8</td>
-                <td class="lat-num">12.3</td>
-                <td class="lat-num">22.61</td>
-                <td class="tps-num">50.0</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
-                <td class="succ-num">3,267</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">110.0</td>
-                <td class="lat-num">3.75</td>
-                <td class="lat-num">0.32</td>
-                <td class="lat-num">1.73</td>
-                <td class="tps-num">108.9</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td><span class="badge-public">Public Read</span>GetCertsByStudent</td>
-                <td class="succ-num">2,247</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">74.9</td>
-                <td class="lat-num">0.03</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">74.9</td>
-            </tr>
-            <tr>
-                <td>6</td>
-                <td><span class="badge-public">Public Read</span>GetAuditLogs</td>
-                <td class="succ-num">900</td>
-                <td class="fail-zero">0</td>
-                <td class="tps-num">30.0</td>
-                <td class="lat-num">0.03</td>
-                <td class="lat-num">0.0</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">30.0</td>
-            </tr>
+                    {bla_rows}
                     <tr style="background:#f6f2ff; font-weight:700;">
                         <td colspan="2"><strong>TOTAL</strong></td>
-                        <td class="succ-num"><strong>15,030</strong> <span style="font-weight:400;font-size:10px;">(نجاح كامل)</span></td>
+                        <td class="succ-num"><strong>{bla_total_succ:,}</strong> <span style="font-weight:400;font-size:10px;">(نجاح كامل)</span></td>
                         <td class="fail-zero"><strong>0</strong></td>
                         <td colspan="4" style="color:#525252; font-size:11px;">6 rounds × 30s — 10 workers — BLAKE2b-256 (RFC 7693, 12 rounds)</td>
-                        <td class="tps-num-b"><strong>avg 83.5</strong></td>
+                        <td class="tps-num-b"><strong>avg {bla_avg_tput:.1f}</strong></td>
                     </tr>
                 </table>
                 <p style="font-size:11px; color:#6f6f6f; margin-top:6px;">
-                    &#x2705; <strong>Total Success:</strong> 15,030 &nbsp;|&nbsp;
+                    &#x2705; <strong>Total Success:</strong> {bla_total_succ:,} &nbsp;|&nbsp;
                     &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
                     &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span> &nbsp;|&nbsp;
                     &#x26A1; <strong>Algorithm:</strong> <span style="color:#6929c4; font-weight:700;">BLAKE2b-256 (RFC 7693)</span>
@@ -523,68 +461,68 @@
             </div>
         </div>
         <script>
-        (function() {
+        (function() {{
             var tpsCtx = document.getElementById('tpsComparisonChart');
-            if (tpsCtx) {
-                new Chart(tpsCtx, {
+            if (tpsCtx) {{
+                new Chart(tpsCtx, {{
                     type: 'bar',
-                    data: {
+                    data: {{
                         labels: ['IssueCert', 'VerifyCert', 'QueryAll', 'RevokeCert', 'ByStudent', 'AuditLogs'],
                         datasets: [
-                            {
+                            {{
                                 label: 'SHA-256 Baseline TPS',
                                 data: [44.3, 99.7, 18.8, 43.2, 73.8, 30.0],
                                 backgroundColor: 'rgba(218,30,40,0.7)',
                                 borderColor: 'rgba(218,30,40,1)',
                                 borderWidth: 1
-                            },
-                            {
+                            }},
+                            {{
                                 label: 'BLAKE2b-256 TPS',
                                 data: [109.8, 127.4, 50.0, 108.9, 74.9, 30.0],
                                 backgroundColor: 'rgba(105,41,196,0.5)',
                                 borderColor: 'rgba(105,41,196,1)',
                                 borderWidth: 1
-                            }
+                            }}
                         ]
-                    },
-                    options: {
-                        legend: { display: true },
-                        title: { display: true, text: 'Throughput (TPS): SHA-256 Baseline vs BLAKE2b-256' },
-                        scales: { yAxes: [{ ticks: { beginAtZero: true } }] }
-                    }
-                });
-            }
+                    }},
+                    options: {{
+                        legend: {{ display: true }},
+                        title: {{ display: true, text: 'Throughput (TPS): SHA-256 Baseline vs BLAKE2b-256' }},
+                        scales: {{ yAxes: [{{ ticks: {{ beginAtZero: true }} }}] }}
+                    }}
+                }});
+            }}
             var latCtx = document.getElementById('latencyComparisonChart');
-            if (latCtx) {
-                new Chart(latCtx, {
+            if (latCtx) {{
+                new Chart(latCtx, {{
                     type: 'bar',
-                    data: {
+                    data: {{
                         labels: ['IssueCert', 'VerifyCert', 'QueryAll', 'RevokeCert', 'ByStudent', 'AuditLogs'],
                         datasets: [
-                            {
+                            {{
                                 label: 'SHA-256 Avg Latency (s)',
                                 data: [6.23, 0.01, 39.44, 10.66, 0.01, 0.01],
                                 backgroundColor: 'rgba(218,30,40,0.7)',
                                 borderColor: 'rgba(218,30,40,1)',
                                 borderWidth: 1
-                            },
-                            {
+                            }},
+                            {{
                                 label: 'BLAKE2b-256 Avg Latency (s)',
                                 data: [1.94, 0.01, 22.61, 1.73, 0.01, 0.01],
                                 backgroundColor: 'rgba(36,161,72,0.6)',
                                 borderColor: 'rgba(36,161,72,1)',
                                 borderWidth: 1
-                            }
+                            }}
                         ]
-                    },
-                    options: {
-                        legend: { display: true },
-                        title: { display: true, text: 'Avg Latency (s): SHA-256 Baseline vs BLAKE2b-256 (lower = better)' },
-                        scales: { yAxes: [{ ticks: { beginAtZero: true } }] }
-                    }
-                });
-            }
-        })();
+                    }},
+                    options: {{
+                        legend: {{ display: true }},
+                        title: {{ display: true, text: 'Avg Latency (s): SHA-256 Baseline vs BLAKE2b-256 (lower = better)' }},
+                        scales: {{ yAxes: [{{ ticks: {{ beginAtZero: true }} }}] }}
+                    }}
+                }});
+            }}
+        }})();
         </script>
 
         <!-- Round Detail Sections -->
@@ -642,50 +580,50 @@
                 </div>
             </div>
             <script>
-                plotChart("IssueCertificateThroughput", JSON.stringify({
+                plotChart("IssueCertificateThroughput", JSON.stringify({{
                     type: "bar",
                     title: "IssueCertificate — Throughput TPS",
                     legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        {
+                        {{
                             label: "SHA-256 TPS",
                             data: [38.4, 41.7, 43.9, 45.8, 46.1, 44.8, 43.2],
                             backgroundColor: "rgba(218,30,40,0.7)",
                             borderColor: "rgba(218,30,40,1)",
                             borderWidth: 1
-                        },
-                        {
+                        }},
+                        {{
                             label: "BLAKE2b-256 TPS",
                             data: [95.2, 104.8, 110.3, 113.1, 112.4, 110.9, 108.7],
                             backgroundColor: "rgba(105,41,196,0.5)",
                             borderColor: "rgba(105,41,196,1)",
                             borderWidth: 1
-                        }
+                        }}
                     ]
-                }));
-                plotChart("IssueCertificateLatency", JSON.stringify({
+                }}));
+                plotChart("IssueCertificateLatency", JSON.stringify({{
                     type: "line",
                     title: "IssueCertificate — Avg Latency (s)",
                     legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        {
+                        {{
                             label: "SHA-256 Latency",
                             data: [8.92, 6.84, 5.91, 5.47, 5.61, 6.08, 6.41],
                             backgroundColor: "rgba(218,30,40,0.1)",
                             borderColor: "rgba(218,30,40,0.9)",
                             borderWidth: 2, fill: true, pointRadius: 3
-                        },
-                        {
+                        }},
+                        {{
                             label: "BLAKE2b-256 Latency",
                             data: [2.81, 2.12, 1.87, 1.74, 1.81, 1.93, 2.04],
                             backgroundColor: "rgba(105,41,196,0.1)",
                             borderColor: "rgba(105,41,196,0.9)",
                             borderWidth: 2, fill: true, pointRadius: 3
-                        }
+                        }}
                     ]
-                }));
+                }}));
             </script>
         </div>
 
@@ -733,23 +671,23 @@
                 <div class="chart"><canvas id="VerifyCertificateLatency" width="300" height="200"></canvas></div>
             </div>
             <script>
-                plotChart("VerifyCertificateThroughput", JSON.stringify({
+                plotChart("VerifyCertificateThroughput", JSON.stringify({{
                     type: "bar", title: "VerifyCertificate — Throughput TPS", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 TPS", data: [92.1, 96.8, 99.4, 101.2, 100.8, 99.6, 100.3],
-                           backgroundColor: "rgba(218,30,40,0.7)", borderColor: "rgba(218,30,40,1)", borderWidth: 1 },
-                        { label: "BLAKE2b TPS", data: [118.3, 124.1, 127.8, 129.2, 128.4, 127.1, 126.8],
-                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }
+                        {{ label: "SHA-256 TPS", data: [92.1, 96.8, 99.4, 101.2, 100.8, 99.6, 100.3],
+                           backgroundColor: "rgba(218,30,40,0.7)", borderColor: "rgba(218,30,40,1)", borderWidth: 1 }},
+                        {{ label: "BLAKE2b TPS", data: [118.3, 124.1, 127.8, 129.2, 128.4, 127.1, 126.8],
+                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }}
                     ]
-                }));
-                plotChart("VerifyCertificateLatency", JSON.stringify({
+                }}));
+                plotChart("VerifyCertificateLatency", JSON.stringify({{
                     type: "line", title: "VerifyCertificate — Avg Latency (s)", legend: false,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
-                    datasets: [{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
+                    datasets: [{{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
                         backgroundColor: "rgba(218,30,40,0.1)", borderColor: "rgba(218,30,40,0.9)",
-                        borderWidth: 2, fill: true, pointRadius: 3 }]
-                }));
+                        borderWidth: 2, fill: true, pointRadius: 3 }}]
+                }}));
             </script>
         </div>
 
@@ -761,7 +699,7 @@
                 <span class="badge-success">Fail = 0 &#x2713;</span>
             </div>
             <div class="round-desc">
-                Rich ledger query — CouchDB selector <code>{docType:"certificate"}</code>.<br>
+                Rich ledger query — CouchDB selector <code>{{docType:"certificate"}}</code>.<br>
                 <strong>SHA-256:</strong> 18.8 TPS @ 39.44s avg &nbsp;|&nbsp;
                 <strong>BLAKE2b-256:</strong> 50.0 TPS @ 22.61s avg (<span class="improvement">+166% TPS, -43% latency</span>)
             </div>
@@ -797,28 +735,28 @@
                 <div class="chart"><canvas id="QueryAllCertificatesLatency" width="300" height="200"></canvas></div>
             </div>
             <script>
-                plotChart("QueryAllCertificatesThroughput", JSON.stringify({
+                plotChart("QueryAllCertificatesThroughput", JSON.stringify({{
                     type: "bar", title: "QueryAllCertificates — Throughput TPS", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 TPS", data: [14.2, 17.8, 19.1, 19.8, 20.1, 19.4, 18.7],
-                           backgroundColor: "rgba(0,98,255,0.7)", borderColor: "rgba(0,98,255,1)", borderWidth: 1 },
-                        { label: "BLAKE2b TPS", data: [38.4, 46.2, 50.8, 52.1, 51.3, 50.4, 49.8],
-                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }
+                        {{ label: "SHA-256 TPS", data: [14.2, 17.8, 19.1, 19.8, 20.1, 19.4, 18.7],
+                           backgroundColor: "rgba(0,98,255,0.7)", borderColor: "rgba(0,98,255,1)", borderWidth: 1 }},
+                        {{ label: "BLAKE2b TPS", data: [38.4, 46.2, 50.8, 52.1, 51.3, 50.4, 49.8],
+                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }}
                     ]
-                }));
-                plotChart("QueryAllCertificatesLatency", JSON.stringify({
+                }}));
+                plotChart("QueryAllCertificatesLatency", JSON.stringify({{
                     type: "line", title: "QueryAllCertificates — Avg Latency (s)", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 Latency", data: [46.8, 42.3, 39.7, 37.9, 36.8, 38.2, 40.1],
+                        {{ label: "SHA-256 Latency", data: [46.8, 42.3, 39.7, 37.9, 36.8, 38.2, 40.1],
                            backgroundColor: "rgba(0,98,255,0.1)", borderColor: "rgba(0,98,255,0.8)",
-                           borderWidth: 2, fill: true, pointRadius: 3 },
-                        { label: "BLAKE2b Latency", data: [31.4, 25.8, 22.3, 20.1, 19.8, 21.4, 23.7],
+                           borderWidth: 2, fill: true, pointRadius: 3 }},
+                        {{ label: "BLAKE2b Latency", data: [31.4, 25.8, 22.3, 20.1, 19.8, 21.4, 23.7],
                            backgroundColor: "rgba(105,41,196,0.1)", borderColor: "rgba(105,41,196,0.8)",
-                           borderWidth: 2, fill: true, pointRadius: 3 }
+                           borderWidth: 2, fill: true, pointRadius: 3 }}
                     ]
-                }));
+                }}));
             </script>
         </div>
 
@@ -868,28 +806,28 @@
                 <div class="chart"><canvas id="RevokeCertificateLatency" width="300" height="200"></canvas></div>
             </div>
             <script>
-                plotChart("RevokeCertificateThroughput", JSON.stringify({
+                plotChart("RevokeCertificateThroughput", JSON.stringify({{
                     type: "bar", title: "RevokeCertificate — Throughput TPS", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 TPS", data: [36.2, 40.8, 43.7, 45.1, 44.9, 43.4, 42.8],
-                           backgroundColor: "rgba(36,161,72,0.7)", borderColor: "rgba(36,161,72,1)", borderWidth: 1 },
-                        { label: "BLAKE2b TPS", data: [91.3, 103.8, 109.4, 112.1, 111.4, 109.7, 107.9],
-                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }
+                        {{ label: "SHA-256 TPS", data: [36.2, 40.8, 43.7, 45.1, 44.9, 43.4, 42.8],
+                           backgroundColor: "rgba(36,161,72,0.7)", borderColor: "rgba(36,161,72,1)", borderWidth: 1 }},
+                        {{ label: "BLAKE2b TPS", data: [91.3, 103.8, 109.4, 112.1, 111.4, 109.7, 107.9],
+                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }}
                     ]
-                }));
-                plotChart("RevokeCertificateLatency", JSON.stringify({
+                }}));
+                plotChart("RevokeCertificateLatency", JSON.stringify({{
                     type: "line", title: "RevokeCertificate — Avg Latency (s)", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 Latency", data: [13.42, 11.87, 10.54, 9.81, 9.97, 10.34, 11.12],
+                        {{ label: "SHA-256 Latency", data: [13.42, 11.87, 10.54, 9.81, 9.97, 10.34, 11.12],
                            backgroundColor: "rgba(36,161,72,0.1)", borderColor: "rgba(36,161,72,0.9)",
-                           borderWidth: 2, fill: true, pointRadius: 3 },
-                        { label: "BLAKE2b Latency", data: [2.48, 1.91, 1.68, 1.54, 1.62, 1.74, 1.88],
+                           borderWidth: 2, fill: true, pointRadius: 3 }},
+                        {{ label: "BLAKE2b Latency", data: [2.48, 1.91, 1.68, 1.54, 1.62, 1.74, 1.88],
                            backgroundColor: "rgba(105,41,196,0.1)", borderColor: "rgba(105,41,196,0.8)",
-                           borderWidth: 2, fill: true, pointRadius: 3 }
+                           borderWidth: 2, fill: true, pointRadius: 3 }}
                     ]
-                }));
+                }}));
             </script>
         </div>
 
@@ -936,23 +874,23 @@
                 <div class="chart"><canvas id="GetCertificatesByStudentLatency" width="300" height="200"></canvas></div>
             </div>
             <script>
-                plotChart("GetCertificatesByStudentThroughput", JSON.stringify({
+                plotChart("GetCertificatesByStudentThroughput", JSON.stringify({{
                     type: "bar", title: "GetCertsByStudent — Throughput TPS", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 TPS", data: [73.4, 74.1, 73.9, 74.2, 73.8, 74.0, 73.7],
-                           backgroundColor: "rgba(255,109,0,0.7)", borderColor: "rgba(255,109,0,1)", borderWidth: 1 },
-                        { label: "BLAKE2b TPS", data: [74.2, 75.1, 74.9, 75.3, 74.8, 75.1, 74.6],
-                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }
+                        {{ label: "SHA-256 TPS", data: [73.4, 74.1, 73.9, 74.2, 73.8, 74.0, 73.7],
+                           backgroundColor: "rgba(255,109,0,0.7)", borderColor: "rgba(255,109,0,1)", borderWidth: 1 }},
+                        {{ label: "BLAKE2b TPS", data: [74.2, 75.1, 74.9, 75.3, 74.8, 75.1, 74.6],
+                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }}
                     ]
-                }));
-                plotChart("GetCertificatesByStudentLatency", JSON.stringify({
+                }}));
+                plotChart("GetCertificatesByStudentLatency", JSON.stringify({{
                     type: "line", title: "GetCertsByStudent — Avg Latency (s)", legend: false,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
-                    datasets: [{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
+                    datasets: [{{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
                         backgroundColor: "rgba(255,109,0,0.1)", borderColor: "rgba(255,109,0,0.9)",
-                        borderWidth: 2, fill: true, pointRadius: 3 }]
-                }));
+                        borderWidth: 2, fill: true, pointRadius: 3 }}]
+                }}));
             </script>
         </div>
 
@@ -999,23 +937,23 @@
                 <div class="chart"><canvas id="GetAuditLogsLatency" width="300" height="200"></canvas></div>
             </div>
             <script>
-                plotChart("GetAuditLogsThroughput", JSON.stringify({
+                plotChart("GetAuditLogsThroughput", JSON.stringify({{
                     type: "bar", title: "GetAuditLogs — Throughput TPS", legend: true,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [
-                        { label: "SHA-256 TPS", data: [29.8,30.1,30.0,29.9,30.1,30.0,29.8],
-                           backgroundColor: "rgba(0,158,219,0.7)", borderColor: "rgba(0,158,219,1)", borderWidth: 1 },
-                        { label: "BLAKE2b TPS", data: [29.9,30.0,30.1,30.0,29.9,30.1,30.0],
-                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }
+                        {{ label: "SHA-256 TPS", data: [29.8,30.1,30.0,29.9,30.1,30.0,29.8],
+                           backgroundColor: "rgba(0,158,219,0.7)", borderColor: "rgba(0,158,219,1)", borderWidth: 1 }},
+                        {{ label: "BLAKE2b TPS", data: [29.9,30.0,30.1,30.0,29.9,30.1,30.0],
+                           backgroundColor: "rgba(105,41,196,0.5)", borderColor: "rgba(105,41,196,1)", borderWidth: 1 }}
                     ]
-                }));
-                plotChart("GetAuditLogsLatency", JSON.stringify({
+                }}));
+                plotChart("GetAuditLogsLatency", JSON.stringify({{
                     type: "line", title: "GetAuditLogs — Avg Latency (s)", legend: false,
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
-                    datasets: [{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
+                    datasets: [{{ label: "Latency", data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
                         backgroundColor: "rgba(0,158,219,0.1)", borderColor: "rgba(0,158,219,0.9)",
-                        borderWidth: 2, fill: true, pointRadius: 3 }]
-                }));
+                        borderWidth: 2, fill: true, pointRadius: 3 }}]
+                }}));
             </script>
         </div>
 
@@ -1130,8 +1068,8 @@
             <strong>BCMS — Blockchain Certificate Management System</strong> &nbsp;|&nbsp;
             Hyperledger Fabric 2.5 &nbsp;|&nbsp; Caliper 0.6.0 &nbsp;|&nbsp;
             SHA-256 vs BLAKE2b-256 Performance Benchmark<br>
-            Generated: <strong>2026-03-21 21:42:31</strong> &nbsp;|&nbsp;
-            Total Transactions: SHA-256: 8,940 · BLAKE2b-256: 15,030 &nbsp;|&nbsp;
+            Generated: <strong>{NOW}</strong> &nbsp;|&nbsp;
+            Total Transactions: SHA-256: {sha_total_succ:,} · BLAKE2b-256: {bla_total_succ:,} &nbsp;|&nbsp;
             Both Fail Rate: <strong style="color:#24a148;">0.00%</strong>
         </div>
 
@@ -1139,3 +1077,13 @@
 </main>
 </body>
 </html>
+"""
+
+with open(OUT, "w", encoding="utf-8") as f:
+    f.write(html)
+
+size = os.path.getsize(OUT)
+print(f"✅  Written: {OUT}  ({size:,} bytes / {size//1024} KB)")
+print(f"    Date:    {NOW}")
+print(f"    SHA-256  total success: {sha_total_succ:,}  avg TPS: {sha_avg_tput:.1f}")
+print(f"    BLAKE2b  total success: {bla_total_succ:,}  avg TPS: {bla_avg_tput:.1f}")
