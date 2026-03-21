@@ -25,7 +25,8 @@ RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 OUT = os.path.join(RESULTS_DIR, "security_tamarin_report.html")
-TODAY = datetime.date.today().strftime("%Y-%m-%d")
+TODAY = datetime.datetime.now().strftime("%Y-%m-%d")        # current date
+NOW   = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # current date + time
 
 # ── Inline Chart.js from local copy ──────────────────────────────────────────
 CHART_SRC = os.path.join(RESULTS_DIR, "chart.umd.min.js")
@@ -281,7 +282,7 @@ html = r"""<!DOCTYPE html>
       <div>Tamarin Prover v1.6.1</div>
       <div>11/11 Lemmas ✅</div>
       <div>Dolev-Yao Model</div>
-      <div>2026-03-13</div>
+      <div>{TODAY}</div>
     </div>
   </div>
 </nav>
@@ -297,7 +298,7 @@ html = r"""<!DOCTYPE html>
     Model: <strong>AcademicCertificateProtocol.spthy</strong> &nbsp;|&nbsp;
     Adversary: <strong>Full Dolev-Yao</strong> &nbsp;|&nbsp;
     Tool: <strong>Tamarin Prover v1.6.1</strong> &nbsp;|&nbsp;
-    Date: <strong>2026-03-13</strong>
+    Date: <strong>{NOW}</strong>
   </p>
   <div class="header-badges">
     <span class="hbadge hb-green">✅ 11/11 Lemmas VERIFIED</span>
@@ -1097,7 +1098,7 @@ html = r"""<!DOCTYPE html>
     Model: <code>security/tamarin/academic_certificate_protocol.spthy</code>
   </div>
   <div>
-    Generated: 2026-03-13 &nbsp;|&nbsp;
+    Generated: {NOW} &nbsp;|&nbsp;
     <a href="https://github.com/NawalAlragwi/fabricNew" target="_blank">NawalAlragwi/fabricNew ↗</a>
   </div>
 </div>
@@ -1234,6 +1235,9 @@ html = r"""<!DOCTYPE html>
 </script>
 </body>
 </html>"""
+
+# ── Inject current date/time (raw string can't use f-string interpolation) ───
+html = html.replace("{TODAY}", TODAY).replace("{NOW}", NOW)
 
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
