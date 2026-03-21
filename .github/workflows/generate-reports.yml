@@ -1,58 +1,40 @@
-name: Generate BCMS Security & Caliper Reports
+name: Generate Performance Reports
 
 on:
-  push:
-    branches: [main, genspark_ai_developer]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: write
+  workflow_dispatch: # يتيح لكِ تشغيل التقرير يدوياً من تبويب Actions
 
 jobs:
   generate-reports:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 1. جلب الكود من المستودع (نسخة v4 لتجنب التحذير القديم)
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      # 2. إعداد بيئة بايثون
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-level: '3.x'
 
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install blake3 graphviz matplotlib pandas numpy 2>/dev/null || true
-
-      - name: Ensure results directory & Chart.js
+      # 3. إنشاء المجلدات المطلوبة وتوفير مكتبة الرسوم البيانية
+      # ملاحظة: الكود الخاص بكِ يتطلب وجود ملف chart.umd.min.js محلياً
+      - name: Prepare Report Environment
         run: |
           mkdir -p results
-          if [ ! -f results/chart.umd.min.js ]; then
-            curl -sL "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" \
-              -o results/chart.umd.min.js
-          fi
+          # تحميل مكتبة Chart.js لضمان عمل السكريبت دون أخطاء FileNotFoundError
+          curl -L https://cdn.jsdelivr.net/npm/chart.js -o results/chart.umd.min.js
 
-      - name: Generate Tamarin Security HTML Report
+      # 4. تشغيل سكريبت توليد التقرير
+      - name: Run Report Generator
         run: |
-          python3 generate_tamarin_report.py
-          ls -lh results/security_tamarin_report.html
+          python3 generate_report.py # تأكدي أن هذا هو اسم ملف البايثون الخاص بكِ في المستودع
 
-      - name: Generate Caliper Benchmark HTML Report
-        run: |
-          python3 generate_caliper_report.py
-          ls -lh results/caliper_report.html
-
-      - name: Upload reports as artifact
+      # 5. رفع التقرير النهائي كملف مرفق (Artifact)
+      - name: Upload Final HTML Report
         uses: actions/upload-artifact@v4
         with:
-          name: bcms-reports
-          path: |
-            results/security_tamarin_report.html
-            results/caliper_report.html
-            results/caliper_simulated.json
-            results/chart.umd.min.js
-          retention-days: 30
+          name: Caliper-Performance-Report
+          path: results/caliper_report.html
+          retention-days: 7 # سيحتفظ GitHub بالملف لمدة 7 أيام
