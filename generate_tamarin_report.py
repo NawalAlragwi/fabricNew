@@ -17,13 +17,18 @@ Structure:
     9. Conclusion & Final Verdict
 """
 
-import os, datetime
+import os, datetime, sys
 
-OUT = "/home/user/webapp/results/security_tamarin_report.html"
+# ── Resolve paths relative to this script's location ─────────────────────────
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(RESULTS_DIR, exist_ok=True)
+
+OUT = os.path.join(RESULTS_DIR, "security_tamarin_report.html")
 TODAY = "2026-03-13"   # keep original date as in uploaded file
 
 # ── Inline Chart.js from local copy ──────────────────────────────────────────
-CHART_SRC = "/home/user/webapp/results/chart.umd.min.js"
+CHART_SRC = os.path.join(RESULTS_DIR, "chart.umd.min.js")
 
 html = r"""<!DOCTYPE html>
 <html lang="ar-SA">

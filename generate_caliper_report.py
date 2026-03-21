@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Generate a comprehensive Caliper benchmark HTML report for BCMS."""
 
-import json, os, datetime
+import json, os, sys, datetime
 
-OUT = "/home/user/webapp/results/caliper_report.html"
+# ── Resolve paths relative to this script's location ─────────────────────────
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(RESULTS_DIR, exist_ok=True)
+
+OUT = os.path.join(RESULTS_DIR, "caliper_report.html")
 CHART_JS = "chart.umd.min.js"   # served from same directory
 
 # ── Data ─────────────────────────────────────────────────────────────────────

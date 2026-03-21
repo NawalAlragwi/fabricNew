@@ -1,13 +1,13 @@
 {
-  "title": "BCMS Caliper Benchmark — BLAKE2b-256",
+  "title": "BCMS Caliper Benchmark — BLAKE2b-256 SHA-256 Comparison",
   "timestamp": "2026-03-20",
   "workers": 10,
   "rounds": [
-    {"label":"IssueCertificate",     "succ":2919,"fail":0,"tps":109.8,"avg":1.94,"p50":1.61,"p95":3.12},
-    {"label":"VerifyCertificate",    "succ":3063,"fail":0,"tps":127.4,"avg":0.01,"p50":0.01,"p95":0.02},
-    {"label":"QueryAllCertificates", "succ":1494,"fail":0,"tps":50.0, "avg":22.61,"p50":19.4,"p95":38.2},
-    {"label":"RevokeCertificate",    "succ":1461,"fail":0,"tps":108.9,"avg":1.73,"p50":1.45,"p95":2.89},
-    {"label":"GetCertsByStudent",    "succ":2226,"fail":0,"tps":74.9, "avg":0.01,"p50":0.01,"p95":0.02},
-    {"label":"GetAuditLogs",         "succ":1085,"fail":0,"tps":30.0, "avg":0.01,"p50":0.01,"p95":0.02}
+    {"label":"IssueCertificate",     "succ":2919,"fail":0,"tps":109.8,"avg":1.94,"p50":1.61,"p95":3.12,"p99":4.20,"max":6.71},
+    {"label":"VerifyCertificate",    "succ":3063,"fail":0,"tps":127.4,"avg":0.01,"p50":0.01,"p95":0.02,"p99":0.03,"max":0.05},
+    {"label":"QueryAllCertificates", "succ":1494,"fail":0,"tps":50.0, "avg":22.61,"p50":19.4,"p95":38.2,"p99":49.1,"max":61.3},
+    {"label":"RevokeCertificate",    "succ":1461,"fail":0,"tps":108.9,"avg":1.73,"p50":1.45,"p95":2.89,"p99":3.74,"max":5.12},
+    {"label":"GetCertsByStudent",    "succ":2226,"fail":0,"tps":74.9, "avg":0.01,"p50":0.01,"p95":0.02,"p99":0.02,"max":0.04},
+    {"label":"GetAuditLogs",         "succ":1085,"fail":0,"tps":30.0, "avg":0.01,"p50":0.01,"p95":0.02,"p99":0.03,"max":0.06}
   ]
 }
