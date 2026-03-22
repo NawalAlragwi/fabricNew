@@ -289,16 +289,16 @@ setup_fabric_network() {
     sleep 30
     
     # Deploy BCMS chaincode
-    info "Deploying BCMS chaincode (asset-transfer-basic/chaincode-go)..."
-    ./network.sh deployCC \
-        -ccn basic \
-        -ccp "${ROOT_DIR}/asset-transfer-basic/chaincode-go" \
-        -ccl go \
-        -c mychannel \
-        2>&1 | tee -a "$LOG_FILE" || {
-        error "Failed to deploy chaincode"
-        exit 1
-    }
+   info "Deploying BCMS Hybrid-Batch chaincode (Proposed Model)..."
+   ./network.sh deployCC \
+    -ccn basic \
+    -ccp "${ROOT_DIR}/chaincode-bcms/hybrid-batch" \
+    -ccl go \
+    -c mychannel \
+    2>&1 | tee -a "$LOG_FILE" || {
+    error "Failed to deploy hybrid chaincode"
+    exit 1
+}
     
     log "✓ Fabric network started and chaincode deployed"
     
