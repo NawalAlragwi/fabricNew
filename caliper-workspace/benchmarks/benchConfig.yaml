@@ -59,26 +59,24 @@ test:
 
   rounds:
     # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Org1 MSP Write Operation
-    # Paper target: 250 TPS, avg latency 118ms
-    # ──────────────────────────────────────────────────────────────────
-    - label: IssueCertificate
-      description: >
-        Org1 issues educational certificates to the Hyperledger Fabric ledger.
-        RBAC enforced: only Org1MSP clients can invoke.
-        Cryptographic: SHA-256 H(C) = SHA256(studentID|name|degree|issuer|date).
-        Model: T = (IDs, IDc, S, t, H(C)) as per research paper §3.2.
-        Zero-failure design: idempotent — duplicate IDs return nil (not error).
-      txDuration: 30
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/issueCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
+   # ──────────────────────────────────────────────────────────────────
+# Round 1: IssueCertificate — Proposed Hybrid-Batch Model
+# Optimized for High Throughput using SHA-256 + BLAKE3
+# ──────────────────────────────────────────────────────────────────
+- label: IssueCertificate
+  description: >
+    Org1 issues certificates using the Proposed Hybrid-Batch Framework.
+    Security: Double-Hash (SHA-256 + BLAKE3).
+    Optimization: Batching (10 certs/tx) to offset hybrid crypto overhead.
+  txDuration: 30
+  rateControl:
+    type: fixed-rate
+    opts:
+      tps: 50 # جرب 50 أولاً، إذا نجحت ارفعها لـ 100
+  workload:
+    module: workload/issueCertificate.js
+  txOptions:
+    invokerIdentity: User1@org1.example.com
     # ──────────────────────────────────────────────────────────────────
     # Round 2: VerifyCertificate — Public ReadOnly Operation
     # Paper target: High TPS (read-only, direct peer query)
