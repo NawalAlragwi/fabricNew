@@ -41,7 +41,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
 
         const request = {
             contractId:        'basic',
-            contractFunction:  'VerifyCertificate',
+            contractFunction:  'VerifyCertificateHybrid',
             // Args: (id, certHash)
             contractArguments: [certID, certHash],
             readOnly:          true    // bypass orderer — direct peer query for max TPS

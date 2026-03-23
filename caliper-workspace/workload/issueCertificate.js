@@ -7,9 +7,9 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         this.txIndex = 0;
-        // نحدد حجم الدفعة (مثلاً 10 شهادات في كل معاملة بلوكشين)
+        // نحدد حجم الدفعة (مثلاً 5 شهادات في كل معاملة بلوكشين)
         // يمكنك تغيير هذا الرقم لاختبار تأثير حجم الدفعة على الأداء
-        this.batchSize = 10; 
+        this.batchSize = 5; 
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
