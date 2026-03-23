@@ -763,18 +763,37 @@ NETEOF
         --caliper-flow-only-test \
         2>&1 | tee -a "$LOG_FILE" || warn "Caliper benchmark may have encountered issues"
     
+    # ── Handle Caliper's primary HTML output ─────────────────────────────────
+    CALIPER_SUCCESS=false
     if [ -f "report.html" ]; then
         REPORT_SIZE=$(stat -c%s "report.html" 2>/dev/null || echo "unknown")
         log "✓ Caliper report generated: caliper-workspace/report.html ($REPORT_SIZE bytes)"
         cp "report.html" "${ROOT_DIR}/results/caliper_report.html" 2>/dev/null || true
         log "✓ Copied to results/caliper_report.html"
+        # Copy to the SHA-256 final slot only when Caliper ran successfully
+        cp "report.html" "${ROOT_DIR}/results/report_sha256_final.html" 2>/dev/null \
+            && log "✓ Copied to results/report_sha256_final.html" \
+            || warn "Could not copy to results/report_sha256_final.html"
+        CALIPER_SUCCESS=true
     else
-        warn "Caliper report.html not generated — Fabric network not running (expected in CI/sandbox)"
+        warn "Caliper report.html not found — Fabric network not running (expected in CI/sandbox)"
+        warn "Skipping copy to results/report_sha256_final.html (benchmark did not succeed)"
         info "Generating documented Caliper benchmark report from projected results..."
         generate_caliper_html_report
-        log "✓ Benchmark report: results/caliper_report.html"
+        log "✓ Fallback benchmark report: results/caliper_report.html"
     fi
-    
+
+    # ── Run Hybrid-Batch Analysis Report generator (always) ───────────────────
+    cd "$ROOT_DIR"
+    info "Running generate_final_report.py — Hybrid-Batch Analysis Report..."
+    if [ -f "generate_final_report.py" ]; then
+        python3 generate_final_report.py \
+            && log "✓ Hybrid-Batch report: results/hybrid_batch_analysis.html" \
+            || warn "generate_final_report.py encountered an error — report may be incomplete"
+    else
+        warn "generate_final_report.py not found — skipping Hybrid-Batch analysis report"
+    fi
+
     cd "$ROOT_DIR"
 }
 
@@ -1105,9 +1124,60 @@ main() {
     
     # Step 9: Print summary
     print_final_summary
-    
+
+    # Step 10: Git — stage, commit, and push all new reports to main
+    sync_reports_to_git
+
     log "BCMS Analysis Pipeline completed successfully!"
     exit 0
+}
+
+# ─── Git Sync ─────────────────────────────────────────────────────────────────
+
+sync_reports_to_git() {
+    step "Syncing Reports to GitHub (main branch)"
+    cd "$ROOT_DIR"
+
+    # Verify git is available
+    if ! command -v git &>/dev/null; then
+        warn "git not found — skipping automatic push"
+        return 0
+    fi
+
+    # Verify we are inside a git repository
+    if ! git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+        warn "Not inside a git repository — skipping automatic push"
+        return 0
+    fi
+
+    # Verify a remote named 'origin' exists
+    if ! git remote get-url origin &>/dev/null 2>&1; then
+        warn "No 'origin' remote configured — skipping automatic push"
+        return 0
+    fi
+
+    # ── Stage all changes (reports, logs, generated files) ────────────────────
+    info "Staging all changes..."
+    git add . 2>&1 | tee -a "$LOG_FILE" || { warn "git add failed"; return 1; }
+
+    # Check if there is anything to commit
+    if git diff --cached --quiet; then
+        log "✓ Nothing to commit — working tree is clean"
+        return 0
+    fi
+
+    # ── Commit ─────────────────────────────────────────────────────────────────
+    local commit_msg="docs: update hybrid-batch benchmark reports"
+    info "Committing with message: '${commit_msg}'"
+    git commit -m "${commit_msg}" 2>&1 | tee -a "$LOG_FILE" \
+        || { warn "git commit failed — check for unresolved issues"; return 1; }
+    log "✓ Commit created"
+
+    # ── Push to origin/main ────────────────────────────────────────────────────
+    info "Pushing to origin main..."
+    git push origin main 2>&1 | tee -a "$LOG_FILE" \
+        && log "✓ Successfully pushed reports to origin/main" \
+        || warn "git push failed — changes committed locally but not pushed (check credentials/network)"
 }
 
 # Entry point
