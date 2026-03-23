@@ -119,50 +119,38 @@ func (s *SmartContract) VerifyCertificateHybrid(ctx contractapi.TransactionConte
 	}, nil
 }
 
-// QueryAllCertificates جلب جميع الشهادات من الدفتر
-// Optimized: Returns only essential fields to reduce payload size
+// QueryAllCertificates جلب عدد جميع الشهادات من الدفتر (مبسطة جداً)
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) (interface{}, error) {
-	// RangeQuery on all certificates — returns Iterator
+	// RangeQuery على جميع الشهادات
 	iterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get state range: %v", err)
+		return nil, fmt.Errorf("failed: %v", err)
 	}
 	defer iterator.Close()
 
-	// Return minimal data to reduce size & improve performance
-	var certificates []map[string]interface{}
-
+	count := 0
 	for iterator.HasNext() {
 		response, err := iterator.Next()
 		if err != nil {
-			return nil, fmt.Errorf("failed to iterate: %v", err)
+			return nil, fmt.Errorf("iterate: %v", err)
 		}
 
 		var certData map[string]interface{}
-		err = json.Unmarshal(response.Value, &certData)
-		if err != nil {
-			// Skip invalid entries
+		if err := json.Unmarshal(response.Value, &certData); err != nil {
 			continue
 		}
 
-		// Filter only certificates
 		if docType, ok := certData["doc_type"]; ok && docType == "certificate" {
-			// Return essential fields only (not full cert data)
-			minimal := map[string]interface{}{
-				"id": certData["id"],
-				"student_id": certData["student_id"],
-				"is_revoked": certData["is_revoked"],
-			}
-			certificates = append(certificates, minimal)
+			count++
 		}
 	}
 
-	// Return empty array (never nil) when no certs found
-	if certificates == nil {
-		certificates = make([]map[string]interface{}, 0)
+	// Return count as object
+	result := map[string]interface{}{
+		"success": true,
+		"count":   count,
 	}
-
-	return certificates, nil
+	return result, nil
 }
 
 // ─── 4. نقطة انطلاق العقد الذكي (Main Entry Point) ──────────────────────────
