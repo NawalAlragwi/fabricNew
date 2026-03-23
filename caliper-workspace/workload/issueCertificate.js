@@ -7,7 +7,8 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         this.txIndex = 0;
-        // نحدد حجم الدفعة (مثلاً 10 شهادات في كل معاملة)
+        // نحدد حجم الدفعة (مثلاً 10 شهادات في كل معاملة بلوكشين)
+        // يمكنك تغيير هذا الرقم لاختبار تأثير حجم الدفعة على الأداء
         this.batchSize = 10; 
     }
 
@@ -20,38 +21,35 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         let batch = [];
         const workerIdx = this.workerIndex || 0;
 
-        // إنشاء مجموعة من الشهادات (Batch)
+        // ─── إنشاء الدفعة (Batch Generation) ───
         for (let i = 0; i < this.batchSize; i++) {
             this.txIndex++;
-            const certID = `CERT_${workerIdx}_${this.txIndex}`;
+            const certID = `CERT_${workerIdx}_${this.txIndex}_${Date.now()}`;
             const studentID = `STU_${workerIdx}_${this.txIndex}`;
-            const studentName = `Student_${workerIdx}_${this.txIndex}`;
-            const degree = 'Bachelor of Computer Science';
-            const issuer = 'Digital University';
+            const studentName = `Student Name ${this.txIndex}`;
+            const degree = 'PhD in Computer Science'; // تيمناً ببحثك دكتور
+            const issuer = 'Sana University';
             const issueDate = new Date().toISOString().split('T')[0];
 
-            // ملاحظة: الهاش الهجين يتم حسابه الآن داخل الـ Chaincode لضمان الدقة
-            // لذا سنرسل البيانات الخام، أو هاش مبدئي.
-            const fields = [studentID, studentName, degree, issuer, issueDate].join('|');
-            const certHash = crypto.createHash('sha256').update(fields).digest('hex');
-            const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
-
+            // ملاحظة: الهاش الهجين سيتم حسابه داخل الـ Chaincode لضمان النزاهة
+            // نحن هنا نرسل البيانات الأساسية المطلوبة لهيكل Certificate في Go
             batch.push({
-                ID: certID,
-                StudentID: studentID,
-                StudentName: studentName,
-                Degree: degree,
-                Issuer: issuer,
-                IssueDate: issueDate,
-                CertHash: certHash,
-                Signature: signature
+                id: certID,
+                student_id: studentID,
+                student_name: studentName,
+                degree: degree,
+                issuer: issuer,
+                issue_date: issueDate,
+                is_revoked: false
             });
         }
 
         const request = {
-            contractId: 'basic',
-            contractFunction: 'IssueCertificate', // حافظنا على نفس الاسم
-            contractArguments: [JSON.stringify(batch)], // نرسل المصفوفة كـ JSON String
+            contractId: 'basic', 
+            // تم التعديل ليتطابق مع اسم الدالة في العقد الذكي الهجين
+            contractFunction: 'IssueCertificateBatch', 
+            // تحويل المصفوفة إلى String لأن العقد الذكي يستقبل JSON string
+            contractArguments: [JSON.stringify(batch)], 
             readOnly: false
         };
 
@@ -59,7 +57,12 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
     }
 
     async cleanupWorkloadModule() {
+        // تنظيف الموارد إذا لزم الأمر
     }
 }
 
-module.exports = { createWorkloadModule: () => new IssueCertificateWorkload() };
+function createWorkloadModule() {
+    return new IssueCertificateWorkload();
+}
+
+module.exports = { createWorkloadModule };
