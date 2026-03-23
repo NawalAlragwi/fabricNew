@@ -119,21 +119,20 @@ func (s *SmartContract) VerifyCertificateHybrid(ctx contractapi.TransactionConte
 }
 
 // QueryAllCertificates جلب جميع الشهادات من الدفتر
-func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]Certificate, error) {
 	// RangeQuery على جميع الشهادات — يعيد مكرر (Iterator)
 	iterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get state range: %v", err)
+		return []Certificate{}, fmt.Errorf("failed to get state range: %v", err)
 	}
 	defer iterator.Close()
 
-	var certificates []*Certificate
+	var certificates []Certificate
 
 	for iterator.HasNext() {
-		// Get next result from iterator
 		response, err := iterator.Next()
 		if err != nil {
-			return nil, fmt.Errorf("failed to iterate: %v", err)
+			return []Certificate{}, fmt.Errorf("failed to iterate: %v", err)
 		}
 
 		var cert Certificate
@@ -145,15 +144,11 @@ func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextI
 
 		// Ensure we only return certificates
 		if cert.DocType == "certificate" {
-			certificates = append(certificates, &cert)
+			certificates = append(certificates, cert)
 		}
 	}
 
 	// Return empty slice (never nil) when no certs found
-	if certificates == nil {
-		certificates = make([]*Certificate, 0)
-	}
-
 	return certificates, nil
 }
 
