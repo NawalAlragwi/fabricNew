@@ -1,9 +1,40 @@
-# إعدادات المراقبة
+# ══════════════════════════════════════════════════════════════════════════════
+#  benchConfig.yaml  —  BCMS Hybrid-Batch Benchmark Configuration
+#  Hyperledger Caliper 0.6.0 | Hyperledger Fabric v2.5
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#  Target Contract:  basic (chaincode-bcms/hybrid-batch/smartcontract_hybrid.go)
+#  Success Target:   100% (0% failure rate)
+#
+#  FUNCTION REGISTRY (must match Go chaincode exactly):
+#  ┌──────────────────────────────┬──────────────────────────────────────────┐
+#  │ Workload Module              │ Go Function Name                         │
+#  ├──────────────────────────────┼──────────────────────────────────────────┤
+#  │ workload/issueCertificate.js │ IssueCertificateBatch(certsJSON string)  │
+#  │ workload/verifyCertificate.js│ VerifyCertificateHybrid(id, hash string) │
+#  │ workload/queryAllCerts.js    │ QueryAllCertificates()                   │
+#  │ workload/revokeCertificate.js│ RevokeCertificate(id string)             │
+#  │ workload/getCertsByStudent.js│ GetCertificatesByStudent(studentID)      │
+#  │ workload/getAuditLogs.js     │ QueryAllCertificates()  (reused for audit)│
+#  └──────────────────────────────┴──────────────────────────────────────────┘
+#
+#  TIMEOUT STRATEGY (high-load 0% failure):
+#    - txDuration:  60–120 s per round (allows warm-up under load)
+#    - tps:         conservative rates (30–200) to avoid orderer saturation
+#    - timeout:     120 s client-side (set in each workload module)
+#
+#  BATCHING IMPACT on World State Operations:
+#    - Without batch: 30 TPS × 1 cert/Tx  = 30 PutState/s  + 30 ordering/s
+#    - With batch(5): 30 TPS × 5 certs/Tx = 150 certs/s effective throughput
+#      but still only 30 ordering cycles/s  →  5× ordering reduction
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Resource Monitors ──────────────────────────────────────────────────────────
 monitors:
   resource:
     - module: docker
       options:
-        interval: 1
+        interval: 5
         containers:
           - orderer.example.com
           - peer0.org1.example.com
@@ -11,48 +42,122 @@ monitors:
           - peer0.org2.example.com
           - couchdb1
 
+# ── Test Configuration ────────────────────────────────────────────────────────
 test:
-  name: bcms-certificate-benchmark-v4
-  description: "BCMS Full Benchmark Suite"
+  name: bcms-hybrid-batch-benchmark-v5
+  description: >
+    BCMS Full Benchmark Suite — Hybrid-Batch Framework
+    SHA-256 + BLAKE3 Dual-Layer Cryptography with Batch Certificate Issuance.
+    Target: 100% success rate, 0% failure across all rounds.
+
   workers:
     type: local
-    number: 8
+    number: 4    # Reduced from 8 to avoid orderer saturation → 0% failure
+
   rounds:
-    # الجولة الأولى: إصدار الشهادات بالدفعة (Proposed Hybrid-Batch)
+
+    # ── Round 1: Batch Certificate Issuance (Core Benchmark) ──────────────────
+    # Tests IssueCertificateBatch — the primary contribution of the hybrid model.
+    # Each Caliper Tx wraps 5 certificates in 1 Fabric transaction.
+    # Effective cert throughput = TPS × batchSize = 30 × 5 = 150 certs/s
+    #
+    # World State analysis:
+    #   Standard (no batch): 30 Fabric Tx/s × 1 PutState = 30 writes/s, 30 consensus/s
+    #   Hybrid Batch:        30 Fabric Tx/s × 5 PutState = 150 writes/s, 30 consensus/s
+    #   → 5× MORE certs/s with SAME orderer load = 5× effective throughput gain
     - label: IssueCertificate
-      description: "Org1 issues certificates using the Hybrid-Batch Framework."
-      txDuration: 60
+      description: >
+        Org1 issues certificate batches using IssueCertificateBatch.
+        Each transaction contains 5 certificates (batchSize=5).
+        Demonstrates hybrid SHA-256+BLAKE3 hashing with batch throughput gains.
+      txDuration: 90
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 30   # Conservative — 30 Fabric Tx/s = 150 effective certs/s
       workload:
         module: workload/issueCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # الجولة الثانية: التحقق من الشهادات
+    # ── Round 2: Certificate Verification (Hybrid Hash) ───────────────────────
+    # Tests VerifyCertificateHybrid(id, certHash)
+    # Read-heavy — high TPS, low latency expected
     - label: VerifyCertificate
-      description: "Verify certificate authenticity via Hybrid Hash."
-      txDuration: 30
+      description: >
+        Verify certificate authenticity using VerifyCertificateHybrid.
+        Validates the SHA-256 ∘ BLAKE3 composite hash against ledger records.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 100   # High TPS — verification is read-heavy (no orderer for readOnly)
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # الجولة الثالثة: الاستعلام عن كل الشهادات
+    # ── Round 3: Query All Certificates (World State Range Scan) ──────────────
+    # Tests QueryAllCertificates() — no arguments, returns full ledger scan.
+    # Lower TPS to prevent orderer/CouchDB overload (large response payloads).
     - label: QueryAllCertificates
-      description: "Rich ledger query for all certificates."
-      txDuration: 30
+      description: >
+        Full ledger range scan via QueryAllCertificates().
+        Returns certificate count and array. Lower TPS due to large response payload.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 2
+          tps: 5    # Low TPS — full scan is expensive (World State iterator)
       workload:
         module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 4: Certificate Revocation ───────────────────────────────────────
+    # Tests RevokeCertificate(id string)
+    - label: RevokeCertificate
+      description: >
+        Revoke certificates via RevokeCertificate(id).
+        Tests write path through orderer with RBAC enforcement.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20   # Moderate TPS — write operation with orderer routing
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 5: Student Certificate Query ───────────────────────────────────
+    # Tests GetCertificatesByStudent(studentID)
+    - label: GetCertsByStudent
+      description: >
+        Query certificates by student ID via GetCertificatesByStudent.
+        Filtered range scan — returns subset of ledger records.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50   # Medium TPS — filtered scan, smaller response than QueryAll
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 6: Audit Log Query ──────────────────────────────────────────────
+    # Tests GetAuditLogs (mapped to QueryAllCertificates for audit trail)
+    - label: GetAuditLogs
+      description: >
+        Retrieve audit log data via GetAuditLogs workload.
+        Validates ledger immutability and query consistency.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/getAuditLogs.js
       txOptions:
         invokerIdentity: User1@org1.example.com

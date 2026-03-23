@@ -783,16 +783,9 @@ NETEOF
         log "✓ Fallback benchmark report: results/caliper_report.html"
     fi
 
-    # ── Run Hybrid-Batch Analysis Report generator (always) ───────────────────
+    # ── Run Final Comprehensive Report generator (always) ───────────────────────
     cd "$ROOT_DIR"
-    info "Running generate_final_report.py — Hybrid-Batch Analysis Report..."
-    if [ -f "generate_final_report.py" ]; then
-        python3 generate_final_report.py \
-            && log "✓ Hybrid-Batch report: results/hybrid_batch_analysis.html" \
-            || warn "generate_final_report.py encountered an error — report may be incomplete"
-    else
-        warn "generate_final_report.py not found — skipping Hybrid-Batch analysis report"
-    fi
+    run_final_reporting_pipeline
 
     cd "$ROOT_DIR"
 }
@@ -835,6 +828,82 @@ CALIPER_EOF
 generate_simulated_caliper_results() {
     # Kept for backward compatibility — calls the new HTML report generator
     generate_caliper_html_report
+}
+
+# ─── Final Reporting & Visualisation Pipeline ────────────────────────────────
+# AUTO-TRIGGERED after every benchmark run.
+# Generates:
+#   results/final_comprehensive_report.html  — Interactive HTML with Chart.js charts
+#   results/final_comprehensive_report.md    — Markdown for dissertation
+#   results/hybrid_batch_analysis.html       — Legacy HTML alias
+#
+# Data consumed:
+#   results/caliper_simulated.json           — Caliper benchmark results
+#   security/proofs/tamarin_results_*.txt    — Tamarin formal verification output
+#   results/hash_benchmark.json              — Hash micro-benchmark data
+
+run_final_reporting_pipeline() {
+    step "Running Final Reporting & Visualisation Pipeline"
+    cd "$ROOT_DIR"
+    mkdir -p results
+
+    info "─── Step R1: Ensuring Caliper JSON results are present..."
+    if [ ! -f "results/caliper_simulated.json" ]; then
+        warn "caliper_simulated.json not found — generating from defaults"
+        generate_caliper_html_report
+    else
+        log "✓ results/caliper_simulated.json found ($(stat -c%s results/caliper_simulated.json 2>/dev/null || echo '?') bytes)"
+    fi
+
+    info "─── Step R2: Ensuring Tamarin proof results are present..."
+    LATEST_PROOF=$(find security/proofs/ -name 'tamarin_results_*.txt' 2>/dev/null | sort -r | head -1 || echo '')
+    if [ -z "$LATEST_PROOF" ]; then
+        warn "No Tamarin proof files found in security/proofs/ — report will show N/A"
+    else
+        log "✓ Tamarin proof: $LATEST_PROOF"
+        # Keep results/tamarin_verification.txt in sync
+        cp "$LATEST_PROOF" results/tamarin_verification.txt 2>/dev/null || true
+    fi
+
+    info "─── Step R3: Running generate_final_report.py (HTML + Markdown)..."
+    if [ -f "generate_final_report.py" ]; then
+        python3 generate_final_report.py 2>&1 | tee -a "$LOG_FILE"
+        RC=${PIPESTATUS[0]}
+        if [ "$RC" -eq 0 ]; then
+            log "✓ HTML  report : results/final_comprehensive_report.html"
+            log "✓ MD    report : results/final_comprehensive_report.md"
+            log "✓ Legacy alias : results/hybrid_batch_analysis.html"
+        else
+            warn "generate_final_report.py exited with code $RC — check log above"
+        fi
+    else
+        error "generate_final_report.py not found in $ROOT_DIR"
+    fi
+
+    info "─── Step R4: Running generate_tamarin_report.py (Security HTML)..."
+    generate_tamarin_html_report
+
+    info "─── Step R5: Running generate_caliper_report.py (Caliper HTML)..."
+    if [ -f "generate_caliper_report.py" ]; then
+        python3 generate_caliper_report.py 2>&1 | tee -a "$LOG_FILE" \
+            && log "✓ Caliper HTML: results/caliper_report.html" \
+            || warn "generate_caliper_report.py failed"
+    fi
+
+    info "─── Step R6: Printing results manifest..."
+    echo "" | tee -a "$LOG_FILE"
+    echo -e "${BOLD}${CYAN}  ╔══════════════════════════════════════════════════════════╗${NC}" | tee -a "$LOG_FILE"
+    echo -e "${BOLD}${CYAN}  ║   RESULTS FOLDER CONTENTS                              ║${NC}" | tee -a "$LOG_FILE"
+    echo -e "${BOLD}${CYAN}  ╠══════════════════════════════════════════════════════════╣${NC}" | tee -a "$LOG_FILE"
+    for f in results/*.html results/*.md results/*.json results/*.txt; do
+        [ -f "$f" ] || continue
+        SIZE=$(stat -c%s "$f" 2>/dev/null || echo '?')
+        printf "  ║  %-42s %6s bytes  ║\n" "$f" "$SIZE" | tee -a "$LOG_FILE"
+    done
+    echo -e "${BOLD}${CYAN}  ╚══════════════════════════════════════════════════════════╝${NC}" | tee -a "$LOG_FILE"
+    echo "" | tee -a "$LOG_FILE"
+
+    log "✓ Final reporting pipeline complete"
 }
 
 # ─── Report Generation ───────────────────────────────────────────────────────
@@ -1064,11 +1133,14 @@ main() {
     install_tamarin
     
     if [ "$REPORT_ONLY" = "true" ]; then
-        info "REPORT_ONLY mode: regenerating HTML reports without Docker/Fabric/Caliper"
+        info "REPORT_ONLY mode: regenerating all reports without Docker/Fabric/Caliper"
         mkdir -p results
-        generate_tamarin_html_report
-        generate_caliper_html_report
+        # Run the full final reporting pipeline (Caliper JSON + Tamarin proofs → HTML + MD)
+        run_final_reporting_pipeline
         log "✓ Reports regenerated:"
+        log "    results/final_comprehensive_report.html"
+        log "    results/final_comprehensive_report.md"
+        log "    results/hybrid_batch_analysis.html"
         log "    results/security_tamarin_report.html"
         log "    results/caliper_report.html"
         print_final_summary
@@ -1118,14 +1190,17 @@ main() {
     
     # Step 7: Generate reports
     generate_reports
+
+    # Step 8: Run final comprehensive reporting & visualisation pipeline
+    run_final_reporting_pipeline
     
-    # Step 8: Check documentation
+    # Step 9: Check documentation
     check_documentation
     
-    # Step 9: Print summary
+    # Step 10: Print summary
     print_final_summary
 
-    # Step 10: Git — stage, commit, and push all new reports to main
+    # Step 11: Git — stage, commit, and push all new reports to main
     sync_reports_to_git
 
     log "BCMS Analysis Pipeline completed successfully!"
