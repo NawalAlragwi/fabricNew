@@ -323,13 +323,21 @@ def build_html(sha_rounds, hyb_rounds, tamarin, hash_bench, caliper_meta):
     sha256_bm = hash_bench.get("sha256", HASH_BENCH_FALLBACK["sha256"])
     blake3_bm = hash_bench.get("blake3", HASH_BENCH_FALLBACK["blake3"])
 
+    # Load Chart.js (inline from local file for offline/sandbox compatibility)
+    chartjs_path = RESULTS_DIR / "chart.umd.min.js"
+    if chartjs_path.exists():
+        chartjs_inline = chartjs_path.read_text(encoding="utf-8")
+        chartjs_tag = f"<script>{chartjs_inline}</script>"
+    else:
+        chartjs_tag = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>'
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BCMS — Final Comprehensive Report</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  {chartjs_tag}
   <style>
     *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
     html{{font-size:15px;scroll-behavior:smooth}}

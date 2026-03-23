@@ -1,6 +1,6 @@
 # BCMS — Final Comprehensive Performance & Security Report
 
-> **Generated:** 2026-03-23 23:51 UTC  
+> **Generated:** 2026-03-23 23:56 UTC  
 > **Framework:** Hyperledger Fabric v2.5.9 | Caliper 0.6.0 | Tamarin Prover v1.6.1  
 > **Branch:** mirage-batch | **Chaincode:** basic (hybrid-batch)  
 > **Hash Algorithm:** SHA-256 ∘ BLAKE3 (dual-layer) | **Batch Size:** 5 certs/Tx
