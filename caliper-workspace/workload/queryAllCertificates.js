@@ -26,7 +26,7 @@ class QueryAllCertificatesWorkload extends WorkloadModuleBase {
             contractId:        'basic',
             contractFunction:  'QueryAllCertificates',
             contractArguments: [],      // no args — Go func takes only ctx
-            readOnly:          true     // essential: prevents orderer bottleneck
+            readOnly:          false    // ⚠️ Force through orderer for reliability
         };
 
         return this.sutAdapter.sendRequests(request);

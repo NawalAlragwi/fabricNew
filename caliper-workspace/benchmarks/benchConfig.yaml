@@ -51,7 +51,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 2
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
