@@ -1,4 +1,4 @@
-package chaincode
+package main
 
 import (
 	"crypto/sha256"
@@ -8,34 +8,64 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
-	"lukechampine.com/blake3" // استخدام BLAKE3 للسرعة القصوى في الدمج
+	"lukechampine.com/blake3"
 )
 
-// ─── Cryptographic Hybrid Implementation ──────────────────────────────────────
+// ─── 1. تعريف الهياكل (Data Models) ───────────────────────────────────────
 
-// ComputeHybridHash يمثل "القفل المزدوج" (Double-Lock)
-// يجمع بين SHA-256 للمعيارية و BLAKE3 للحصانة ضد تمديد الطول والسرعة
+// SmartContract يمثل العقد الذكي الأساسي
+type SmartContract struct {
+	contractapi.Contract
+}
+
+// Certificate يمثل بنية الشهادة الأكاديمية
+type Certificate struct {
+	ID          string `json:"id"`
+	StudentID   string `json:"student_id"`
+	StudentName string `json:"student_name"`
+	Degree      string `json:"degree"`
+	Issuer      string `json:"issuer"`
+	IssueDate   string `json:"issue_date"`
+	CertHash    string `json:"cert_hash"`
+	HashAlgo    string `json:"hash_algo"`
+	IsRevoked   bool   `json:"is_revoked"`
+	DocType     string `json:"doc_type"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+	TxID        string `json:"tx_id"`
+}
+
+// VerificationResult يمثل نتيجة عملية التحقق
+type VerificationResult struct {
+	CertID    string `json:"cert_id"`
+	Valid     bool   `json:"valid"`
+	HashMatch bool   `json:"hash_match"`
+	IsRevoked bool   `json:"is_revoked"`
+	HashAlgo  string `json:"hash_algo"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+// ─── 2. منطق التشفير الهجين (Hybrid Hash) ──────────────────────────────────
+
+// ComputeHybridHash يجمع بين SHA-256 و BLAKE3 لحماية الشهادة
 func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate string) string {
 	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
 	
-	// الطبقة 1: SHA-256
+	// الطبقة 1: SHA-256 (للمعيارية)
 	h1 := sha256.Sum256([]byte(data))
 	
-	// الطبقة 2: BLAKE3 (تأخذ مخرج SHA كمدخل لها)
+	// الطبقة 2: BLAKE3 (للسرعة والحصانة الأمنية)
 	h2 := blake3.Sum256(h1[:])
 	
 	return fmt.Sprintf("%x", h2)
 }
 
-// ─── Optimized Batch Functions ──────────────────────────────────────────────
+// ─── 3. وظائف العقد الذكي (Smart Contract Functions) ────────────────────────
 
-// IssueCertificateBatch هي المساهمة الجوهرية لتحسين الأداء
-// تسمح بمعالجة مئات الشهادات في معاملة بلوكشين واحدة
-func (s *SmartContract) IssueCertificateBatch(
-	ctx contractapi.TransactionContextInterface,
-	certsJSON string,
-) error {
-	// التحقق من الهوية (RBAC)
+// IssueCertificateBatch معالجة دفعات من الشهادات في معاملة واحدة (لتحسين الأداء)
+func (s *SmartContract) IssueCertificateBatch(ctx contractapi.TransactionContextInterface, certsJSON string) error {
+	// التحقق من الهوية (Access Control)
 	mspID, _ := ctx.GetClientIdentity().GetMSPID()
 	if mspID != "Org1MSP" {
 		return fmt.Errorf("unauthorized: only Org1 can issue batches")
@@ -50,7 +80,6 @@ func (s *SmartContract) IssueCertificateBatch(
 	txID := ctx.GetStub().GetTxID()
 
 	for _, cert := range certs {
-		// تطبيق الهاش الهجين تلقائياً لكل شهادة في الدفعة
 		cert.CertHash = ComputeHybridHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate)
 		cert.HashAlgo = "hybrid-sha256-blake3"
 		cert.DocType = "certificate"
@@ -59,31 +88,23 @@ func (s *SmartContract) IssueCertificateBatch(
 		cert.TxID = txID
 
 		certJSON, _ := json.Marshal(cert)
-		// تخزين كل شهادة بمفتاحها الخاص للبحث السريع لاحقاً
 		if err := ctx.GetStub().PutState(cert.ID, certJSON); err != nil {
 			return fmt.Errorf("failed to write cert %s: %v", cert.ID, err)
 		}
 	}
-
 	return nil
 }
 
-// ─── Enhanced Verification ──────────────────────────────────────────────────
-
-func (s *SmartContract) VerifyCertificateHybrid(
-	ctx contractapi.TransactionContextInterface,
-	id string,
-	inputHash string,
-) (*VerificationResult, error) {
+// VerifyCertificateHybrid التحقق من صحة الشهادة باستخدام الهاش الهجين
+func (s *SmartContract) VerifyCertificateHybrid(ctx contractapi.TransactionContextInterface, id string, inputHash string) (*VerificationResult, error) {
 	certBytes, _ := ctx.GetStub().GetState(id)
 	if certBytes == nil {
-		return &VerificationResult{Valid: false, Message: "Not Found"}, nil
+		return &VerificationResult{Valid: false, Message: "Certificate Not Found"}, nil
 	}
 
 	var cert Certificate
 	json.Unmarshal(certBytes, &cert)
 
-	// التحقق من الهاش الهجين
 	hashMatch := cert.CertHash == inputHash
 	
 	return &VerificationResult{
@@ -92,7 +113,21 @@ func (s *SmartContract) VerifyCertificateHybrid(
 		HashMatch: hashMatch,
 		IsRevoked: cert.IsRevoked,
 		HashAlgo:  cert.HashAlgo,
-		Message:   "Verified via Hybrid SHA256+BLAKE3",
+		Message:   "Verified via Hybrid Cryptography System",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
+}
+
+// ─── 4. نقطة انطلاق العقد الذكي (Main Entry Point) ──────────────────────────
+
+func main() {
+	bcmsChaincode, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		fmt.Printf("Error creating BCMS chaincode: %s", err.Error())
+		return
+	}
+
+	if err := bcmsChaincode.Start(); err != nil {
+		fmt.Printf("Error starting BCMS chaincode: %s", err.Error())
+	}
 }
