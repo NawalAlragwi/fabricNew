@@ -21,11 +21,11 @@ test:
     # الجولة الأولى: إصدار الشهادات بالدفعة (Proposed Hybrid-Batch)
     - label: IssueCertificate
       description: "Org1 issues certificates using the Hybrid-Batch Framework."
-      txDuration: 30
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 30
       workload:
         module: workload/issueCertificate.js
       txOptions:
