@@ -82,6 +82,7 @@ func (s *SmartContract) IssueCertificateBatch(ctx contractapi.TransactionContext
 	for _, cert := range certs {
 		cert.CertHash = ComputeHybridHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate)
 		cert.HashAlgo = "hybrid-sha256-blake3"
+		cert.IsRevoked = false
 		cert.DocType = "certificate"
 		cert.CreatedAt = now
 		cert.UpdatedAt = now
@@ -119,36 +120,48 @@ func (s *SmartContract) VerifyCertificateHybrid(ctx contractapi.TransactionConte
 }
 
 // QueryAllCertificates جلب جميع الشهادات من الدفتر
-func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]Certificate, error) {
-	// RangeQuery على جميع الشهادات — يعيد مكرر (Iterator)
+// Optimized: Returns only essential fields to reduce payload size
+func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) (interface{}, error) {
+	// RangeQuery on all certificates — returns Iterator
 	iterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
-		return []Certificate{}, fmt.Errorf("failed to get state range: %v", err)
+		return nil, fmt.Errorf("failed to get state range: %v", err)
 	}
 	defer iterator.Close()
 
-	var certificates []Certificate
+	// Return minimal data to reduce size & improve performance
+	var certificates []map[string]interface{}
 
 	for iterator.HasNext() {
 		response, err := iterator.Next()
 		if err != nil {
-			return []Certificate{}, fmt.Errorf("failed to iterate: %v", err)
+			return nil, fmt.Errorf("failed to iterate: %v", err)
 		}
 
-		var cert Certificate
-		err = json.Unmarshal(response.Value, &cert)
+		var certData map[string]interface{}
+		err = json.Unmarshal(response.Value, &certData)
 		if err != nil {
 			// Skip invalid entries
 			continue
 		}
 
-		// Ensure we only return certificates
-		if cert.DocType == "certificate" {
-			certificates = append(certificates, cert)
+		// Filter only certificates
+		if docType, ok := certData["doc_type"]; ok && docType == "certificate" {
+			// Return essential fields only (not full cert data)
+			minimal := map[string]interface{}{
+				"id": certData["id"],
+				"student_id": certData["student_id"],
+				"is_revoked": certData["is_revoked"],
+			}
+			certificates = append(certificates, minimal)
 		}
 	}
 
-	// Return empty slice (never nil) when no certs found
+	// Return empty array (never nil) when no certs found
+	if certificates == nil {
+		certificates = make([]map[string]interface{}, 0)
+	}
+
 	return certificates, nil
 }
 
