@@ -305,6 +305,18 @@ setup_fabric_network() {
         exit 1
     fi
 
+    # BUG-4 FIX: main.go is required by the Fabric peer lifecycle.
+    # Without a main package calling contractapi.Start(), the peer's Go
+    # toolchain cannot compile the chaincode during 'peer lifecycle chaincode
+    # package'. Abort early with a clear message if the file is missing.
+    if [ ! -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/main.go" ]; then
+        error "main.go not found at chaincode-bcms/hybrid-batch/main.go"
+        error "Every Fabric Go chaincode MUST have a main package that calls contractapi.Start()."
+        error "Please ensure chaincode-bcms/hybrid-batch/main.go exists before deploying."
+        exit 1
+    fi
+    log "✓ main.go found — Go chaincode has a valid entry point"
+
     info "Deploying BCMS Hybrid-Batch chaincode (SHA-256 + BLAKE3 + Batch)..."
     export GOFLAGS="-mod=mod"
     ./network.sh deployCC \
