@@ -126,9 +126,10 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-certificate-benchmark-v4</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">BCMS Full Benchmark Suite</span></li>
-                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">3</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-hybrid-batch-benchmark-v5</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BCMS Full Benchmark Suite — Hybrid-Batch Framework SHA-256 + BLAKE3 Dual-Layer Cryptography with Batch Certificate Issuance. Target: 100% success rate, 0% failure across all rounds.
+</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">6</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
             <ul>
@@ -137,6 +138,9 @@
                     <li><a href="#IssueCertificate">IssueCertificate</a></li>
                     <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
+                    <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
+                    <li><a href="#GetCertsByStudent">GetCertsByStudent</a></li>
+                    <li><a href="#GetAuditLogs">GetAuditLogs</a></li>
             </ul>
             <ul>
                 <h3>&nbspSystem under test</h3>
@@ -154,20 +158,30 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1795</td> <td>13</td> <td>30.0</td> <td>1.77</td> <td>0.20</td> <td>0.58</td> <td>29.8</td>
+                         <td>IssueCertificate</td> <td>2676</td> <td>28</td> <td>30.0</td> <td>1.13</td> <td>0.18</td> <td>0.52</td> <td>29.8</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>5968</td> <td>0</td> <td>197.8</td> <td>1.02</td> <td>0.02</td> <td>0.32</td> <td>197.7</td>
+                         <td>VerifyCertificate</td> <td>6004</td> <td>0</td> <td>99.8</td> <td>0.25</td> <td>0.01</td> <td>0.02</td> <td>99.8</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>0</td> <td>3008</td> <td>98.9</td> <td>-</td> <td>-</td> <td>-</td> <td>35.5</td>
+                         <td>QueryAllCertificates</td> <td>0</td> <td>304</td> <td>5.0</td> <td>-</td> <td>-</td> <td>-</td> <td>2.5</td>
+                    </tr>
+                    <tr>
+                         <td>RevokeCertificate</td> <td>0</td> <td>1204</td> <td>20.0</td> <td>-</td> <td>-</td> <td>-</td> <td>20.0</td>
+                    </tr>
+                    <tr>
+                         <td>GetCertsByStudent</td> <td>0</td> <td>3004</td> <td>49.8</td> <td>-</td> <td>-</td> <td>-</td> <td>25.6</td>
+                    </tr>
+                    <tr>
+                         <td>GetAuditLogs</td> <td>0</td> <td>604</td> <td>10.0</td> <td>-</td> <td>-</td> <td>-</td> <td>10.0</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>Org1 issues certificates using the Hybrid-Batch Framework.</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+                <p>Org1 issues certificate batches using IssueCertificateBatch. Each transaction contains 5 certificates (batchSize&#x3D;5). Demonstrates hybrid SHA-256+BLAKE3 hashing with batch throughput gains.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 90
 rateControl:
   type: fixed-rate
   opts:
@@ -179,7 +193,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1795</td> <td>13</td> <td>30.0</td> <td>1.77</td> <td>0.20</td> <td>0.58</td> <td>29.8</td>
+                                     <td>IssueCertificate</td> <td>2676</td> <td>28</td> <td>30.0</td> <td>1.13</td> <td>0.18</td> <td>0.52</td> <td>29.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -187,12 +201,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>Verify certificate authenticity via Hybrid Hash.</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+                <p>Verify certificate authenticity using VerifyCertificateHybrid. Validates the SHA-256 ∘ BLAKE3 composite hash against ledger records.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 200
+    tps: 100
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -200,7 +215,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>5968</td> <td>0</td> <td>197.8</td> <td>1.02</td> <td>0.02</td> <td>0.32</td> <td>197.7</td>
+                                     <td>VerifyCertificate</td> <td>6004</td> <td>0</td> <td>99.8</td> <td>0.25</td> <td>0.01</td> <td>0.02</td> <td>99.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -208,12 +223,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>Rich ledger query for all certificates.</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+                <p>Full ledger range scan via QueryAllCertificates(). Returns certificate count and array. Lower TPS due to large response payload.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 100
+    tps: 5
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -221,24 +237,96 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>0</td> <td>3008</td> <td>98.9</td> <td>-</td> <td>-</td> <td>-</td> <td>35.5</td>
+                                     <td>QueryAllCertificates</td> <td>0</td> <td>304</td> <td>5.0</td> <td>-</td> <td>-</td> <td>-</td> <td>2.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
             </div>
 
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
+                <h2>Benchmark round: RevokeCertificate</h2>
+                <p>Revoke certificates via RevokeCertificate(id). Tests write path through orderer with RBAC enforcement.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 20
+</pre>
+                        <h3>Performance metrics for RevokeCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>RevokeCertificate</td> <td>0</td> <td>1204</td> <td>20.0</td> <td>-</td> <td>-</td> <td>-</td> <td>20.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for RevokeCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetCertsByStudent">
+                <h2>Benchmark round: GetCertsByStudent</h2>
+                <p>Query certificates by student ID via GetCertificatesByStudent. Filtered range scan — returns subset of ledger records.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for GetCertsByStudent</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>GetCertsByStudent</td> <td>0</td> <td>3004</td> <td>49.8</td> <td>-</td> <td>-</td> <td>-</td> <td>25.6</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for GetCertsByStudent</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetAuditLogs">
+                <h2>Benchmark round: GetAuditLogs</h2>
+                <p>Retrieve audit log data via GetAuditLogs workload. Validates ledger immutability and query consistency.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 10
+</pre>
+                        <h3>Performance metrics for GetAuditLogs</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>GetAuditLogs</td> <td>0</td> <td>604</td> <td>10.0</td> <td>-</td> <td>-</td> <td>-</td> <td>10.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for GetAuditLogs</h3>
+            </div>
+
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-certificate-benchmark-v4
-description: BCMS Full Benchmark Suite
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-hybrid-batch-benchmark-v5
+description: &gt;
+  BCMS Full Benchmark Suite — Hybrid-Batch Framework SHA-256 + BLAKE3 Dual-Layer
+  Cryptography with Batch Certificate Issuance. Target: 100% success rate, 0%
+  failure across all rounds.
 workers:
   type: local
-  number: 8
+  number: 4
 rounds:
   - label: IssueCertificate
-    description: Org1 issues certificates using the Hybrid-Batch Framework.
-    txDuration: 60
+    description: &gt;
+      Org1 issues certificate batches using IssueCertificateBatch. Each
+      transaction contains 5 certificates (batchSize&#x3D;5). Demonstrates hybrid
+      SHA-256+BLAKE3 hashing with batch throughput gains.
+    txDuration: 90
     rateControl:
       type: fixed-rate
       opts:
@@ -248,25 +336,68 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
-    description: Verify certificate authenticity via Hybrid Hash.
-    txDuration: 30
-    rateControl:
-      type: fixed-rate
-      opts:
-        tps: 200
-    workload:
-      module: workload&#x2F;verifyCertificate.js
-    txOptions:
-      invokerIdentity: User1@org1.example.com
-  - label: QueryAllCertificates
-    description: Rich ledger query for all certificates.
-    txDuration: 30
+    description: &gt;
+      Verify certificate authenticity using VerifyCertificateHybrid. Validates
+      the SHA-256 ∘ BLAKE3 composite hash against ledger records.
+    txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
         tps: 100
     workload:
+      module: workload&#x2F;verifyCertificate.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: QueryAllCertificates
+    description: &gt;
+      Full ledger range scan via QueryAllCertificates(). Returns certificate
+      count and array. Lower TPS due to large response payload.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 5
+    workload:
       module: workload&#x2F;queryAllCertificates.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: RevokeCertificate
+    description: &gt;
+      Revoke certificates via RevokeCertificate(id). Tests write path through
+      orderer with RBAC enforcement.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 20
+    workload:
+      module: workload&#x2F;revokeCertificate.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: GetCertsByStudent
+    description: &gt;
+      Query certificates by student ID via GetCertificatesByStudent. Filtered
+      range scan — returns subset of ledger records.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;getCertificatesByStudent.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: GetAuditLogs
+    description: &gt;
+      Retrieve audit log data via GetAuditLogs workload. Validates ledger
+      immutability and query consistency.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 10
+    workload:
+      module: workload&#x2F;getAuditLogs.js
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>

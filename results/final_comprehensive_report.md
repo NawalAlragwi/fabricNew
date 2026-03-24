@@ -1,6 +1,6 @@
 # BCMS — Final Comprehensive Performance & Security Report
 
-> **Generated:** 2026-03-23 23:51 UTC  
+> **Generated:** 2026-03-24 00:36 UTC  
 > **Framework:** Hyperledger Fabric v2.5.9 | Caliper 0.6.0 | Tamarin Prover v1.6.1  
 > **Branch:** mirage-batch | **Chaincode:** basic (hybrid-batch)  
 > **Hash Algorithm:** SHA-256 ∘ BLAKE3 (dual-layer) | **Batch Size:** 5 certs/Tx
@@ -98,8 +98,8 @@ Ordering_Reduction  = (100 - 20) / 100 × 100            = 80.0%
 
 | Algorithm | Throughput (h/s) | Mean Latency (µs) | P95 Latency (µs) | Role in Hybrid |
 |---|---|---|---|---|
-| SHA-256 | 154,928 | 2.719 | 4.909 | Layer 1 — FIPS compliance |
-| BLAKE3  | 143,629 | 3.532 | 5.190 | Layer 2 — Length-extension immunity |
+| SHA-256 | 107,554 | 3.793 | 5.370 | Layer 1 — FIPS compliance |
+| BLAKE3  | 125,723 | 4.008 | 6.773 | Layer 2 — Length-extension immunity |
 
 > **Note:** Combined hybrid hash overhead (~6.25 µs) is < 0.01% of network round-trip latency (~1,000+ ms).
 
@@ -144,5 +144,5 @@ The BCMS Hybrid-Batch Framework achieves all dissertation objectives:
 
 ---
 
-*BCMS Analysis Pipeline v3.0 — 2026-03-23*  
+*BCMS Analysis Pipeline v3.0 — 2026-03-24*  
 *github.com/NawalAlragwi/fabricNew — branch: mirage-batch*
