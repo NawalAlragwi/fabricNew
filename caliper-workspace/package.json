@@ -4,7 +4,6 @@
   "description": "Hyperledger Caliper Benchmark — BCMS Certificate System",
   "private": true,
   "scripts": {
-    "benchmark": "caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/benchConfig.yaml --caliper-flow-only-test",
     "generate-report": "node generate_custom_report.js"
   },
   "dependencies": {
