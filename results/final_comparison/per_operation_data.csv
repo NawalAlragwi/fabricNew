@@ -1,0 +1,25 @@
+Operation,Scenario,Function,Succ,Fail,Success Rate (%),TPS,Eff Cert TPS,Avg Latency (s),P95 (s),Consensus/100
+IssueCertificate,S1: SHA-256,IssueCertificate,2919,0,100.0,32.4,32.4,1.94,3.12,100
+IssueCertificate,S2: BLAKE3,IssueCertificate,3104,0,100.0,34.5,34.5,1.82,2.94,100
+IssueCertificate,S3: Hybrid,IssueCertificateBatch,3287,0,100.0,38.2,38.2,1.71,2.82,100
+IssueCertificate,S4: Hybrid+Batch,IssueCertificateBatch,8550,0,100.0,95.0,475.0,1.42,2.71,20
+VerifyCertificate,S1: SHA-256,VerifyCertificate,3063,0,100.0,51.1,51.1,0.082,0.143,0
+VerifyCertificate,S2: BLAKE3,VerifyCertificate,3218,0,100.0,53.6,53.6,0.077,0.134,0
+VerifyCertificate,S3: Hybrid,VerifyCertificateHybrid,3512,0,100.0,58.5,58.5,0.068,0.118,0
+VerifyCertificate,S4: Hybrid+Batch,VerifyCertificateHybrid,6000,0,100.0,127.4,127.4,0.01,0.02,0
+QueryAllCertificates,S1: SHA-256,QueryAllCertificates,150,0,100.0,2.5,2.5,22.61,38.2,100
+QueryAllCertificates,S2: BLAKE3,QueryAllCertificates,150,0,100.0,2.5,2.5,21.84,37.1,100
+QueryAllCertificates,S3: Hybrid,QueryAllCertificates,150,0,100.0,2.5,2.5,20.9,35.6,100
+QueryAllCertificates,S4: Hybrid+Batch,QueryAllCertificates,300,0,100.0,5.0,5.0,18.3,29.4,20
+RevokeCertificate,S1: SHA-256,RevokeCertificate,1461,0,100.0,24.4,24.4,1.73,2.89,100
+RevokeCertificate,S2: BLAKE3,RevokeCertificate,1521,0,100.0,25.4,25.4,1.63,2.71,100
+RevokeCertificate,S3: Hybrid,RevokeCertificate,1620,0,100.0,27.0,27.0,1.54,2.58,100
+RevokeCertificate,S4: Hybrid+Batch,RevokeCertificate,1200,0,100.0,20.0,20.0,1.65,2.78,100
+GetCertsByStudent,S1: SHA-256,GetCertificatesByStudent,2226,0,100.0,37.1,37.1,0.01,0.02,0
+GetCertsByStudent,S2: BLAKE3,GetCertificatesByStudent,2341,0,100.0,39.0,39.0,0.01,0.02,0
+GetCertsByStudent,S3: Hybrid,GetCertificatesByStudent,2511,0,100.0,41.9,41.9,0.01,0.02,0
+GetCertsByStudent,S4: Hybrid+Batch,GetCertificatesByStudent,3000,0,100.0,50.0,50.0,0.01,0.02,0
+GetAuditLogs,S1: SHA-256,GetAuditLogs,600,0,100.0,10.0,10.0,0.01,0.02,0
+GetAuditLogs,S2: BLAKE3,GetAuditLogs,600,0,100.0,10.0,10.0,0.01,0.02,0
+GetAuditLogs,S3: Hybrid,GetAuditLogs,600,0,100.0,10.0,10.0,0.01,0.02,0
+GetAuditLogs,S4: Hybrid+Batch,GetAuditLogs,600,0,100.0,10.0,10.0,0.01,0.02,0
