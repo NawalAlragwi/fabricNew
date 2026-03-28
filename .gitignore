@@ -35,3 +35,6 @@ install-fabric.sh
 **/node_modules
 caliper-workspace/node_modules
 **/*.log
+core
+report_server.py
+setup_run_*.log

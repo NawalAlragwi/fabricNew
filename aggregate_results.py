@@ -38,6 +38,30 @@ def main():
     for key, _ in SCENARIOS:
         d = all_data[key]; a = d.get("aggregate",{}); res = d.get("resource_metrics",{})
         pr = get_round(d,"IssueCertificate")
+
+        # Extract CPU/RAM — support both old flat format and new per-container format
+        def _cpu_peer(res):
+            # New per-container format
+            for k in ["peer0.org1.example.com","peer0.org1","peer"]:
+                if k in res: return res[k].get("cpu_pct_avg", res[k].get("cpu_avg", 0))
+            # Old flat format
+            return res.get("avg_cpu_peer_pct", res.get("cpu_peer_pct", 0))
+
+        def _mem_peer(res):
+            for k in ["peer0.org1.example.com","peer0.org1","peer"]:
+                if k in res: return res[k].get("mem_mb_avg", res[k].get("mem_avg", 0))
+            return res.get("avg_mem_peer_mb", res.get("mem_peer_mb", 0))
+
+        def _cpu_ord(res):
+            for k in ["orderer.example.com","orderer"]:
+                if k in res: return res[k].get("cpu_pct_avg", res[k].get("cpu_avg", 0))
+            return res.get("avg_cpu_orderer_pct", res.get("cpu_orderer_pct", 0))
+
+        def _mem_ord(res):
+            for k in ["orderer.example.com","orderer"]:
+                if k in res: return res[k].get("mem_mb_avg", res[k].get("mem_avg", 0))
+            return res.get("avg_mem_orderer_mb", res.get("mem_orderer_mb", 0))
+
         agg["scenarios"][key] = {
             "label": LABELS[key], "chaincode": d.get("chaincode",""),
             "hash_algorithm": d.get("hash_algorithm",""), "batch_size": d.get("batch_size",1),
@@ -45,8 +69,8 @@ def main():
             "total_failures": a.get("total_failures",0), "overall_success_rate": a.get("overall_success_rate_pct",100.0),
             "primary_tps": a.get("primary_tps",0), "effective_cert_tps": pr.get("effective_cert_tps",a.get("primary_tps",0)),
             "avg_latency_ms": a.get("avg_latency_ms",0), "consensus_rounds_per100": pr.get("consensus_rounds_per_100_certs",100),
-            "cpu_peer_pct": res.get("avg_cpu_peer_pct",0), "mem_peer_mb": res.get("avg_mem_peer_mb",0),
-            "cpu_orderer_pct": res.get("avg_cpu_orderer_pct",0), "mem_orderer_mb": res.get("avg_mem_orderer_mb",0),
+            "cpu_peer_pct":   _cpu_peer(res), "mem_peer_mb":    _mem_peer(res),
+            "cpu_orderer_pct":_cpu_ord(res),  "mem_orderer_mb": _mem_ord(res),
         }
 
     for op in OPERATIONS:
