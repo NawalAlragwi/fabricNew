@@ -1,0 +1,100 @@
+# ============================================================================
+#  BCMS Benchmark — Scenario 2: BLAKE3 Alternative
+#  Single certificate per transaction, BLAKE3 hashing only.
+#  Chaincode: chaincode-bcms/blake3
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+
+test:
+  name: bcms-s2-blake3-alternative
+  description: >
+    BLAKE3 hashing benchmark. Replaces SHA-256 with BLAKE3 (3-10x faster).
+    Single-certificate issuance, no batching. Measures BLAKE3 efficiency gains.
+  workers:
+    type: local
+    number: 4
+
+  rounds:
+
+    - label: IssueCertificate
+      description: Issue single certificates using BLAKE3 hashing.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: VerifyCertificate
+      description: Verify certificate existence (BLAKE3 mode).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/verifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: Full ledger scan in BLAKE3 mode.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: RevokeCertificate
+      description: Revoke certificates using BLAKE3 chaincode.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com
+
+    - label: GetCertificatesByStudent
+      description: Per-student certificate query (BLAKE3 mode).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: GetAuditLogs
+      description: Audit trail range scan (BLAKE3 mode).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/getAuditLogs.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
