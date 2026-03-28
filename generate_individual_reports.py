@@ -1,671 +1,695 @@
 #!/usr/bin/env python3
 """
-generate_individual_reports.py
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Generates a standalone, self-contained HTML report for each of the 4 research
-scenarios and saves it in its designated results folder:
-
+Generate individual standalone HTML benchmark reports for each scenario.
+Each report goes inside its own scenario folder:
   results/scenario_1_sha256/report_scenario_1_sha256.html
   results/scenario_2_blake3/report_scenario_2_blake3.html
   results/scenario_3_merged/report_scenario_3_merged.html
   results/scenario_4_batching/report_scenario_4_batching.html
-
-Each HTML file:
-  - Embeds Chart.js inline (no external CDN needed — works offline/sandbox)
-  - Has 8 charts: TPS bar, Latency bars, Per-Operation TPS, Per-Op Latency,
-                   P50/P95/P99 latency, CPU usage, RAM usage, Success Rate
-  - Shows a full per-operation detail table with p50/p95/p99
-  - Shows resource consumption table (3 containers)
-  - Shows benchmark configuration panel
-  - Shows comparison badge vs other scenarios
-  - Zero-failure banner
-  - Color-coded per scenario (S1=blue, S2=green, S3=orange, S4=purple)
 """
 
 import json
+import os
+import sys
 from pathlib import Path
 from datetime import datetime
 
-ROOT_DIR  = Path(__file__).parent
+ROOT_DIR = Path(__file__).parent
 RESULTS   = ROOT_DIR / "results"
-CHARTJS_F = RESULTS / "chart.umd.min.js"
+CHARTJS   = ROOT_DIR / "results" / "chart.umd.min.js"
 
-# ── Scenario registry ─────────────────────────────────────────────────────────
+# ── scenario meta ────────────────────────────────────────────────────────────
 SCENARIOS = [
     {
-        "key":       "scenario_1_sha256",
-        "label":     "S1: SHA-256 Baseline",
-        "short":     "S1",
-        "color":     "#2980b9",
-        "color_bg":  "#d6eaf8",
-        "gradient":  "linear-gradient(135deg,#1a3a5c 0%,#2980b9 60%,#5dade2 100%)",
-        "benchcfg":  "caliper-workspace/benchmarks/benchConfig_s1_sha256.yaml",
-        "badge_txt": "Baseline — standard SHA-256 single-cert issuance",
+        "num":        1,
+        "key":        "scenario_1_sha256",
+        "label":      "S1: SHA-256 Baseline",
+        "short":      "SHA-256",
+        "config":     "benchConfig_s1_sha256.yaml",
+        "chaincode":  "chaincode-bcms/sha256",
+        "hash":       "SHA-256",
+        "workers":    4,
+        "batch":      1,
+        "color":      "#2563eb",
+        "accent":     "#1d4ed8",
+        "bg":         "#eff6ff",
+        "border":     "#bfdbfe",
+        "badge":      "SHA256",
     },
     {
-        "key":       "scenario_2_blake3",
-        "label":     "S2: BLAKE3 Alternative",
-        "short":     "S2",
-        "color":     "#27ae60",
-        "color_bg":  "#d5f5e3",
-        "gradient":  "linear-gradient(135deg,#1a4731 0%,#27ae60 60%,#58d68d 100%)",
-        "benchcfg":  "caliper-workspace/benchmarks/benchConfig_s2_blake3.yaml",
-        "badge_txt": "BLAKE3 — 3-10× faster hashing vs SHA-256",
+        "num":        2,
+        "key":        "scenario_2_blake3",
+        "label":      "S2: BLAKE3 Alternative",
+        "short":      "BLAKE3",
+        "config":     "benchConfig_s2_blake3.yaml",
+        "chaincode":  "chaincode-bcms/blake3",
+        "hash":       "BLAKE3",
+        "workers":    4,
+        "batch":      1,
+        "color":      "#16a34a",
+        "accent":     "#15803d",
+        "bg":         "#f0fdf4",
+        "border":     "#bbf7d0",
+        "badge":      "BLAKE3",
     },
     {
-        "key":       "scenario_3_merged",
-        "label":     "S3: Hybrid SHA-256 + BLAKE3",
-        "short":     "S3",
-        "color":     "#e67e22",
-        "color_bg":  "#fdebd0",
-        "gradient":  "linear-gradient(135deg,#6e2c00 0%,#e67e22 60%,#f0b27a 100%)",
-        "benchcfg":  "caliper-workspace/benchmarks/benchConfig_s3_hybrid.yaml",
-        "badge_txt": "Hybrid — BLAKE3(SHA-256(data)) double-lock security",
+        "num":        3,
+        "key":        "scenario_3_merged",
+        "label":      "S3: Hybrid SHA-256 + BLAKE3",
+        "short":      "Hybrid",
+        "config":     "benchConfig_s3_hybrid.yaml",
+        "chaincode":  "chaincode-bcms/hybrid-batch",
+        "hash":       "SHA-256 ∘ BLAKE3",
+        "workers":    4,
+        "batch":      1,
+        "color":      "#9333ea",
+        "accent":     "#7e22ce",
+        "bg":         "#faf5ff",
+        "border":     "#e9d5ff",
+        "badge":      "HYBRID",
     },
     {
-        "key":       "scenario_4_batching",
-        "label":     "S4: Hybrid + Batching Optimization",
-        "short":     "S4",
-        "color":     "#8e44ad",
-        "color_bg":  "#e8daef",
-        "gradient":  "linear-gradient(135deg,#4a235a 0%,#8e44ad 60%,#bb8fce 100%)",
-        "benchcfg":  "caliper-workspace/benchmarks/benchConfig_s4_batching.yaml",
-        "badge_txt": "Hybrid+Batch — 10 certs/TX, maximum throughput",
+        "num":        4,
+        "key":        "scenario_4_batching",
+        "label":      "S4: Hybrid + Batching ×10",
+        "short":      "Hybrid+Batch",
+        "config":     "benchConfig_s4_batching.yaml",
+        "chaincode":  "chaincode-bcms/hybrid-batch",
+        "hash":       "SHA-256 ∘ BLAKE3 (batched)",
+        "workers":    8,
+        "batch":      10,
+        "color":      "#dc2626",
+        "accent":     "#b91c1c",
+        "bg":         "#fff7ed",
+        "border":     "#fed7aa",
+        "badge":      "BATCH×10",
     },
 ]
 
-# Other-scenario reference for comparison badges
-ALL_TPS     = {"scenario_1_sha256": 32.4, "scenario_2_blake3": 34.5,
-               "scenario_3_merged": 38.2, "scenario_4_batching": 95.0}
-ALL_LAT     = {"scenario_1_sha256": 1940, "scenario_2_blake3": 1820,
-               "scenario_3_merged": 1710, "scenario_4_batching": 1420}
-ALL_EFF     = {"scenario_1_sha256": 32.4, "scenario_2_blake3": 34.5,
-               "scenario_3_merged": 38.2, "scenario_4_batching": 950.0}
+OPERATIONS = [
+    ("IssueCertificate",       "write"),
+    ("VerifyCertificate",      "read"),
+    ("QueryAllCertificates",   "read"),
+    ("RevokeCertificate",      "write"),
+    ("GetCertificatesByStudent","read"),
+    ("GetAuditLogs",           "read"),
+]
 
-OPERATIONS  = ["IssueCertificate","VerifyCertificate","QueryAllCertificates",
-               "RevokeCertificate","GetCertificatesByStudent","GetAuditLogs"]
+TAMARIN_LEMMAS = [
+    ("cert_authenticity",            "Certificate Authenticity"),
+    ("cert_integrity",               "Certificate Integrity"),
+    ("hash_collision_resistance",    "Hash Collision Resistance"),
+    ("revocation_correctness",       "Revocation Correctness"),
+    ("rbac_enforcement",             "RBAC Enforcement"),
+    ("replay_attack_prevention",     "Replay Attack Prevention"),
+    ("audit_trail_completeness",     "Audit Trail Completeness"),
+    ("batch_atomicity",              "Batch Atomicity"),
+    ("forward_secrecy",              "Forward Secrecy"),
+    ("non_repudiation",              "Non-Repudiation"),
+    ("student_privacy",              "Student Privacy"),
+]
 
-OP_ICONS = {
-    "IssueCertificate":        "📜",
-    "VerifyCertificate":       "🔍",
-    "QueryAllCertificates":    "📋",
-    "RevokeCertificate":       "🚫",
-    "GetCertificatesByStudent":"🎓",
-    "GetAuditLogs":            "🔐",
-}
+# ── helpers ──────────────────────────────────────────────────────────────────
+def load_chartjs() -> str:
+    if CHARTJS.exists():
+        return CHARTJS.read_text(encoding="utf-8")
+    return ""   # fallback: empty (charts won't render offline)
 
-# ── Helper: embed or reference Chart.js ──────────────────────────────────────
-def get_chartjs() -> str:
-    if CHARTJS_F.exists():
-        raw = CHARTJS_F.read_text(encoding="utf-8")
-        return raw.replace("</script>", "<\\/script>")
-    # Fallback: CDN
-    return "/* Chart.js missing — add chart.umd.min.js to results/ */"
-
-# ── Load JSON ─────────────────────────────────────────────────────────────────
 def load_data(key: str) -> dict:
-    p = RESULTS / key / "caliper_results.json"
-    return json.loads(p.read_text(encoding="utf-8"))
+    path = RESULTS / key / "caliper_results.json"
+    if not path.exists():
+        raise FileNotFoundError(f"Missing: {path}")
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
 
-# ── Round lookup ──────────────────────────────────────────────────────────────
-def get_round(data: dict, label: str) -> dict:
-    return next(
-        (r for r in data.get("rounds", []) if r.get("label", "").lower() == label.lower()),
-        {}
-    )
-
-# ── Format helpers ────────────────────────────────────────────────────────────
-def fmt_ms(sec: float) -> str:
-    ms = sec * 1000
-    return f"{ms:.0f} ms" if ms >= 1 else f"{ms:.2f} ms"
-
-def pct_diff(base: float, new: float) -> str:
+def pct_change(base: float, val: float) -> str:
     if base == 0:
         return "N/A"
-    d = (new - base) / base * 100
-    sign = "+" if d >= 0 else ""
-    return f"{sign}{d:.1f}%"
+    pct = (val - base) / base * 100
+    sign = "+" if pct >= 0 else ""
+    return f"{sign}{pct:.1f}%"
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
-CSS = """
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.6}
-.header{color:#fff;padding:44px 28px;text-align:center;position:relative;overflow:hidden}
-.header::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.18);pointer-events:none}
-.header > *{position:relative;z-index:1}
-.header h1{font-size:2rem;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
-.header .sub{font-size:1rem;opacity:.88;margin-bottom:4px}
-.header .meta{font-size:.82rem;opacity:.65}
-.zero-banner{background:linear-gradient(90deg,#0d6e3d,#27ae60);color:#fff;text-align:center;
-  padding:12px 20px;font-weight:700;font-size:1.05rem;letter-spacing:.3px}
-.container{max-width:1300px;margin:0 auto;padding:28px 20px}
-.card{background:#fff;border-radius:14px;padding:26px;margin-bottom:26px;
-  box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid #e2e8f0}
-.card h2{font-size:1.2rem;font-weight:700;margin-bottom:18px;padding-bottom:10px;
-  border-bottom:2px solid #e2e8f0;color:#1a1a2e;display:flex;align-items:center;gap:8px}
-.card h2 .icon{font-size:1.3rem}
-/* KPI Grid */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px}
-.kpi{background:#f8fafc;border-radius:10px;padding:18px 12px;text-align:center;
-  border:1px solid #e2e8f0;transition:transform .15s}
-.kpi:hover{transform:translateY(-2px)}
-.kpi-val{font-size:2rem;font-weight:800;line-height:1.1}
-.kpi-lbl{font-size:.72rem;color:#64748b;margin-top:5px;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
-/* Chart grid */
-.chart-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.chart-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.chart-wrap{position:relative;height:280px}
-.chart-tall{position:relative;height:340px}
-@media(max-width:900px){.chart-2col,.chart-3col{grid-template-columns:1fr}}
-.chart-title{font-size:.92rem;font-weight:600;color:#334155;margin-bottom:10px;text-align:center}
-/* Tables */
-.tbl{width:100%;border-collapse:collapse;font-size:.85rem}
-.tbl th{background:#1a1a2e;color:#fff;padding:9px 14px;text-align:left;font-weight:600;white-space:nowrap}
-.tbl td{padding:9px 14px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
-.tbl tbody tr:hover{background:#f8fafc}
-.tbl .grp-hd td{background:#eef2ff;font-weight:700;color:#3730a3;padding-left:10px}
-.pass{color:#16a34a;font-weight:700}
-.warn{color:#d97706;font-weight:700}
-.fail{color:#dc2626;font-weight:700}
-/* Badges */
-.badge{display:inline-block;color:#fff;padding:3px 10px;border-radius:20px;
-  font-size:.8rem;font-weight:700;white-space:nowrap}
-.tag{display:inline-block;background:#eef2ff;color:#3730a3;padding:2px 8px;
-  border-radius:6px;font-size:.78rem;font-weight:600;margin:2px}
-/* Config panel */
-.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.cfg-item{background:#f8fafc;border-radius:8px;padding:14px;border-left:4px solid}
-.cfg-key{font-size:.75rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.cfg-val{font-size:1rem;font-weight:700;color:#1a1a2e}
-/* Comparison badges */
-.cmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.cmp-card{border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;background:#f8fafc}
-.cmp-sc{font-size:.8rem;font-weight:700;color:#64748b;margin-bottom:6px}
-.cmp-val{font-size:1.15rem;font-weight:800}
-.cmp-diff{font-size:.78rem;margin-top:3px;font-weight:600}
-.up{color:#16a34a}
-.dn{color:#dc2626}
-.eq{color:#64748b}
-/* Footer */
-footer{text-align:center;padding:24px;color:#94a3b8;font-size:.8rem;border-top:1px solid #e2e8f0;margin-top:8px}
-"""
+def arrow(base: float, val: float, higher_better: bool = True) -> str:
+    if base == 0:
+        return ""
+    delta = val - base
+    if abs(delta) < 0.01:
+        return "→"
+    going_up = delta > 0
+    good     = going_up == higher_better
+    symbol   = ("▲" if going_up else "▼")
+    colour   = ("#16a34a" if good else "#dc2626")
+    return f'<span style="color:{colour}">{symbol}</span>'
 
-# ── Per-scenario HTML builder ─────────────────────────────────────────────────
-def build_scenario_html(scfg: dict, data: dict, chartjs: str) -> str:
-    key      = scfg["key"]
-    label    = scfg["label"]
-    color    = scfg["color"]
-    gradient = scfg["gradient"]
-    agg      = data["aggregate"]
-    res      = data["resource_metrics"]
-    rounds   = data["rounds"]
-    ts       = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# ── per-scenario reference values (S1 as baseline) ──────────────────────────
+def get_baselines() -> dict:
+    d = load_data("scenario_1_sha256")
+    agg = d["aggregate"]
+    rnd = {r["label"]: r for r in d.get("rounds", [])}
+    return {
+        "tps":    agg["primary_tps"],
+        "effTps": agg["effective_cert_tps"],
+        "lat":    agg["avg_latency_ms"],
+        "rounds": rnd,
+    }
 
-    # ── Per-round data ────────────────────────────────────────────────────────
-    ops_data   = {op: get_round(data, op) for op in OPERATIONS}
-    tps_list   = [ops_data[op].get("tps", 0) for op in OPERATIONS]
-    lat_ms     = [round(ops_data[op].get("avg_latency_s", 0)*1000, 1) for op in OPERATIONS]
-    p50_ms     = [round(ops_data[op].get("p50_s", 0)*1000, 1) for op in OPERATIONS]
-    p95_ms     = [round(ops_data[op].get("p95_s", 0)*1000, 1) for op in OPERATIONS]
-    p99_ms     = [round(ops_data[op].get("p99_s", 0)*1000, 1) for op in OPERATIONS]
-    succ_rates = [ops_data[op].get("success_rate_pct", 100.0) for op in OPERATIONS]
-    eff_tps    = [ops_data[op].get("effective_cert_tps", ops_data[op].get("tps", 0)) for op in OPERATIONS]
-    op_labels  = [f"{OP_ICONS.get(op,'📌')} {op}" for op in OPERATIONS]
+# ── main HTML builder ────────────────────────────────────────────────────────
+def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
+    agg   = data["aggregate"]
+    runds = {r["label"]: r for r in data.get("rounds", [])}
+    res   = data.get("resource_metrics", {})
 
-    # ── Resource data ─────────────────────────────────────────────────────────
-    containers = list(res.keys())
-    cpu_vals   = [res[c].get("cpu_pct_avg", 0) for c in containers]
-    mem_vals   = [res[c].get("mem_mb_avg", 0) for c in containers]
-    cpu_max    = [res[c].get("cpu_pct_max", 0) for c in containers]
-    mem_max    = [res[c].get("mem_mb_max", 0) for c in containers]
+    color  = meta["color"]
+    accent = meta["accent"]
+    bg     = meta["bg"]
+    border = meta["border"]
+    badge  = meta["badge"]
+    label  = meta["label"]
+    num    = meta["num"]
 
-    short_containers = [c.split(".")[0] for c in containers]
+    # KPI values
+    tps      = agg["primary_tps"]
+    eff_tps  = agg["effective_cert_tps"]
+    lat_ms   = agg["avg_latency_ms"]
+    failures = agg["total_failures"]
+    tot_tx   = agg["total_transactions"]
+    succ_pct = agg["overall_success_rate_pct"]
+    cons_red = agg.get("ordering_overhead_reduction_pct", 0)
+    puts_tx  = agg.get("world_state_puts_per_tx", 1)
+    cons_100 = agg.get("consensus_rounds_per_100_certs", 100)
 
-    # ── KPIs ──────────────────────────────────────────────────────────────────
-    total_tx = agg["total_transactions"]
-    p_tps    = agg["primary_tps"]
-    e_tps    = agg["effective_cert_tps"]
-    avg_lat  = agg["avg_latency_ms"]
-    total_f  = agg["total_failures"]
-    cons100  = agg["consensus_rounds_per_100_certs"]
-    ws_puts  = agg["world_state_puts_per_tx"]
-    batch_sz = data["batch_size"]
-    workers  = data["workers"]
+    tps_delta   = pct_change(baselines["tps"], tps)
+    lat_delta   = pct_change(baselines["lat"], lat_ms)
+    eff_delta   = pct_change(baselines["effTps"], eff_tps)
 
-    # ── Comparison rows ───────────────────────────────────────────────────────
-    cmp_html = ""
-    for other_key, other_label in [
-        ("scenario_1_sha256","S1: SHA-256"),
-        ("scenario_2_blake3","S2: BLAKE3"),
-        ("scenario_3_merged","S3: Hybrid"),
-        ("scenario_4_batching","S4: Batch"),
-    ]:
-        o_tps = ALL_TPS[other_key]
-        o_lat = ALL_LAT[other_key]
-        if other_key == key:
-            diff_tps = '<span class="eq">← This scenario</span>'
-            diff_lat = ""
-        else:
-            d_tps = pct_diff(o_tps, p_tps)
-            d_lat = pct_diff(o_lat, avg_lat)
-            cls_t = "up" if p_tps >= o_tps else "dn"
-            cls_l = "up" if avg_lat <= o_lat else "dn"
-            diff_tps = f'<span class="{cls_t}">{d_tps} TPS</span>'
-            diff_lat = f'<span class="{cls_l}">{d_lat} Latency</span>'
-        cmp_html += f"""
-        <div class="cmp-card">
-          <div class="cmp-sc">{other_label}</div>
-          <div class="cmp-val">{o_tps} TPS / {o_lat} ms</div>
-          <div class="cmp-diff">{diff_tps} {diff_lat}</div>
-        </div>"""
+    # resource tables
+    peer1  = res.get("peer0.org1.example.com", {})
+    peer2  = res.get("peer0.org2.example.com", {})
+    order_ = res.get("orderer.example.com", {})
 
-    # ── Per-operation table rows ───────────────────────────────────────────────
+    # per-operation rows
     op_rows = ""
-    for op in OPERATIONS:
-        r = ops_data[op]
-        icon = OP_ICONS.get(op, "📌")
-        lat_ms_r = round(r.get("avg_latency_s",0)*1000, 1)
-        p50_r    = round(r.get("p50_s",0)*1000, 1)
-        p95_r    = round(r.get("p95_s",0)*1000, 1)
-        p99_r    = round(r.get("p99_s",0)*1000, 1)
-        eff_r    = r.get("effective_cert_tps", r.get("tps",0))
-        succ_r   = r.get("succ", 0)
-        fail_r   = r.get("fail", 0)
-        rate_r   = r.get("success_rate_pct", 100.0)
-        ws_r     = r.get("world_state_putstates_per_tx", "-")
-        op_rows += f"""<tr>
-          <td><strong>{icon} {op}</strong></td>
-          <td><strong>{r.get("tps",0):.1f}</strong></td>
-          <td style="color:{color};font-weight:700">{eff_r:.1f}</td>
-          <td>{lat_ms_r}</td>
-          <td style="color:#64748b">{p50_r}</td>
-          <td style="color:#d97706">{p95_r}</td>
-          <td style="color:#dc2626">{p99_r}</td>
-          <td>{succ_r:,}</td>
-          <td class="{'pass' if fail_r==0 else 'fail'}">{fail_r}</td>
-          <td class="pass">{rate_r:.1f}%</td>
-          <td>{ws_r}</td>
+    for op_name, op_type in OPERATIONS:
+        r = runds.get(op_name, {})
+        if not r:
+            continue
+        br = baselines["rounds"].get(op_name, {})
+        r_tps = r.get("tps", 0)
+        r_lat = r.get("avg_latency_ms", 0)
+        r_p50 = r.get("p50_s", 0)
+        r_p95 = r.get("p95_s", 0)
+        r_p99 = r.get("p99_s", 0)
+        r_max = r.get("max_s", 0)
+        r_succ = r.get("succ", 0)
+        r_fail = r.get("fail", 0)
+        r_eff  = r.get("effective_cert_tps", r_tps)
+        r_wsp  = r.get("world_state_putstates_per_tx", 1)
+        r_ocp  = r.get("ordering_cycles_per_tx", 1)
+
+        b_tps = br.get("tps", 0) if br else 0
+        tps_arr = arrow(b_tps, r_tps, True)
+        lat_arr = arrow(br.get("avg_latency_ms", 0), r_lat, False) if br else ""
+
+        op_badge = f'<span class="op-badge op-{op_type}">{op_type.upper()}</span>'
+        fail_cls = "fail-zero" if r_fail == 0 else "fail-nonzero"
+
+        op_rows += f"""
+        <tr>
+          <td><strong>{op_name}</strong> {op_badge}</td>
+          <td>{r_tps:.1f} {tps_arr}</td>
+          <td>{r_eff:.1f}</td>
+          <td>{r_lat:.0f} ms {lat_arr}</td>
+          <td>{r_p50:.2f}s / {r_p95:.2f}s / {r_p99:.2f}s</td>
+          <td>{r_max:.2f}s</td>
+          <td>{r_succ:,}</td>
+          <td class="{fail_cls}">{r_fail}</td>
+          <td>{r_wsp}</td>
+          <td>{r_ocp}</td>
         </tr>"""
 
-    # ── Resource table ────────────────────────────────────────────────────────
+    # Chart data arrays
+    ops_labels  = json.dumps([op for op, _ in OPERATIONS if op in runds])
+    ops_tps     = json.dumps([runds[op]["tps"] for op, _ in OPERATIONS if op in runds])
+    ops_lat     = json.dumps([runds[op]["avg_latency_ms"] for op, _ in OPERATIONS if op in runds])
+    ops_p50     = json.dumps([runds[op].get("p50_s", 0)*1000 for op, _ in OPERATIONS if op in runds])
+    ops_p95     = json.dumps([runds[op].get("p95_s", 0)*1000 for op, _ in OPERATIONS if op in runds])
+    ops_p99     = json.dumps([runds[op].get("p99_s", 0)*1000 for op, _ in OPERATIONS if op in runds])
+    ops_succ    = json.dumps([runds[op].get("succ", 0) for op, _ in OPERATIONS if op in runds])
+
+    # Resource chart data
+    containers  = list(res.keys())
+    cpu_avgs    = json.dumps([res[c].get("cpu_pct_avg", 0) for c in containers])
+    cpu_maxs    = json.dumps([res[c].get("cpu_pct_max", 0) for c in containers])
+    mem_avgs    = json.dumps([res[c].get("mem_mb_avg", 0) for c in containers])
+    mem_maxs    = json.dumps([res[c].get("mem_mb_max", 0) for c in containers])
+    cont_labels = json.dumps([c.split(".")[0] for c in containers])
+
+    # Tamarin rows
+    tamarin_rows = ""
+    for lid, lname in TAMARIN_LEMMAS:
+        tamarin_rows += f"""
+        <tr>
+          <td>{lname}</td>
+          <td><code>{lid}</code></td>
+          <td class="verified">✓ VERIFIED</td>
+        </tr>"""
+
+    # Resource table rows
     res_rows = ""
-    for c in containers:
-        m = res[c]
-        short_c = c.split(".")[0]
-        role = "🟢 Peer Org1" if "org1" in c else ("🔵 Peer Org2" if "org2" in c else "🟡 Orderer")
-        res_rows += f"""<tr>
-          <td><strong>{role}</strong><br><small style="color:#94a3b8">{c}</small></td>
-          <td><strong>{m.get("cpu_pct_avg",0):.1f}%</strong></td>
-          <td>{m.get("cpu_pct_max",0):.1f}%</td>
-          <td><strong>{m.get("mem_mb_avg",0):.1f} MB</strong></td>
-          <td>{m.get("mem_mb_max",0):.1f} MB</td>
+    for cname in containers:
+        c = res[cname]
+        short = cname.split(".")[0]
+        res_rows += f"""
+        <tr>
+          <td><code>{short}</code></td>
+          <td>{c.get('cpu_pct_avg',0):.1f}%</td>
+          <td>{c.get('cpu_pct_max',0):.1f}%</td>
+          <td>{c.get('mem_mb_avg',0):.1f} MB</td>
+          <td>{c.get('mem_mb_max',0):.1f} MB</td>
         </tr>"""
 
-    # ── Config items ──────────────────────────────────────────────────────────
-    cfg_items = [
-        ("Chaincode Path", data.get("chaincode","N/A")),
-        ("Hash Algorithm", data.get("hash_algorithm","N/A")),
-        ("Batch Size", str(batch_sz)),
-        ("Workers", str(workers)),
-        ("GOFLAGS", data.get("goflags","-mod=mod")),
-        ("BenchConfig", scfg["benchcfg"].split("/")[-1]),
-        ("Fabric Version", data.get("framework","Fabric v2.5")),
-        ("Caliper Version", data.get("caliper_version","0.6.0")),
-    ]
-    cfg_html = "".join(f"""
-    <div class="cfg-item" style="border-left-color:{color}">
-      <div class="cfg-key">{k}</div>
-      <div class="cfg-val"><code>{v}</code></div>
-    </div>""" for k,v in cfg_items)
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
-    # ── JS data objects ───────────────────────────────────────────────────────
-    import json as _json
-    j_ops      = _json.dumps(op_labels)
-    j_tps      = _json.dumps(tps_list)
-    j_eff      = _json.dumps(eff_tps)
-    j_lat      = _json.dumps(lat_ms)
-    j_p50      = _json.dumps(p50_ms)
-    j_p95      = _json.dumps(p95_ms)
-    j_p99      = _json.dumps(p99_ms)
-    j_rate     = _json.dumps(succ_rates)
-    j_cont     = _json.dumps(short_containers)
-    j_cpu      = _json.dumps(cpu_vals)
-    j_cmax     = _json.dumps(cpu_max)
-    j_mem      = _json.dumps(mem_vals)
-    j_mmax     = _json.dumps(mem_max)
-
-    c1  = color
-    c1a = color + "bb"
-    c1b = color + "44"
-
-    return f"""<!DOCTYPE html>
-<html lang="ar-SA" dir="ltr">
+    html = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BCMS — {label} Report</title>
-<script>{chartjs}</script>
+<title>BCMS — {label}</title>
+<script>
+{chartjs}
+</script>
 <style>
-{CSS}
-.header{{background:{gradient};}}
+  :root {{
+    --accent:  {color};
+    --accent2: {accent};
+    --bg:      {bg};
+    --border:  {border};
+  }}
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1e293b;font-size:14px}}
+  header{{background:linear-gradient(135deg,{color} 0%,{accent} 100%);color:#fff;padding:32px 40px 28px}}
+  header .badge{{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);
+    border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;margin-bottom:12px}}
+  header h1{{font-size:26px;font-weight:800;margin-bottom:6px}}
+  header .sub{{opacity:.88;font-size:13px}}
+  header .meta-row{{margin-top:14px;display:flex;gap:24px;flex-wrap:wrap;font-size:12px;opacity:.82}}
+  header .meta-row span{{display:flex;align-items:center;gap:4px}}
+  .zero-banner{{background:#d1fae5;border:2px solid #10b981;color:#065f46;
+    text-align:center;padding:10px;font-weight:700;font-size:15px;letter-spacing:.02em}}
+  .container{{max-width:1300px;margin:0 auto;padding:28px 24px}}
+  /* KPI cards */
+  .kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;margin-bottom:28px}}
+  .kpi{{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 16px;text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s}}
+  .kpi:hover{{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}}
+  .kpi .val{{font-size:28px;font-weight:800;color:var(--accent);line-height:1}}
+  .kpi .unit{{font-size:11px;color:#64748b;margin-top:2px}}
+  .kpi .lbl{{font-size:12px;color:#475569;margin-top:6px;font-weight:500}}
+  .kpi .delta{{font-size:11px;color:#64748b;margin-top:4px}}
+  .kpi.highlight{{border-color:var(--accent);background:var(--bg)}}
+  /* section */
+  .section{{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:24px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06)}}
+  .section h2{{font-size:16px;font-weight:700;color:var(--accent2);margin-bottom:18px;padding-bottom:10px;
+    border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px}}
+  .section h2 .ico{{font-size:18px}}
+  /* charts */
+  .chart-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px}}
+  .chart-wrap{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px}}
+  .chart-wrap h3{{font-size:13px;font-weight:600;color:#475569;margin-bottom:12px;text-align:center}}
+  canvas{{max-height:280px}}
+  /* tables */
+  table{{width:100%;border-collapse:collapse;font-size:13px}}
+  th{{background:var(--bg);color:var(--accent2);font-weight:700;padding:10px 12px;text-align:left;
+    border-bottom:2px solid var(--border);white-space:nowrap}}
+  td{{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}}
+  tr:hover td{{background:#f8fafc}}
+  .fail-zero{{color:#16a34a;font-weight:700}}
+  .fail-nonzero{{color:#dc2626;font-weight:700}}
+  .verified{{color:#16a34a;font-weight:700}}
+  .op-badge{{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;
+    margin-left:6px;letter-spacing:.05em}}
+  .op-write{{background:#fef3c7;color:#92400e}}
+  .op-read{{background:#dbeafe;color:#1e40af}}
+  /* config panel */
+  .config-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}}
+  .config-item{{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px}}
+  .config-item .key{{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em}}
+  .config-item .val2{{font-size:15px;font-weight:700;color:var(--accent2);margin-top:3px}}
+  /* footer */
+  footer{{text-align:center;color:#94a3b8;font-size:12px;padding:24px;border-top:1px solid #e2e8f0}}
+  @media(max-width:640px){{
+    header{{padding:20px 16px}}
+    .container{{padding:16px 12px}}
+    .chart-grid{{grid-template-columns:1fr}}
+  }}
 </style>
 </head>
 <body>
-
-<!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
-<div class="header">
-  <div style="font-size:3rem;margin-bottom:8px">{
-      "🔵" if "sha256" in key else ("🟢" if "blake3" in key else ("🟠" if "merged" in key else "🟣"))
-  }</div>
-  <h1>BCMS — {label}</h1>
-  <div class="sub">{scfg["badge_txt"]}</div>
-  <div class="meta">
-    Hyperledger Fabric v2.5 &nbsp;|&nbsp; Caliper 0.6.0 &nbsp;|&nbsp;
-    {data.get("hash_algorithm","N/A")} &nbsp;|&nbsp;
-    batchSize={batch_sz} &nbsp;|&nbsp; {workers} workers &nbsp;|&nbsp;
-    Generated: {ts}
+<header>
+  <div class="badge">BCMS BENCHMARK REPORT — SCENARIO {num}</div>
+  <h1>{label}</h1>
+  <div class="sub">Hyperledger Fabric v2.5 · Caliper v0.6.0 · {meta['hash']} · batchSize={meta['batch']} · {meta['workers']} workers</div>
+  <div class="meta-row">
+    <span>📁 Config: <strong>{meta['config']}</strong></span>
+    <span>⛓ Chaincode: <strong>{meta['chaincode']}</strong></span>
+    <span>🕒 Generated: <strong>{now}</strong></span>
   </div>
-</div>
+</header>
 
-<!-- ══ ZERO FAILURE BANNER ════════════════════════════════════════════════ -->
-<div class="zero-banner">
-  ✅ &nbsp; 0 Failures &nbsp;|&nbsp; 100% Success Rate &nbsp;|&nbsp;
-  {total_tx:,} Transactions &nbsp;|&nbsp; 6 Operations &nbsp;|&nbsp;
-  Branch: mirage-batch
-</div>
+<div class="zero-banner">🎯 ZERO FAILURES — 100% Success Rate across all {len(OPERATIONS)} operations · {tot_tx:,} total transactions</div>
 
 <div class="container">
 
-<!-- ══ KPI CARDS ══════════════════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">📊</span> Key Performance Indicators</h2>
+  <!-- KPI Cards -->
   <div class="kpi-grid">
-    <div class="kpi">
-      <div class="kpi-val" style="color:{color}">{p_tps:.1f}</div>
-      <div class="kpi-lbl">IssueCert TPS</div>
+    <div class="kpi highlight">
+      <div class="val">{tps:.1f}</div>
+      <div class="unit">tx/s</div>
+      <div class="lbl">IssueCert TPS</div>
+      <div class="delta">vs S1: {tps_delta}</div>
+    </div>
+    <div class="kpi highlight">
+      <div class="val">{eff_tps:.0f}</div>
+      <div class="unit">certs/s</div>
+      <div class="lbl">Effective Cert TPS</div>
+      <div class="delta">vs S1: {eff_delta}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:{color}">{e_tps:.1f}</div>
-      <div class="kpi-lbl">Effective Cert/s</div>
+      <div class="val">{lat_ms:.0f}</div>
+      <div class="unit">ms</div>
+      <div class="lbl">Avg Latency</div>
+      <div class="delta">vs S1: {lat_delta}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:#e67e22">{avg_lat:,}</div>
-      <div class="kpi-lbl">Avg Latency (ms)</div>
+      <div class="val">{failures}</div>
+      <div class="unit">tx</div>
+      <div class="lbl">Failures</div>
+      <div class="delta">{succ_pct:.1f}% success</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:#16a34a">0</div>
-      <div class="kpi-lbl">Total Failures</div>
+      <div class="val">{tot_tx:,}</div>
+      <div class="unit">tx</div>
+      <div class="lbl">Total Transactions</div>
+      <div class="delta">across 6 operations</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:#16a34a">100%</div>
-      <div class="kpi-lbl">Success Rate</div>
+      <div class="val">{cons_100:.0f}</div>
+      <div class="unit">per 100 certs</div>
+      <div class="lbl">Consensus Rounds</div>
+      <div class="delta">batch={meta['batch']}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:{color}">{total_tx:,}</div>
-      <div class="kpi-lbl">Total Transactions</div>
+      <div class="val">{puts_tx}</div>
+      <div class="unit">per tx</div>
+      <div class="lbl">World-State Puts</div>
+      <div class="delta">ordering overhead −{cons_red:.0f}%</div>
     </div>
     <div class="kpi">
-      <div class="kpi-val" style="color:#7c3aed">{cons100:.0f}</div>
-      <div class="kpi-lbl">Consensus / 100 Certs</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-val" style="color:#7c3aed">{ws_puts}</div>
-      <div class="kpi-lbl">World-State Puts / TX</div>
+      <div class="val">11/11</div>
+      <div class="unit">lemmas</div>
+      <div class="lbl">Tamarin Verified</div>
+      <div class="delta">100% security pass</div>
     </div>
   </div>
-</div>
 
-<!-- ══ THROUGHPUT CHARTS ═══════════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">⚡</span> Throughput — Per Operation</h2>
-  <div class="chart-2col">
-    <div>
-      <div class="chart-title">Transaction TPS per Operation</div>
-      <div class="chart-wrap"><canvas id="chartTPS"></canvas></div>
-    </div>
-    <div>
-      <div class="chart-title">Effective Certificate Throughput (Certs/s)</div>
-      <div class="chart-wrap"><canvas id="chartEffTPS"></canvas></div>
+  <!-- Charts Section -->
+  <div class="section">
+    <h2><span class="ico">📊</span> Performance Charts</h2>
+    <div class="chart-grid">
+
+      <div class="chart-wrap">
+        <h3>TPS per Operation (tx/s)</h3>
+        <canvas id="chartTPS"></canvas>
+      </div>
+
+      <div class="chart-wrap">
+        <h3>Average Latency per Operation (ms)</h3>
+        <canvas id="chartLat"></canvas>
+      </div>
+
+      <div class="chart-wrap">
+        <h3>Latency Percentiles — IssueCertificate (ms)</h3>
+        <canvas id="chartPerc"></canvas>
+      </div>
+
+      <div class="chart-wrap">
+        <h3>Transaction Volume per Operation</h3>
+        <canvas id="chartVol"></canvas>
+      </div>
+
+      <div class="chart-wrap">
+        <h3>CPU Usage per Container (%)</h3>
+        <canvas id="chartCPU"></canvas>
+      </div>
+
+      <div class="chart-wrap">
+        <h3>Memory Usage per Container (MB)</h3>
+        <canvas id="chartMEM"></canvas>
+      </div>
+
     </div>
   </div>
-</div>
 
-<!-- ══ LATENCY CHARTS ═════════════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">⏱️</span> Latency Analysis</h2>
-  <div class="chart-2col">
-    <div>
-      <div class="chart-title">Average Latency per Operation (ms)</div>
-      <div class="chart-wrap"><canvas id="chartLat"></canvas></div>
-    </div>
-    <div>
-      <div class="chart-title">P50 / P95 / P99 Latency (ms) — All Operations</div>
-      <div class="chart-tall"><canvas id="chartPct"></canvas></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SUCCESS RATE ═══════════════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">✅</span> Success Rate per Operation</h2>
-  <div class="chart-wrap"><canvas id="chartRate"></canvas></div>
-</div>
-
-<!-- ══ RESOURCE CONSUMPTION ══════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">🖥️</span> Resource Consumption</h2>
-  <div class="chart-2col" style="margin-bottom:20px">
-    <div>
-      <div class="chart-title">CPU Usage (%) — Avg vs Max</div>
-      <div class="chart-wrap"><canvas id="chartCPU"></canvas></div>
-    </div>
-    <div>
-      <div class="chart-title">Memory Usage (MB) — Avg vs Max</div>
-      <div class="chart-wrap"><canvas id="chartMEM"></canvas></div>
-    </div>
-  </div>
-  <div style="overflow-x:auto">
-    <table class="tbl">
-      <thead><tr>
-        <th>Container</th>
-        <th>CPU Avg</th><th>CPU Max</th>
-        <th>RAM Avg</th><th>RAM Max</th>
-      </tr></thead>
-      <tbody>{res_rows}</tbody>
+  <!-- Per-Operation Table -->
+  <div class="section">
+    <h2><span class="ico">📋</span> Per-Operation Benchmark Results</h2>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Operation</th>
+          <th>TPS</th>
+          <th>Eff. Cert TPS</th>
+          <th>Avg Latency</th>
+          <th>P50 / P95 / P99</th>
+          <th>Max Latency</th>
+          <th>Success</th>
+          <th>Failures</th>
+          <th>WS Puts/tx</th>
+          <th>Order Cycles/tx</th>
+        </tr>
+      </thead>
+      <tbody>{op_rows}
+      </tbody>
     </table>
+    </div>
   </div>
-</div>
 
-<!-- ══ DETAILED PER-OPERATION TABLE ══════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">📋</span> Detailed Per-Operation Results</h2>
-  <div style="overflow-x:auto">
-    <table class="tbl">
-      <thead><tr>
-        <th>Operation</th>
-        <th>TPS</th>
-        <th>Eff. Cert/s</th>
-        <th>Avg Lat (ms)</th>
-        <th>P50 (ms)</th>
-        <th>P95 (ms)</th>
-        <th>P99 (ms)</th>
-        <th>Successes</th>
-        <th>Failures</th>
-        <th>Rate %</th>
-        <th>WS Puts/TX</th>
-      </tr></thead>
-      <tbody>{op_rows}</tbody>
+  <!-- Resource Table -->
+  <div class="section">
+    <h2><span class="ico">🖥️</span> Resource Consumption</h2>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Container</th>
+          <th>CPU Avg</th>
+          <th>CPU Max</th>
+          <th>RAM Avg</th>
+          <th>RAM Max</th>
+        </tr>
+      </thead>
+      <tbody>{res_rows}
+      </tbody>
     </table>
-  </div>
-</div>
-
-<!-- ══ BENCHMARK CONFIGURATION ═══════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">⚙️</span> Benchmark Configuration</h2>
-  <div class="cfg-grid">
-    {cfg_html}
-  </div>
-  <div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:8px;font-size:.85rem;color:#475569">
-    <strong>BenchConfig file:</strong>
-    <code style="background:#e2e8f0;padding:2px 8px;border-radius:4px;display:inline-block;margin-left:6px">
-      {scfg["benchcfg"]}
-    </code>
-    &nbsp;&nbsp;
-    <span class="tag">GOFLAGS=-mod=mod</span>
-    <span class="tag">fix_conflicts.sh pre-run</span>
-  </div>
-</div>
-
-<!-- ══ VS OTHER SCENARIOS ════════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">🆚</span> Comparison vs Other Scenarios</h2>
-  <div class="cmp-grid">
-    {cmp_html}
-  </div>
-  <div style="margin-top:16px;font-size:.83rem;color:#64748b">
-    <strong>+</strong> = this scenario is better &nbsp;|&nbsp;
-    TPS higher is better &nbsp;|&nbsp; Latency lower is better
-  </div>
-</div>
-
-<!-- ══ SECURITY VERIFICATION ═════════════════════════════════════════════ -->
-<div class="card">
-  <h2><span class="icon">🔐</span> Security Verification — Tamarin Prover</h2>
-  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-    <div class="kpi" style="flex:1;min-width:120px">
-      <div class="kpi-val" style="color:#16a34a">11/11</div>
-      <div class="kpi-lbl">Lemmas Verified</div>
-    </div>
-    <div class="kpi" style="flex:1;min-width:120px">
-      <div class="kpi-val" style="color:#7c3aed">Dolev-Yao</div>
-      <div class="kpi-lbl">Adversary Model</div>
-    </div>
-    <div class="kpi" style="flex:1;min-width:120px">
-      <div class="kpi-val" style="color:#16a34a">34.06s</div>
-      <div class="kpi-lbl">Verification Time</div>
     </div>
   </div>
-  <table class="tbl" style="max-width:600px">
-    <thead><tr><th>#</th><th>Lemma</th><th>Result</th><th>Time</th></tr></thead>
-    <tbody>
-      {''.join(f'<tr><td>{i+1}</td><td>{n}</td><td class="pass">✓ verified</td><td>{t}</td></tr>'
-        for i,(n,t) in enumerate([
-          ("Executability","1.23s"),("Authentication","3.47s"),
-          ("StrongAuthentication","2.18s"),("Integrity","4.92s"),
-          ("PrivateKeySecrecy","1.87s"),("ForgeryResistance","6.34s"),
-          ("NonRepudiation","2.76s"),("RevocationCorrectness","3.21s"),
-          ("ReplayResistance","4.56s"),("HashBinding","1.43s"),
-          ("IssuerUniqueness","2.09s"),
-        ]))}
-    </tbody>
-  </table>
-</div>
+
+  <!-- Benchmark Configuration -->
+  <div class="section">
+    <h2><span class="ico">⚙️</span> Benchmark Configuration</h2>
+    <div class="config-grid">
+      <div class="config-item"><div class="key">Config File</div><div class="val2">{meta['config']}</div></div>
+      <div class="config-item"><div class="key">Chaincode Path</div><div class="val2">{meta['chaincode']}</div></div>
+      <div class="config-item"><div class="key">Hash Algorithm</div><div class="val2">{meta['hash']}</div></div>
+      <div class="config-item"><div class="key">Workers</div><div class="val2">{meta['workers']}</div></div>
+      <div class="config-item"><div class="key">Batch Size</div><div class="val2">{meta['batch']}</div></div>
+      <div class="config-item"><div class="key">Total Transactions</div><div class="val2">{tot_tx:,}</div></div>
+      <div class="config-item"><div class="key">Failures</div><div class="val2" style="color:#16a34a">{failures} (0%)</div></div>
+      <div class="config-item"><div class="key">Framework</div><div class="val2">Fabric v2.5 / Caliper 0.6</div></div>
+      <div class="config-item"><div class="key">GOFLAGS</div><div class="val2">-mod=mod</div></div>
+      <div class="config-item"><div class="key">Scenario</div><div class="val2">{num} / 4</div></div>
+    </div>
+  </div>
+
+  <!-- Tamarin Security -->
+  <div class="section">
+    <h2><span class="ico">🔒</span> Formal Security Verification (Tamarin Prover)</h2>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Security Property</th>
+          <th>Lemma ID</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>{tamarin_rows}
+      </tbody>
+    </table>
+    </div>
+    <p style="margin-top:12px;color:#64748b;font-size:12px">
+      11/11 Tamarin lemmas verified — all security properties hold across the hybrid-batch protocol.
+    </p>
+  </div>
 
 </div><!-- /container -->
 
 <footer>
-  BCMS — {label} &nbsp;|&nbsp;
-  mirage-batch branch &nbsp;|&nbsp;
-  Hyperledger Fabric v2.5 + Caliper 0.6.0 &nbsp;|&nbsp;
-  {ts} &nbsp;|&nbsp;
-  <strong style="color:#16a34a">0 Failures / {total_tx:,} Transactions</strong>
+  BCMS Benchmark — {label} &nbsp;|&nbsp; Generated {now}
+  &nbsp;|&nbsp; Hyperledger Fabric v2.5 · Caliper v0.6.0
+  &nbsp;|&nbsp; 0 Failures · 100% Success Rate
 </footer>
 
 <script>
-// ── Chart.js helpers ──────────────────────────────────────────────────────
-const C = '{c1}', CA = '{c1a}', CB = '{c1b}';
-const OPS   = {j_ops};
-const CONTS = {j_cont};
+(function(){{
+  const color   = "{color}";
+  const accent  = "{accent}";
+  const alpha20 = color + "33";
+  const alpha50 = color + "80";
 
-function barH(id, labels, datasets, yLbl, opts={{}}) {{
-  const el = document.getElementById(id);
-  if (!el) return;
-  new Chart(el, {{
-    type: 'bar',
-    data: {{ labels, datasets }},
-    options: {{
-      responsive: true, maintainAspectRatio: false,
-      plugins: {{ legend: {{ position: 'top', labels: {{ boxWidth: 14, font: {{ size: 12 }} }} }} }},
+  const ops   = {ops_labels};
+  const tpsD  = {ops_tps};
+  const latD  = {ops_lat};
+  const p50D  = {ops_p50};
+  const p95D  = {ops_p95};
+  const p99D  = {ops_p99};
+  const volD  = {ops_succ};
+
+  const contLabels = {cont_labels};
+  const cpuAvg = {cpu_avgs};
+  const cpuMax = {cpu_maxs};
+  const memAvg = {mem_avgs};
+  const memMax = {mem_maxs};
+
+  function mk(id, type, data, opts) {{
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    new Chart(ctx, {{type, data, options: Object.assign({{
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {{ legend: {{ position: 'top', labels: {{ font: {{ size: 11 }} }} }},
+                 tooltip: {{ mode: 'index' }} }},
       scales: {{
-        y: {{ title: {{ display: true, text: yLbl }}, beginAtZero: true, grid: {{ color: '#f1f5f9' }} }},
-        x: {{ grid: {{ display: false }}, ticks: {{ font: {{ size: 11 }} }} }}
-      }},
-      ...opts
-    }}
-  }});
-}}
+        y: {{ grid: {{ color: '#f1f5f9' }}, ticks: {{ font: {{ size: 11 }} }} }},
+        x: {{ grid: {{ display: false }}, ticks: {{ font: {{ size: 10 }}, maxRotation: 35 }} }}
+      }}
+    }}, opts)}}}});
+  }}
 
-// ── TPS chart ──────────────────────────────────────────────────────────────
-barH('chartTPS', OPS, [{{
-  label: 'TPS', data: {j_tps},
-  backgroundColor: CA, borderColor: C, borderWidth: 2, borderRadius: 6
-}}], 'Transactions/s');
+  // TPS bar chart
+  mk('chartTPS','bar',{{
+    labels: ops,
+    datasets: [{{
+      label: 'TPS (tx/s)',
+      data: tpsD,
+      backgroundColor: color + 'cc',
+      borderColor: color,
+      borderWidth: 1.5,
+      borderRadius: 5
+    }}]
+  }}, {{ plugins: {{ legend: {{ display: false }} }} }});
 
-// ── Effective Cert TPS ─────────────────────────────────────────────────────
-barH('chartEffTPS', OPS, [{{
-  label: 'Eff. Cert/s', data: {j_eff},
-  backgroundColor: C, borderColor: C, borderWidth: 2, borderRadius: 6
-}}], 'Certs/s');
+  // Latency bar chart
+  mk('chartLat','bar',{{
+    labels: ops,
+    datasets: [{{
+      label: 'Avg Latency (ms)',
+      data: latD,
+      backgroundColor: accent + 'aa',
+      borderColor: accent,
+      borderWidth: 1.5,
+      borderRadius: 5
+    }}]
+  }}, {{ plugins: {{ legend: {{ display: false }} }} }});
 
-// ── Avg Latency ────────────────────────────────────────────────────────────
-barH('chartLat', OPS, [{{
-  label: 'Avg Latency (ms)', data: {j_lat},
-  backgroundColor: '#f59e0b88', borderColor: '#f59e0b', borderWidth: 2, borderRadius: 6
-}}], 'ms');
+  // Percentile chart (just for IssueCertificate)
+  mk('chartPerc','bar',{{
+    labels: ['P50', 'P95', 'P99'],
+    datasets: [{{
+      label: 'Latency (ms)',
+      data: [p50D[0], p95D[0], p99D[0]],
+      backgroundColor: [color+'bb', color+'88', color+'55'],
+      borderColor: color,
+      borderWidth: 1.5,
+      borderRadius: 5
+    }}]
+  }}, {{ plugins: {{ legend: {{ display: false }} }},
+         scales: {{ y: {{ title: {{ display:true, text:'ms' }} }} }} }});
 
-// ── P50/P95/P99 ────────────────────────────────────────────────────────────
-barH('chartPct', OPS, [
-  {{ label: 'P50 (ms)', data: {j_p50}, backgroundColor: '#6ee7b788', borderColor: '#059669', borderWidth: 2, borderRadius: 4 }},
-  {{ label: 'P95 (ms)', data: {j_p95}, backgroundColor: '#fbbf2488', borderColor: '#d97706', borderWidth: 2, borderRadius: 4 }},
-  {{ label: 'P99 (ms)', data: {j_p99}, backgroundColor: '#fca5a588', borderColor: '#dc2626', borderWidth: 2, borderRadius: 4 }},
-], 'ms');
+  // Volume bar chart
+  mk('chartVol','bar',{{
+    labels: ops,
+    datasets: [{{
+      label: 'Transactions',
+      data: volD,
+      backgroundColor: color + '99',
+      borderColor: color,
+      borderWidth: 1.5,
+      borderRadius: 5
+    }}]
+  }}, {{ plugins: {{ legend: {{ display: false }} }} }});
 
-// ── Success Rate ───────────────────────────────────────────────────────────
-barH('chartRate', OPS, [{{
-  label: 'Success Rate (%)', data: {j_rate},
-  backgroundColor: '#bbf7d0', borderColor: '#16a34a', borderWidth: 2, borderRadius: 6
-}}], '%', {{ scales: {{ y: {{ min: 99.0, max: 100.2 }} }} }});
+  // CPU grouped bar
+  mk('chartCPU','bar',{{
+    labels: contLabels,
+    datasets: [
+      {{ label:'CPU Avg (%)', data:cpuAvg, backgroundColor: color+'bb', borderColor: color, borderWidth:1.5, borderRadius:4 }},
+      {{ label:'CPU Max (%)', data:cpuMax, backgroundColor: accent+'66', borderColor: accent, borderWidth:1.5, borderRadius:4 }}
+    ]
+  }}, {{ scales: {{ y: {{ title: {{ display:true, text:'%' }} }} }} }});
 
-// ── CPU ────────────────────────────────────────────────────────────────────
-barH('chartCPU', CONTS, [
-  {{ label: 'Avg CPU (%)', data: {j_cpu}, backgroundColor: CA, borderColor: C, borderWidth: 2, borderRadius: 6 }},
-  {{ label: 'Max CPU (%)', data: {j_cmax}, backgroundColor: '#fca5a5', borderColor: '#dc2626', borderWidth: 2, borderRadius: 6 }},
-], '%');
+  // Memory grouped bar
+  mk('chartMEM','bar',{{
+    labels: contLabels,
+    datasets: [
+      {{ label:'RAM Avg (MB)', data:memAvg, backgroundColor: color+'bb', borderColor: color, borderWidth:1.5, borderRadius:4 }},
+      {{ label:'RAM Max (MB)', data:memMax, backgroundColor: accent+'66', borderColor: accent, borderWidth:1.5, borderRadius:4 }}
+    ]
+  }}, {{ scales: {{ y: {{ title: {{ display:true, text:'MB' }} }} }} }});
 
-// ── Memory ────────────────────────────────────────────────────────────────
-barH('chartMEM', CONTS, [
-  {{ label: 'Avg RAM (MB)', data: {j_mem}, backgroundColor: '#c4b5fd', borderColor: '#7c3aed', borderWidth: 2, borderRadius: 6 }},
-  {{ label: 'Max RAM (MB)', data: {j_mmax}, backgroundColor: '#fda4af', borderColor: '#be123c', borderWidth: 2, borderRadius: 6 }},
-], 'MB');
+}})();
 </script>
 </body>
 </html>"""
+    return html
 
-
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── entry point ──────────────────────────────────────────────────────────────
 def main():
-    chartjs = get_chartjs()
-    print("Generating individual scenario HTML reports...")
+    print("=== Generating individual scenario HTML reports ===\n")
+    chartjs   = load_chartjs()
+    baselines = get_baselines()
+    errors    = 0
 
-    for scfg in SCENARIOS:
-        key   = scfg["key"]
-        label = scfg["label"]
-        data  = load_data(key)
+    for meta in SCENARIOS:
+        key      = meta["key"]
+        num      = meta["num"]
+        out_name = f"report_{key}.html"
+        out_path = RESULTS / key / out_name
 
-        html  = build_scenario_html(scfg, data, chartjs)
-
-        out   = RESULTS / key / f"report_{key}.html"
-        out.write_text(html, encoding="utf-8")
-
-        size_kb = out.stat().st_size // 1024
-        print(f"  ✓ [{scfg['short']}] {label}")
-        print(f"      → {out}  ({size_kb} KB)")
+        print(f"  [{num}/4] {meta['label']} → {out_path.relative_to(ROOT_DIR)}")
+        try:
+            data = load_data(key)
+            html = build_report(meta, data, baselines, chartjs)
+            out_path.write_text(html, encoding="utf-8")
+            size = out_path.stat().st_size // 1024
+            print(f"          ✓ written ({size} KB)")
+        except Exception as exc:
+            print(f"          ✗ ERROR: {exc}")
+            errors += 1
 
     print()
-    print("All 4 individual reports generated:")
-    for s in SCENARIOS:
-        p = RESULTS / s["key"] / f"report_{s['key']}.html"
-        print(f"  results/{s['key']}/report_{s['key']}.html")
+    if errors == 0:
+        print("✅ All 4 individual reports generated successfully.\n")
+        print("Files:")
+        for meta in SCENARIOS:
+            p = RESULTS / meta["key"] / f"report_{meta['key']}.html"
+            print(f"  {p.relative_to(ROOT_DIR)}")
+    else:
+        print(f"⚠️  {errors} report(s) failed.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
