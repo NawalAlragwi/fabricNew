@@ -1342,8 +1342,13 @@ run_all_scenarios() {
     step "Aggregating All Scenario Results"
     python3 aggregate_results.py 2>&1 | tee -a "$LOG_FILE" || warn "aggregate_results.py failed"
     python3 generate_scenario_report.py 2>&1 | tee -a "$LOG_FILE" || warn "generate_scenario_report.py failed"
+    python3 generate_individual_reports.py 2>&1 | tee -a "$LOG_FILE" || warn "generate_individual_reports.py failed"
     log "✓ All scenarios complete"
-    log "  results/final_comparison/four_scenario_report.html"
+    log "  results/final_comparison/four_scenario_report.html    (master comparison)"
+    log "  results/scenario_1_sha256/report_scenario_1_sha256.html"
+    log "  results/scenario_2_blake3/report_scenario_2_blake3.html"
+    log "  results/scenario_3_merged/report_scenario_3_merged.html"
+    log "  results/scenario_4_batching/report_scenario_4_batching.html"
     log "  results/final_comparison/comparison_data.csv"
 }
 
