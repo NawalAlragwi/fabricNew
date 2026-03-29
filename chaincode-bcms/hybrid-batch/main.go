@@ -18,11 +18,10 @@ import (
 	"os"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
-	chaincode "github.com/NawalAlragwi/fabricNew/chaincode-bcms/hybrid-batch"
 )
 
 func main() {
-	cc, err := contractapi.NewChaincode(&chaincode.SmartContract{})
+	cc, err := contractapi.NewChaincode(&SmartContract{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating BCMS Hybrid-Batch chaincode: %v\n", err)
 		os.Exit(1)
