@@ -69,9 +69,25 @@ function checkPrereqs() {
 checkPrereqs
 
 ## package the chaincode
-./scripts/packageCC.sh $CC_NAME $CC_SRC_PATH $CC_SRC_LANGUAGE $CC_VERSION 
+infoln "📦 Starting chaincode packaging step..."
+infoln "  Using: ./scripts/packageCC.sh $CC_NAME $CC_SRC_PATH $CC_SRC_LANGUAGE $CC_VERSION"
+./scripts/packageCC.sh $CC_NAME $CC_SRC_PATH $CC_SRC_LANGUAGE $CC_VERSION || {
+  fatalln "Chaincode packaging failed"
+  exit 1
+}
 
+# Verify package file exists and calculate PACKAGE_ID
+if [ ! -f "${CC_NAME}.tar.gz" ]; then
+  fatalln "❌ Package file not found after packaging: ${CC_NAME}.tar.gz"
+  fatalln "   Current directory: $(pwd)"
+  fatalln "   Files in directory:"
+  ls -la *.tar.gz 2>/dev/null || echo "   No .tar.gz files found"
+  exit 1
+fi
+
+infoln "  ✓ Package file verified: ${CC_NAME}.tar.gz"
 PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid ${CC_NAME}.tar.gz)
+infoln "  ✓ Package ID: $PACKAGE_ID"
 
 ## Install chaincode on peer0.org1 and peer0.org2
 infoln "Installing chaincode on peer0.org1..."

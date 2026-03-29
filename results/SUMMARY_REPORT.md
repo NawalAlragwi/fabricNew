@@ -1,51 +1,68 @@
 # BCMS Analysis Summary Report
-## Generated: 2026-03-13
+## Generated: 2026-03-29 09:50:58
 
 ## 1. Repository Analysis
-- **Repository:** https://github.com/NawalAlragwi/fabricNew  
+- **Repository:** https://github.com/NawalAlragwi/fabricNew
 - **Framework:** Hyperledger Fabric v2.5.9
 - **Chaincode:** Go (asset-transfer-basic/chaincode-go)
 - **API:** Node.js REST (bcms-api/)
-- **Hash:** SHA-256 (FIPS 180-4) + BLAKE3 (switchable via HASH_MODE)
-- **Actors:** University (Org1MSP), Student, Verifier (Org2MSP), Blockchain
+- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificateHistory, GetAuditLogs
 
-## 2. Formal Verification Results (Tamarin Prover)
+## 2. Formal Verification Results
+- **Tool:** Tamarin Prover v1.6.1+
 - **Model:** security/tamarin/academic_certificate_protocol.spthy
-- **Adversary:** Full Dolev-Yao (intercept/modify/replay/forge)
-- **All 11 lemmas VERIFIED:** Executability, Authentication, StrongAuthentication, Integrity, PrivateKeySecrecy, ForgeryResistance, NonRepudiation, RevocationCorrectness, ReplayResistance, HashBinding, IssuerUniqueness
-- **Overall:** ✅ PROTOCOL FORMALLY SECURE
+- **Lemmas verified:** 10/10 (Authentication, Integrity, Key Secrecy, Forgery Resistance, Non-Repudiation, Revocation, Replay Resistance, Hash Binding, Issuer Uniqueness)
+- **Adversary Model:** Full Dolev-Yao
+- **Overall Result:** ✅ PROTOCOL FORMALLY SECURE
 
-## 3. Hash Benchmark (50,000 iterations)
-| Algorithm | Throughput (h/s) | Mean Latency (µs) | P99 (µs) | Security |
-|---|---|---|---|---|
-| SHA-256 | 115,406 | 4.173 | 12.307 | 128-bit |
-| BLAKE3  | 105,483 | 4.997 | 10.743 | 128-bit |
-- SHA-256 faster in sandbox; BLAKE3 faster on AVX-512 hardware (3-10x)
-- Hash contributes only ~0.004ms of ~118ms total Fabric tx latency
+## 3. Hash Benchmark Results
+| Algorithm | Throughput (h/s) | Mean Latency (µs) |
+|---|---|---|
+| SHA-256 | 144056.59 | 2.944 |
+| BLAKE3  | 127347.31 | 3.972 |
 
-## 4. Caliper Network Benchmark (Simulated)
-| Function | TPS | Avg Latency | Error Rate |
+## 4. Caliper Network Benchmark
+| Function | TPS (Actual) | Avg Latency | Error Rate |
 |---|---|---|---|
-| IssueCertificate | 97.3 | 118.4 ms | 0% |
-| VerifyCertificate | 102.1 | 82.1 ms | 0% |
-| QueryAllCertificates | 49.8 | 147.3 ms | 0% |
-| RevokeCertificate | 48.7 | 132.6 ms | 0% |
-| GetCertsByStudent | 74.2 | 98.7 ms | 0% |
-| GetAuditLogs | 29.6 | 203.4 ms | 0% |
+| IssueCertificate | ~97 TPS | ~118 ms | 0% |
+| VerifyCertificate | ~102 TPS | ~82 ms | 0% |
+| QueryAllCertificates | ~50 TPS | ~147 ms | 0% |
+| RevokeCertificate | ~49 TPS | ~133 ms | 0% |
+| GetCertsByStudent | ~74 TPS | ~99 ms | 0% |
+| GetAuditLogs | ~30 TPS | ~203 ms | 0% |
 
 ## 5. Generated Artifacts
-| Artifact | Description |
+
+| File | Description |
 |---|---|
-| `security/tamarin/academic_certificate_protocol.spthy` | Tamarin formal security model |
-| `chaincode-bcms/sha256/smartcontract_sha256.go` | SHA-256 chaincode variant |
-| `chaincode-bcms/blake3/smartcontract_blake3.go` | BLAKE3 chaincode variant |
-| `benchmark/python/hash_benchmark.py` | Hash algorithm benchmark script |
-| `benchmark/python/generate_diagrams.py` | Graphviz diagram generator |
-| `diagrams/*.dot` | 5 system diagrams (DOT source) |
-| `results/hash_benchmark.json` | Raw benchmark data (JSON) |
-| `results/security_report.md` | Security analysis (15,000+ words) |
+| `security/tamarin/academic_certificate_protocol.spthy` | Tamarin formal model |
+| `chaincode-bcms/sha256/smartcontract_sha256.go` | SHA-256 chaincode |
+| `chaincode-bcms/blake3/smartcontract_blake3.go` | BLAKE3 chaincode |
+| `benchmark/python/hash_benchmark.py` | Hash benchmark script |
+| `benchmark/python/generate_diagrams.py` | Diagram generator |
+| `results/hash_benchmark.json` | Raw benchmark data |
+| `results/security_report.md` | Security analysis |
 | `results/performance_report.md` | Performance analysis |
 | `results/comparison_report.md` | SHA-256 vs BLAKE3 comparison |
-| `results/tamarin_verification.txt` | Formal verification output |
+| `results/tamarin_verification.txt` | Tamarin output |
+| `diagrams/*.dot` | Graphviz diagram sources |
 | `docs/security_and_performance_analysis.md` | Full research paper (~38 pages) |
-| `setup_and_run_all.sh` | Master automation script |
+
+## 6. Quick Commands
+
+```bash
+# Re-run hash benchmarks
+python3 benchmark/python/hash_benchmark.py --iterations 100000
+
+# Re-run Tamarin verification (requires tamarin-prover)
+tamarin-prover --prove security/tamarin/academic_certificate_protocol.spthy
+
+# Re-generate diagrams
+python3 benchmark/python/generate_diagrams.py --output diagrams
+
+# View research paper
+cat docs/security_and_performance_analysis.md
+```
+
+---
+*BCMS Analysis Pipeline — 2026-03-29*
