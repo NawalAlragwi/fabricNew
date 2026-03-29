@@ -2,7 +2,7 @@
   "scenario": 4,
   "title": "Hybrid + Batching Optimization",
   "description": "10 certs/TX, hybrid BLAKE3(SHA-256) hash, batchSize=10. 8 workers.",
-  "timestamp": "2026-03-28T22:08:23Z",
+  "timestamp": "2026-03-29T21:00:43Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/hybrid-batch",
