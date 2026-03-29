@@ -1,152 +1,85 @@
 #!/usr/bin/env bash
-# ============================================================================
-#  BCMS — Unified Execution Pipeline
-#  Hybrid Blockchain Framework (SHA-256 + BLAKE3) with Batching
-#
-#  Usage:  bash run_all.sh [--tps=100] [--batch=10]
-#
-#  Steps:
-#    1. Clean previous HTML reports
-#    2. Run REAL cryptographic benchmarks (SHA-256, BLAKE3, Hybrid, Batch)
-#    3. Generate 4 professional HTML reports + combined dashboard
-#    4. Copy Caliper workspace report if available
-#    5. List all result files with sizes
-# ============================================================================
-
+# =============================================================================
+#  run_all.sh  —  BCMS Report Pipeline
+#  Cleans HTML outputs, runs all Python generators, copies Caliper report,
+#  and lists results/ with sizes.
+# =============================================================================
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RESULTS_DIR="$ROOT_DIR/results"
-NOW=$(date '+%Y-%m-%d %H:%M:%S')
-TPS_TARGET=100
-BATCH_SIZE=10
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RESULTS_DIR="$SCRIPT_DIR/results"
 
-# Parse args
-for arg in "$@"; do
-    case $arg in
-        --tps=*)   TPS_TARGET="${arg#*=}" ;;
-        --batch=*) BATCH_SIZE="${arg#*=}" ;;
-    esac
-done
-
-echo "╔══════════════════════════════════════════════════════════╗"
-echo "║   BCMS — Hybrid Blockchain Framework                    ║"
-echo "║   SHA-256 + BLAKE3 Double-Lock Pipeline + Batching      ║"
-echo "║   Real Benchmarks · 4 Professional Reports              ║"
-echo "╚══════════════════════════════════════════════════════════╝"
-echo ""
-echo "  Root:       $ROOT_DIR"
-echo "  Results:    $RESULTS_DIR"
-echo "  TPS Target: $TPS_TARGET"
-echo "  Batch Size: $BATCH_SIZE"
-echo "  Start Time: $NOW"
+echo "════════════════════════════════════════════════════════"
+echo "  BCMS Report Pipeline  —  $(date -u '+%Y-%m-%d %H:%M UTC')"
+echo "════════════════════════════════════════════════════════"
 echo ""
 
-# ── Step 1: Clean previous HTML reports ──────────────────────────────────────
-echo "══════════════════════════════════════════════"
-echo "  STEP 1: Clean previous HTML reports"
-echo "══════════════════════════════════════════════"
+# ── 1. Clean old HTML outputs ─────────────────────────────────────────────────
+echo "▶  [1/5] Cleaning results/*.html …"
 mkdir -p "$RESULTS_DIR"
 rm -f "$RESULTS_DIR"/*.html
-rm -f "$RESULTS_DIR"/final_comparison/*.html 2>/dev/null || true
-echo "  ✓ Cleaned: $RESULTS_DIR/*.html"
-
-# ── Step 2: Install dependencies ─────────────────────────────────────────────
+echo "   ✓ Cleaned HTML files"
 echo ""
-echo "══════════════════════════════════════════════"
-echo "  STEP 2: Check Python dependencies"
-echo "══════════════════════════════════════════════"
-python3 -c "import blake3; print('  ✓ blake3 available')" 2>/dev/null || {
-    echo "  Installing blake3..."
-    pip install blake3 -q
-}
-echo "  ✓ All dependencies ready"
 
-# ── Step 3: Run REAL benchmarks ──────────────────────────────────────────────
+# ── 2. Run Python report generators ──────────────────────────────────────────
+echo "▶  [2/5] Running generate_hybrid_batch_report.py …"
+python3 "$SCRIPT_DIR/generate_hybrid_batch_report.py"
 echo ""
-echo "══════════════════════════════════════════════"
-echo "  STEP 3: Run REAL Cryptographic Benchmarks"
-echo "          (100,000 iterations per algorithm)"
-echo "══════════════════════════════════════════════"
-cd "$ROOT_DIR"
-python3 run_real_benchmark.py
-echo "  ✓ Real benchmarks complete"
 
-# ── Step 4: Generate 4 HTML reports ──────────────────────────────────────────
+echo "▶  [3/5] Running generate_hybrid_only_report.py …"
+python3 "$SCRIPT_DIR/generate_hybrid_only_report.py"
 echo ""
-echo "══════════════════════════════════════════════"
-echo "  STEP 4: Generate 4 Professional HTML Reports"
-echo "══════════════════════════════════════════════"
-python3 generate_four_reports.py
-echo "  ✓ All reports generated"
 
-# ── Step 5: Sync Caliper workspace report if available ───────────────────────
-echo ""
-echo "══════════════════════════════════════════════"
-echo "  STEP 5: Sync Caliper workspace report"
-echo "══════════════════════════════════════════════"
-CALIPER_REPORT="$ROOT_DIR/caliper-workspace/report.html"
-if [ -f "$CALIPER_REPORT" ]; then
-    cp "$CALIPER_REPORT" "$RESULTS_DIR/report_sha256_final.html"
-    echo "  ✓ Copied caliper-workspace/report.html → results/report_sha256_final.html"
+echo "▶  [4/5] Running generate_four_reports.py …"
+if [ -f "$SCRIPT_DIR/generate_four_reports.py" ]; then
+    python3 "$SCRIPT_DIR/generate_four_reports.py" 2>/dev/null \
+        && echo "   ✓ Four-scenario reports generated" \
+        || echo "   ⚠ generate_four_reports.py exited non-zero (continuing)"
 else
-    echo "  ⚠ No caliper-workspace/report.html found (Fabric network not running)"
-    echo "  → Using existing report_sha256_final.html"
+    echo "   ℹ generate_four_reports.py not found — skipping"
+fi
+echo ""
+
+# ── 3. Copy Caliper workspace report if it exists ─────────────────────────────
+echo "▶  [4.5] Checking for Caliper workspace report …"
+CALIPER_SRC="$SCRIPT_DIR/caliper-workspace/report.html"
+CALIPER_DST="$RESULTS_DIR/report_sha256_final.html"
+if [ -f "$CALIPER_SRC" ]; then
+    cp "$CALIPER_SRC" "$CALIPER_DST"
+    echo "   ✓ Copied $CALIPER_SRC → $CALIPER_DST"
+else
+    echo "   ℹ Caliper workspace report not found at $CALIPER_SRC"
+    if [ ! -f "$CALIPER_DST" ]; then
+        echo "   ℹ No existing report_sha256_final.html — skipping"
+    else
+        echo "   ✓ Existing $CALIPER_DST retained"
+    fi
+fi
+echo ""
+
+# ── 4. Generate security / Tamarin report (if generator exists) ──────────────
+if [ -f "$SCRIPT_DIR/generate_tamarin_report.py" ]; then
+    echo "▶  Running generate_tamarin_report.py …"
+    python3 "$SCRIPT_DIR/generate_tamarin_report.py" 2>/dev/null \
+        && echo "   ✓ Tamarin report generated" \
+        || echo "   ⚠ generate_tamarin_report.py exited non-zero (continuing)"
+    echo ""
 fi
 
-# ── Step 6: Final report listing ─────────────────────────────────────────────
+# ── 5. List results/ with sizes ───────────────────────────────────────────────
+echo "▶  [5/5] Contents of results/ :"
 echo ""
-echo "══════════════════════════════════════════════"
-echo "  STEP 6: Final Report Listing"
-echo "══════════════════════════════════════════════"
+if command -v du &>/dev/null; then
+    (cd "$RESULTS_DIR" && ls -lh *.html 2>/dev/null \
+        | awk '{printf "   %-50s %s\n", $9, $5}' \
+        || echo "   (no HTML files found)")
+fi
 echo ""
-echo "  results/ directory:"
-echo "  ─────────────────────────────────────────────"
-printf "  %-45s %s\n" "FILE" "SIZE"
-echo "  ─────────────────────────────────────────────"
-for f in "$RESULTS_DIR"/*.html; do
-    [ -f "$f" ] || continue
-    size=$(du -sh "$f" | cut -f1)
-    fname=$(basename "$f")
-    printf "  %-45s %s\n" "$fname" "$size"
-done
-echo "  ─────────────────────────────────────────────"
+echo "   JSON / data files:"
+(cd "$RESULTS_DIR" && find . -maxdepth 2 -name "*.json" \
+    | sort | xargs -I{} du -h {} 2>/dev/null \
+    | awk '{printf "   %-50s %s\n", $2, $1}') || true
 echo ""
-
-# ── Step 7: Print benchmark summary ──────────────────────────────────────────
-echo "══════════════════════════════════════════════"
-echo "  BENCHMARK SUMMARY (Real Measurements)"
-echo "══════════════════════════════════════════════"
-python3 - <<'PYEOF'
-import json, os
-f = open("results/hash_benchmark.json")
-d = json.load(f)
-h = d["hash_benchmarks"]
-m = d["fabric_metrics"]
-print(f"  SHA-256    : {h['sha256']['throughput_hps']:>12,.0f} h/s | {h['sha256']['mean_us']} µs mean")
-print(f"  BLAKE3     : {h['blake3']['throughput_hps']:>12,.0f} h/s | {h['blake3']['mean_us']} µs mean")
-print(f"  Hybrid     : {h['hybrid']['throughput_hps']:>12,.0f} h/s | {h['hybrid']['mean_us']} µs mean")
-print(f"  Hybrid/cert: {h['hybrid_batch_per_cert']['throughput_hps']:>12,.0f} h/s | {h['hybrid_batch_per_cert']['mean_us']} µs/cert")
-print()
-print(f"  S1 SHA-256:       {m['S1_sha256']['tps']:.2f} TPS | {m['S1_sha256']['latency_ms']} ms")
-print(f"  S2 BLAKE3:        {m['S2_blake3']['tps']:.2f} TPS | {m['S2_blake3']['latency_ms']} ms")
-print(f"  S3 Hybrid:        {m['S3_hybrid']['tps']:.2f} TPS | {m['S3_hybrid']['latency_ms']} ms")
-print(f"  S4 Hybrid+Batch: {m['S4_hybrid_batch']['tps']:.2f} TPS | Eff: {m['S4_hybrid_batch']['effective_cert_tps']:.1f} | {m['S4_hybrid_batch']['latency_ms']} ms")
-PYEOF
-
-echo ""
-echo "╔══════════════════════════════════════════════════════════╗"
-echo "║   ✅ PIPELINE COMPLETE — All reports in results/         ║"
-echo "╠══════════════════════════════════════════════════════════╣"
-echo "║                                                          ║"
-echo "║   📊 S1 SHA-256:    results/report_scenario1_sha256.html ║"
-echo "║   📊 S2 BLAKE3:     results/report_scenario2_blake3.html ║"
-echo "║   📊 S3 Hybrid:     results/report_scenario3_hybrid.html ║"
-echo "║   📊 S4 Batch:      results/report_scenario4_batch.html  ║"
-echo "║   📊 Dashboard:     results/four_scenario_report.html    ║"
-echo "║                                                          ║"
-echo "║   ⚠  All hash data: REAL measurements on this machine    ║"
-echo "║   ⚠  Fabric TPS:    real hash + validated network model  ║"
-echo "╚══════════════════════════════════════════════════════════╝"
-echo ""
-echo "  End Time: $(date '+%Y-%m-%d %H:%M:%S')"
+echo "════════════════════════════════════════════════════════"
+echo "  Pipeline complete  ✓"
+echo "════════════════════════════════════════════════════════"
