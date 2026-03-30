@@ -1137,10 +1137,141 @@ declare -A SCENARIO_KEY=([1]="scenario_1_sha256" [2]="scenario_2_blake3" [3]="sc
 declare -A SCENARIO_BENCHCONFIG=([1]="benchConfig_s1_sha256.yaml" [2]="benchConfig_s2_blake3.yaml" [3]="benchConfig_s3_hybrid.yaml" [4]="benchConfig_s4_batching.yaml")
 declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="10")
 
-# ─── generate_scenario_caliper_json ──────────────────────────────────────────
-# Moved to separate Python script: scripts/gen_scenario_json.py
-# Call: python3 scripts/gen_scenario_json.py --scenario N --output-dir DIR
+# ─── Docker / Fabric availability detection ──────────────────────────────────
+# Sets DOCKER_OK=true/false and FABRIC_NETWORK_OK=true/false.
+# Called once before run_scenario(); results cached in env vars.
+detect_runtime_environment() {
+    DOCKER_OK=false
+    FABRIC_NETWORK_OK=false
+    CALIPER_INSTALLED=false
 
+    # 1. Is Docker daemon reachable?
+    if docker info &>/dev/null 2>&1; then
+        DOCKER_OK=true
+        log "  ✓ Docker daemon reachable"
+    else
+        warn "  Docker daemon not reachable — will use calibrated simulation"
+    fi
+
+    # 2. Is the Fabric network already up (orderer container running)?
+    if $DOCKER_OK && docker ps --format '{{.Names}}' 2>/dev/null | grep -q orderer; then
+        FABRIC_NETWORK_OK=true
+        log "  ✓ Fabric network running (orderer detected)"
+    else
+        warn "  Fabric network not running — will use calibrated simulation"
+    fi
+
+    # 3. Is Caliper installed in the workspace?
+    if [ -f "${ROOT_DIR}/caliper-workspace/node_modules/.bin/caliper" ]; then
+        CALIPER_INSTALLED=true
+        log "  ✓ Caliper binary found"
+    else
+        warn "  Caliper not installed — will use calibrated simulation"
+    fi
+
+    export DOCKER_OK FABRIC_NETWORK_OK CALIPER_INSTALLED
+}
+
+# ─── Real Caliper run for a single scenario ───────────────────────────────────
+# Deploys the correct chaincode, patches benchConfig with right batchSize/workers,
+# runs Caliper, then parses report.html → caliper_results.json.
+run_real_caliper_scenario() {
+    local n="$1" tps="$2"
+    local key="${SCENARIO_KEY[$n]}"
+    local sdir="${ROOT_DIR}/results/${key}"
+    local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"
+    local benchcfg="${SCENARIO_BENCHCONFIG[$n]}"
+    local batchsize="${SCENARIO_BATCHSIZE[$n]}"
+
+    log "  ── REAL CALIPER MODE ── deploying ${SCENARIO_CHAINCODE[$n]} for scenario ${n}"
+
+    export GOFLAGS="-mod=mod"
+    export GOWORK="off"
+    export GO111MODULE="on"
+    export GOPROXY="https://proxy.golang.org,direct"
+
+    # Deploy chaincode (bring up fresh network only if NOT already running)
+    if ! $FABRIC_NETWORK_OK; then
+        warn "  Network down — attempting to start it now"
+        setup_fabric_network || {
+            warn "  Network startup failed — falling back to simulation"
+            return 1
+        }
+        FABRIC_NETWORK_OK=true
+    else
+        # Re-deploy chaincode for this scenario
+        log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
+        cd "${ROOT_DIR}/test-network"
+        ./network.sh deployCC \
+            -ccn basic \
+            -ccp "${cc_path}" \
+            -ccl go \
+            -c mychannel \
+            -ccep "OR('Org1MSP.peer','Org2MSP.peer')" \
+            2>&1 | tee -a "$LOG_FILE" || {
+            warn "  Chaincode deployment failed — falling back to simulation"
+            cd "${ROOT_DIR}"; return 1
+        }
+        cd "${ROOT_DIR}"
+    fi
+
+    # Run Caliper against this scenario's benchConfig
+    cd "${ROOT_DIR}/caliper-workspace"
+
+    # Remove conflicting gateway binding before each run
+    [ -d "node_modules/@hyperledger/fabric-gateway" ] && \
+        rm -rf node_modules/@hyperledger/fabric-gateway
+
+    log "  Running: caliper benchmarks/${benchcfg} (batchSize=${batchsize}, tps=${tps})"
+    npx caliper launch manager \
+        --caliper-workspace . \
+        --caliper-networkconfig networks/networkConfig.yaml \
+        --caliper-benchconfig "benchmarks/${benchcfg}" \
+        --caliper-flow-only-test \
+        2>&1 | tee -a "$LOG_FILE" || {
+        warn "  Caliper exited non-zero — checking for report.html"
+    }
+
+    cd "${ROOT_DIR}"
+
+    # Parse Caliper's report.html → caliper_results.json
+    if [ -f "${ROOT_DIR}/caliper-workspace/report.html" ]; then
+        cp "${ROOT_DIR}/caliper-workspace/report.html" "${sdir}/caliper_raw_report.html"
+        log "  Parsing Caliper report → caliper_results.json"
+        python3 scripts/parse_caliper_report.py \
+            --report "${sdir}/caliper_raw_report.html" \
+            --scenario "$n" \
+            --output "${sdir}/caliper_results.json" \
+            2>&1 | tee -a "$LOG_FILE" || {
+            warn "  Parser failed — using simulated fallback"
+            return 1
+        }
+        # Mark result as real
+        python3 - << 'PYEOF'
+import json, sys
+path = sys.argv[1]
+with open(path) as f: d = json.load(f)
+d["data_source"] = "real_caliper"
+d["is_simulated"] = False
+with open(path, "w") as f: json.dump(d, f, indent=2)
+PYEOF
+        python3 -c "
+import json, sys
+path='${sdir}/caliper_results.json'
+with open(path) as f: d=json.load(f)
+d['data_source']='real_caliper'; d['is_simulated']=False
+with open(path,'w') as f: json.dump(d,f,indent=2)
+" 2>/dev/null || true
+        log "  ✓ Real Caliper data written to ${key}/caliper_results.json"
+        return 0
+    else
+        warn "  report.html not found after Caliper run"
+        return 1
+    fi
+}
+
+# ─── run_scenario: smart dispatcher ──────────────────────────────────────────
+# Tries real Caliper first; falls back to calibrated simulation with clear labels.
 run_scenario() {
     local n="$1" tps="${2:-50}"
     local key="${SCENARIO_KEY[$n]}"
@@ -1154,21 +1285,61 @@ run_scenario() {
     export GOFLAGS="-mod=mod"
     export GOPROXY="https://proxy.golang.org,direct"
 
+    # Write meta (will be updated after benchmark completes)
     cat > "${sdir}/scenario_meta.json" << METAEOF
 {"scenario":${n},"key":"${key}","label":"${label}","chaincode":"${SCENARIO_CHAINCODE[$n]}","batch_size":${SCENARIO_BATCHSIZE[$n]},"benchconfig":"caliper-workspace/benchmarks/${benchcfg}","tps":${tps},"goflags":"-mod=mod","started":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 METAEOF
 
-    log "  Generating Caliper benchmark data for scenario ${n}..."
-    python3 scripts/gen_scenario_json.py --scenario "$n" --output-dir "$sdir" 2>&1 | tee -a "$LOG_FILE"
+    # ── Detect environment (cached after first call) ──────────────────────────
+    if [ -z "${DOCKER_OK+x}" ]; then
+        detect_runtime_environment
+    fi
+
+    # ── Try real Caliper if environment supports it ───────────────────────────
+    local used_real=false
+    if $DOCKER_OK && $CALIPER_INSTALLED; then
+        log "  Docker ✓ + Caliper ✓ — attempting REAL benchmark for scenario ${n}"
+        if run_real_caliper_scenario "$n" "$tps"; then
+            used_real=true
+            log "  ✓ REAL benchmark completed for scenario ${n}"
+        else
+            warn "  Real benchmark failed — falling back to calibrated simulation"
+        fi
+    else
+        warn "  Docker=${DOCKER_OK}, Caliper=${CALIPER_INSTALLED} — using calibrated simulation"
+    fi
+
+    # ── Fallback: calibrated simulation ──────────────────────────────────────
+    if ! $used_real; then
+        warn "  ⚠️  SIMULATED DATA — not actual Caliper measurements"
+        warn "  To run real benchmarks: start Docker, bring up Fabric network, install Caliper"
+        python3 scripts/gen_scenario_json.py \
+            --scenario "$n" \
+            --output-dir "$sdir" \
+            --mark-simulated \
+            2>&1 | tee -a "$LOG_FILE"
+    fi
 
     # Copy latest Tamarin result if available
     local latest; latest=$(ls -t "${ROOT_DIR}/security/proofs/"tamarin_results_*.txt 2>/dev/null | head -1 || true)
-    [ -n "$latest" ] && cp "$latest" "${sdir}/tamarin_results.txt" && log "  Tamarin → ${sdir}/tamarin_results.txt"
-    log "✓ Scenario ${n} complete — $(python3 -c "
-import json; d=json.load(open('${sdir}/caliper_results.json'))
-a=d['aggregate']
-print(f\"TPS={a['primary_tps']}, EffCertTPS={a['effective_cert_tps']}, Latency={a['avg_latency_ms']}ms, Failures={a['total_failures']}\")
-" 2>/dev/null || echo 'metrics unavailable')"
+    [ -n "$latest" ] && cp "$latest" "${sdir}/tamarin_results.txt" \
+        && log "  Tamarin → ${sdir}/tamarin_results.txt"
+
+    # Print summary
+    local summary
+    summary=$(python3 -c "
+import json
+try:
+    d=json.load(open('${sdir}/caliper_results.json'))
+    a=d['aggregate']
+    src=d.get('data_source','simulated')
+    sim=d.get('is_simulated',True)
+    tag='[SIMULATED]' if sim else '[REAL]'
+    print(f\"{tag} TPS={a['primary_tps']}, EffCertTPS={a['effective_cert_tps']}, Latency={a['avg_latency_ms']}ms, Failures={a['total_failures']}\")
+except Exception as e:
+    print(f'metrics unavailable: {e}')
+" 2>/dev/null || echo "metrics unavailable")
+    log "✓ Scenario ${n} complete — ${summary}"
 }
 
 run_all_scenarios() {

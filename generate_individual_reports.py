@@ -159,6 +159,12 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
     runds = {r["label"]: r for r in data.get("rounds", [])}
     res   = data.get("resource_metrics", {})
 
+    # ── Detect whether data is simulated ─────────────────────────────────────
+    is_simulated = data.get("is_simulated", True)   # default to True (safer)
+    data_source  = data.get("data_source", "calibrated_simulation")
+    if data_source == "real_caliper":
+        is_simulated = False
+
     color  = meta["color"]
     accent = meta["accent"]
     bg     = meta["bg"]
@@ -166,6 +172,17 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
     badge  = meta["badge"]
     label  = meta["label"]
     num    = meta["num"]
+
+    # ── Simulation warning banner HTML ────────────────────────────────────────
+    if is_simulated:
+        data_banner = """<div class="sim-banner">
+  \u26a0\ufe0f <strong>SIMULATED DATA</strong> \u2014 These metrics are <em>calibrated estimates</em>, NOT actual Caliper measurements.<br>
+  <small>Docker daemon or Fabric network was unavailable when this report was generated.<br>
+  To run real benchmarks: start Docker, bring up the Fabric test network, then execute
+  <code>bash setup_and_run_all.sh --all-scenarios</code> in a privileged environment (e.g. a VM or bare-metal Linux with Docker privileged mode).</small>
+</div>"""
+    else:
+        data_banner = ""
 
     # KPI values
     tps      = agg["primary_tps"]
@@ -181,6 +198,12 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
     tps_delta   = pct_change(baselines["tps"], tps)
     lat_delta   = pct_change(baselines["lat"], lat_ms)
     eff_delta   = pct_change(baselines["effTps"], eff_tps)
+
+    # Banner with correct tot_tx now available
+    if is_simulated:
+        zero_banner = f'<div class="zero-banner sim-zero">\U0001f4ca CALIBRATED SIMULATION \u2014 {len(OPERATIONS)} operations modelled \u00b7 {tot_tx:,} projected transactions</div>'
+    else:
+        zero_banner = f'<div class="zero-banner">\U0001f3af REAL BENCHMARK \u2014 ZERO FAILURES \u00b7 100% Success Rate across all {len(OPERATIONS)} operations \u00b7 {tot_tx:,} total transactions</div>'
 
     # resource tables
     peer1  = res.get("peer0.org1.example.com", {})
@@ -297,6 +320,11 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
   header .meta-row span{{display:flex;align-items:center;gap:4px}}
   .zero-banner{{background:#d1fae5;border:2px solid #10b981;color:#065f46;
     text-align:center;padding:10px;font-weight:700;font-size:15px;letter-spacing:.02em}}
+  .sim-zero{{background:#fef9c3;border-color:#f59e0b;color:#92400e}}
+  .sim-banner{{background:#fef3c7;border:2px solid #f59e0b;color:#78350f;
+    padding:14px 20px;font-size:13px;line-height:1.6;margin:0}}
+  .sim-banner strong{{color:#b45309;font-size:14px}}
+  .sim-banner code{{background:#fde68a;padding:1px 6px;border-radius:4px;font-size:12px}}
   .container{{max-width:1300px;margin:0 auto;padding:28px 24px}}
   /* KPI cards */
   .kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;margin-bottom:28px}}
@@ -358,7 +386,8 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
   </div>
 </header>
 
-<div class="zero-banner">🎯 ZERO FAILURES — 100% Success Rate across all {len(OPERATIONS)} operations · {tot_tx:,} total transactions</div>
+{data_banner}
+{zero_banner}
 
 <div class="container">
 

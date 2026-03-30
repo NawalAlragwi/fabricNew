@@ -45,6 +45,11 @@
   header .meta-row span{display:flex;align-items:center;gap:4px}
   .zero-banner{background:#d1fae5;border:2px solid #10b981;color:#065f46;
     text-align:center;padding:10px;font-weight:700;font-size:15px;letter-spacing:.02em}
+  .sim-zero{background:#fef9c3;border-color:#f59e0b;color:#92400e}
+  .sim-banner{background:#fef3c7;border:2px solid #f59e0b;color:#78350f;
+    padding:14px 20px;font-size:13px;line-height:1.6;margin:0}
+  .sim-banner strong{color:#b45309;font-size:14px}
+  .sim-banner code{background:#fde68a;padding:1px 6px;border-radius:4px;font-size:12px}
   .container{max-width:1300px;margin:0 auto;padding:28px 24px}
   /* KPI cards */
   .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;margin-bottom:28px}
@@ -102,11 +107,17 @@
   <div class="meta-row">
     <span>📁 Config: <strong>benchConfig_s4_batching.yaml</strong></span>
     <span>⛓ Chaincode: <strong>chaincode-bcms/hybrid-batch</strong></span>
-    <span>🕒 Generated: <strong>2026-03-28 22:33 UTC</strong></span>
+    <span>🕒 Generated: <strong>2026-03-30 21:37 UTC</strong></span>
   </div>
 </header>
 
-<div class="zero-banner">🎯 ZERO FAILURES — 100% Success Rate across all 6 operations · 11,541 total transactions</div>
+<div class="sim-banner">
+  ⚠️ <strong>SIMULATED DATA</strong> — These metrics are <em>calibrated estimates</em>, NOT actual Caliper measurements.<br>
+  <small>Docker daemon or Fabric network was unavailable when this report was generated.<br>
+  To run real benchmarks: start Docker, bring up the Fabric test network, then execute
+  <code>bash setup_and_run_all.sh --all-scenarios</code> in a privileged environment (e.g. a VM or bare-metal Linux with Docker privileged mode).</small>
+</div>
+<div class="zero-banner sim-zero">📊 CALIBRATED SIMULATION — 6 operations modelled · 11,541 projected transactions</div>
 
 <div class="container">
 
@@ -434,7 +445,7 @@
 </div><!-- /container -->
 
 <footer>
-  BCMS Benchmark — S4: Hybrid + Batching ×10 &nbsp;|&nbsp; Generated 2026-03-28 22:33 UTC
+  BCMS Benchmark — S4: Hybrid + Batching ×10 &nbsp;|&nbsp; Generated 2026-03-30 21:37 UTC
   &nbsp;|&nbsp; Hyperledger Fabric v2.5 · Caliper v0.6.0
   &nbsp;|&nbsp; 0 Failures · 100% Success Rate
 </footer>

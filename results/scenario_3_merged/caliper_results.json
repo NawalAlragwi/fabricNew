@@ -171,5 +171,8 @@
     "consensus_rounds_per_100_certs": 100.0,
     "world_state_puts_per_tx": 1,
     "ordering_overhead_reduction_pct": 0.0
-  }
+  },
+  "data_source": "calibrated_simulation",
+  "is_simulated": true,
+  "simulation_note": "WARNING: These are CALIBRATED SIMULATION values, not actual Caliper measurements. Docker daemon or Fabric network was unavailable when this script ran. To obtain real measurements run: bash setup_and_run_all.sh --all-scenarios inside an environment with Docker privileged mode and a live Fabric network."
 }

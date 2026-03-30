@@ -208,13 +208,36 @@ def generate_scenario_caliper_json(scenario_num, output_dir):
         json.dump(out, fh, indent=2)
     print(f"  ✓ caliper_results.json — {cfg['title']} — TPS={cfg['primary_tps']}, Latency={cfg['avg_latency_ms']}ms, Failures=0")
 
+def mark_simulated(output_dir: str) -> None:
+    """Add data_source and is_simulated flags to existing caliper_results.json."""
+    path = Path(output_dir) / "caliper_results.json"
+    if not path.exists():
+        return
+    with open(path) as fh:
+        d = json.load(fh)
+    d["data_source"]  = "calibrated_simulation"
+    d["is_simulated"] = True
+    d["simulation_note"] = (
+        "WARNING: These are CALIBRATED SIMULATION values, not actual Caliper measurements. "
+        "Docker daemon or Fabric network was unavailable when this script ran. "
+        "To obtain real measurements run: bash setup_and_run_all.sh --all-scenarios "
+        "inside an environment with Docker privileged mode and a live Fabric network."
+    )
+    with open(path, "w") as fh:
+        json.dump(d, fh, indent=2)
+    print(f"  ⚠  Marked as SIMULATED: {path}")
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Caliper results JSON for BCMS scenarios")
     parser.add_argument("--scenario", type=int, required=True, choices=[1,2,3,4], help="Scenario number (1-4)")
     parser.add_argument("--output-dir", required=True, help="Output directory for caliper_results.json")
+    parser.add_argument("--mark-simulated", action="store_true",
+                        help="Add is_simulated=true + simulation_note to output JSON")
 
     args = parser.parse_args()
     generate_scenario_caliper_json(args.scenario, args.output_dir)
+    if args.mark_simulated:
+        mark_simulated(args.output_dir)
 
 if __name__ == "__main__":
     main()
