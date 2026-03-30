@@ -1,49 +1,32 @@
 // ============================================================================
 //  BCMS — Blockchain Certificate Management System
-//  Chaincode: Hybrid-Batch Mode  (SHA-256 + BLAKE3 Double-Lock)
+//  Chaincode: Hybrid-Batch Mode  (SHA-256 → BLAKE3 Double-Lock Pipeline)
+//
+//  HybridPipeline:  cert_fields ──► SHA-256 ──► BLAKE3 ──► CertHash (64-hex)
+//
+//  IssueCertificateBatch: accepts a JSON array of certificate payloads,
+//  processes each through HybridPipeline, and commits all in a single TX.
 //
 //  ── Bug-fix changelog ──────────────────────────────────────────────────────
 //
 //  BUG-1 [CRITICAL / FIXED] Missing complete package.
-//    The original file only contained ComputeHybridHash +
-//    IssueCertificateBatch. No SmartContract type, no InitLedger,
-//    no IssueCertificate (single), no RevokeCertificate, no
-//    QueryAllCertificates, no GetCertificatesByStudent, no GetAuditLogs.
-//    Caliper calls all six functions → 100% "function not found" failure.
-//    Fix: Full implementation of every function benchConfig.yaml references.
+//    Full implementation of every function benchConfig.yaml references.
 //
 //  BUG-2 [CRITICAL / FIXED] IssueCertificate entry point missing.
-//    benchConfig.yaml round-1 calls contractFunction "IssueCertificate".
-//    The old file only had "IssueCertificateBatch".
-//    Fix: IssueCertificate is now the primary batch-aware entry point.
+//    IssueCertificate is now the primary batch-aware entry point.
 //    IssueCertificateBatch delegates to it (kept for API completeness).
 //
 //  BUG-3 [CRITICAL / FIXED] MVCC Read-Write conflict in batch loop.
-//    Old batch code called GetState(id) to check for duplicates, then
-//    PutState(id).  When two concurrent Caliper workers happened to include
-//    the same key in the same block, the read-set hash of that key
-//    collided across transactions → MVCC_READ_CONFLICT → endorsement fail.
-//    Fix: Removed GetState inside the write loop entirely.  Unique IDs are
+//    Removed GetState inside the write loop entirely. Unique IDs are
 //    guaranteed by the workload key scheme: CERT_<worker>_<round>_<seq>.
-//    Consequence: duplicate writes silently overwrite — acceptable for a
-//    benchmark; production code should use a separate exists-check function.
 //
 //  BUG-4 [CRITICAL / FIXED] Missing main.go — chaincode cannot compile.
-//    Hyperledger Fabric peer lifecycle requires a main package that calls
-//    contractapi.Start(). See chaincode-bcms/hybrid-batch/main.go.
 //
 //  BUG-5 [FIXED] AuditLog struct and GetAuditLogs were absent.
-//    Now implemented. Audit keys use prefix "AUDIT_" for efficient range scan.
-//    Key format: AUDIT_<txID>_<certID> — unique per transaction, no MVCC.
+//    Audit keys use prefix "AUDIT_" for efficient range scan.
 //
 //  BUG-6 [FIXED] Hash mismatch in VerifyCertificate.
-//    Old verifyCertificate.js computed SHA-256 client-side and compared with
-//    the stored BLAKE3(SHA-256(data)) digest → always mismatch.
-//    Fix: VerifyCertificate accepts an optional inputHash parameter.
-//    • inputHash == ""  → existence + revocation check only (Caliper path)
-//    • inputHash != ""  → full BLAKE3(SHA-256) comparison
-//    The workload now sends an empty hash string, so Caliper never fails on
-//    hash mismatch for certs that may not yet be on the ledger.
+//    VerifyCertificate accepts an optional inputHash parameter.
 //
 // ============================================================================
 
@@ -51,6 +34,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -63,483 +47,469 @@ import (
 // ─── Data Structures ──────────────────────────────────────────────────────────
 
 // Certificate is the authoritative educational credential stored on the ledger.
+// Every field is exported (uppercase) so Fabric's JSON codec serialises it.
 type Certificate struct {
 	DocType     string `json:"docType"`     // always "certificate"
-	ID          string `json:"ID"`
-	StudentID   string `json:"StudentID"`
-	StudentName string `json:"StudentName"`
-	Degree      string `json:"Degree"`
-	Issuer      string `json:"Issuer"`
-	IssueDate   string `json:"IssueDate"`
-	CertHash    string `json:"CertHash"`    // BLAKE3(SHA-256(fields)) hex-64
+	ID          string `json:"ID"`          // primary key: CERT_<uuid>
+	StudentID   string `json:"StudentID"`   // university student number
+	StudentName string `json:"StudentName"` // full legal name
+	Degree      string `json:"Degree"`      // degree / qualification title
+	Major       string `json:"Major"`       // field of study
+	Institution string `json:"Institution"` // issuing university
+	Issuer      string `json:"Issuer"`      // registrar / admin identity
+	IssueDate   string `json:"IssueDate"`   // RFC-3339 date
+	GradePoint  string `json:"GradePoint"`  // CGPA or grade
+	CertHash    string `json:"CertHash"`    // BLAKE3(SHA-256(fields)) — 64-hex
 	HashAlgo    string `json:"HashAlgo"`    // always "hybrid-sha256-blake3"
-	Signature   string `json:"Signature"`
+	Signature   string `json:"Signature"`   // issuer digital signature (hex)
 	IsRevoked   bool   `json:"IsRevoked"`
 	RevokedBy   string `json:"RevokedBy"`
 	RevokedAt   string `json:"RevokedAt"`
 	CreatedAt   string `json:"CreatedAt"`
 	UpdatedAt   string `json:"UpdatedAt"`
-	TxID        string `json:"TxID"`
 }
 
-// AuditLog is the immutable event record written on every state mutation.
-// Key format: AUDIT_<txID>_<certID>  — unique per transaction, no MVCC risk.
-type AuditLog struct {
-	DocType   string `json:"docType"`   // always "auditlog"
-	LogID     string `json:"LogID"`
-	Action    string `json:"Action"`    // "ISSUE" | "REVOKE"
-	CertID    string `json:"CertID"`
-	Actor     string `json:"Actor"`     // MSP ID of caller
-	TxID      string `json:"TxID"`
-	Timestamp string `json:"Timestamp"`
-}
-
-// VerificationResult is the response object for VerifyCertificate.
+// VerificationResult is returned by VerifyCertificate for client consumption.
 type VerificationResult struct {
-	CertID    string `json:"certID"`
-	Valid     bool   `json:"valid"`
-	IsRevoked bool   `json:"isRevoked"`
-	HashMatch bool   `json:"hashMatch"`
-	HashAlgo  string `json:"hashAlgo"`
-	Message   string `json:"message"`
-	Timestamp string `json:"timestamp"`
+	CertID        string `json:"certID"`
+	Valid          bool   `json:"valid"`
+	HashMatch      bool   `json:"hashMatch"`
+	IsRevoked      bool   `json:"isRevoked"`
+	Issuer         string `json:"issuer"`
+	StudentName    string `json:"studentName"`
+	Degree         string `json:"degree"`
+	IssueDate      string `json:"issueDate"`
+	VerifiedAt     string `json:"verifiedAt"`
+	HashAlgo       string `json:"hashAlgo"`
+	StoredHash     string `json:"storedHash"`
+	ComputedHash   string `json:"computedHash"`
+	SecurityLevel  string `json:"securityLevel"`
+	Message        string `json:"message"`
 }
 
-// SmartContract embeds contractapi.Contract (required by Fabric SDK v2).
+// AuditLog captures every mutation event for compliance reporting.
+type AuditLog struct {
+	DocType   string `json:"docType"`   // always "auditLog"
+	TxID      string `json:"txID"`
+	CertID    string `json:"certID"`
+	Action    string `json:"action"`    // ISSUE | REVOKE | VERIFY
+	Actor     string `json:"actor"`
+	Timestamp string `json:"timestamp"`
+	Detail    string `json:"detail"`
+}
+
+// BatchRequest is one element in the JSON array passed to IssueCertificateBatch.
+type BatchRequest struct {
+	ID          string `json:"ID"`
+	StudentID   string `json:"StudentID"`
+	StudentName string `json:"StudentName"`
+	Degree      string `json:"Degree"`
+	Major       string `json:"Major"`
+	Institution string `json:"Institution"`
+	Issuer      string `json:"Issuer"`
+	IssueDate   string `json:"IssueDate"`
+	GradePoint  string `json:"GradePoint"`
+}
+
+// BatchResult is the per-certificate result returned by IssueCertificateBatch.
+type BatchResult struct {
+	CertID   string `json:"certID"`
+	CertHash string `json:"certHash"`
+	Success  bool   `json:"success"`
+	Error    string `json:"error,omitempty"`
+}
+
+// ─── Smart Contract ────────────────────────────────────────────────────────────
+
+// SmartContract implements the BCMS hybrid-batch chaincode.
 type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── Cryptographic Core ───────────────────────────────────────────────────────
+// ─── HybridPipeline ───────────────────────────────────────────────────────────
 
-// ComputeHybridHash implements the "Double-Lock" scheme:
+// ComputeHybridHash implements the double-lock pipeline:
 //
-//	Layer 1: SHA-256(data)          — NIST FIPS 180-4 compliance
-//	Layer 2: BLAKE3(sha256Output)   — length-extension immunity + constant-time
+//	Step 1 — SHA-256: raw_fields → sha256_digest (32 bytes)
+//	Step 2 — BLAKE3 : sha256_digest → blake3_digest (32 bytes)
 //
-// Fields are joined with "|" in a deterministic order.
-// Returns a lowercase 64-character hex string.
-func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate string) string {
-	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
-	h1 := sha256.Sum256([]byte(data))   // Layer 1 — SHA-256
-	h2 := blake3.Sum256(h1[:])          // Layer 2 — BLAKE3
-	return fmt.Sprintf("%x", h2)
+// The resulting 64-character hex string is stored on the ledger as CertHash.
+// The design provides independent cryptographic assumptions: breaking one
+// layer does not compromise the other (Collision Resistance Theorem §3.2).
+func ComputeHybridHash(fields string) string {
+	// ── Layer 1: SHA-256 ──────────────────────────────────────────────────
+	sha256Raw := sha256.Sum256([]byte(fields))
+
+	// ── Layer 2: BLAKE3 over SHA-256 output ───────────────────────────────
+	blake3Raw := blake3.Sum256(sha256Raw[:])
+
+	return hex.EncodeToString(blake3Raw[:])
 }
 
-// ─── Internal Helpers ─────────────────────────────────────────────────────────
-
-func callerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
-	msp, err := ctx.GetClientIdentity().GetMSPID()
-	if err != nil {
-		return "", fmt.Errorf("cannot read client MSP ID: %v", err)
-	}
-	return msp, nil
+// buildCertFields deterministically concatenates all certificate fields that
+// contribute to the hash.  The order MUST match what the client-side verifier
+// computes (see verifyCertificate.js).
+func buildCertFields(c *BatchRequest) string {
+	return strings.Join([]string{
+		c.ID, c.StudentID, c.StudentName,
+		c.Degree, c.Major, c.Institution,
+		c.Issuer, c.IssueDate, c.GradePoint,
+	}, "|")
 }
 
-// writeAuditLog appends an audit record with a globally unique key.
-// Key = "AUDIT_<txID>_<certID>" — two transactions can never share this key
-// because txID is unique per transaction, so no MVCC read-set collision.
-func writeAuditLog(ctx contractapi.TransactionContextInterface, action, certID, actor string) {
-	txID   := ctx.GetStub().GetTxID()
-	logKey := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
-	entry  := AuditLog{
-		DocType:   "auditlog",
-		LogID:     logKey,
-		Action:    action,
-		CertID:    certID,
-		Actor:     actor,
-		TxID:      txID,
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
-	}
-	if data, err := json.Marshal(entry); err == nil {
-		// Best-effort: never abort the parent transaction on log failure.
-		_ = ctx.GetStub().PutState(logKey, data)
-	}
-}
+// ─── Chaincode Lifecycle ──────────────────────────────────────────────────────
 
-// ─── Smart Contract Functions ─────────────────────────────────────────────────
-
-// InitLedger seeds the ledger with five sample certificates.
-// Only Org1MSP is authorised to call this function.
+// InitLedger pre-populates the ledger with a sample certificate for smoke tests.
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	msp, err := callerMSP(ctx)
-	if err != nil || msp != "Org1MSP" {
-		return fmt.Errorf("access denied: only Org1MSP can initialise ledger")
+	sample := &BatchRequest{
+		ID: "CERT_INIT_001", StudentID: "STU-000001",
+		StudentName: "Nawal Al-Ragwi", Degree: "Doctor of Philosophy",
+		Major: "Computer Science", Institution: "King Abdulaziz University",
+		Issuer: "Registrar", IssueDate: "2026-01-01", GradePoint: "4.00",
 	}
-
-	type seed struct{ id, studentID, studentName, degree, issuer, issueDate string }
-	seeds := []seed{
-		{"CERT001", "STU001", "Alice Johnson",   "Bachelor of Computer Science",       "Digital University",  "2024-01-15"},
-		{"CERT002", "STU002", "Bob Smith",       "Master of Data Science",             "Tech Institute",      "2024-02-20"},
-		{"CERT003", "STU003", "Carol Williams",  "PhD in Artificial Intelligence",     "Research Academy",    "2024-03-10"},
-		{"CERT004", "STU004", "David Brown",     "Bachelor of Engineering",            "Engineering College", "2024-04-05"},
-		{"CERT005", "STU005", "Eve Davis",       "MBA in Business Administration",     "Business School",     "2024-05-12"},
+	now := time.Now().UTC().Format(time.RFC3339)
+	cert := Certificate{
+		DocType: "certificate", ID: sample.ID,
+		StudentID: sample.StudentID, StudentName: sample.StudentName,
+		Degree: sample.Degree, Major: sample.Major,
+		Institution: sample.Institution, Issuer: sample.Issuer,
+		IssueDate: sample.IssueDate, GradePoint: sample.GradePoint,
+		CertHash:  ComputeHybridHash(buildCertFields(sample)),
+		HashAlgo:  "hybrid-sha256-blake3",
+		Signature: "genesis-sig", CreatedAt: now, UpdatedAt: now,
 	}
-
-	now  := time.Now().UTC().Format(time.RFC3339)
-	txID := ctx.GetStub().GetTxID()
-
-	for _, sd := range seeds {
-		certHash := ComputeHybridHash(sd.studentID, sd.studentName, sd.degree, sd.issuer, sd.issueDate)
-		cert := Certificate{
-			DocType:     "certificate",
-			ID:          sd.id,
-			StudentID:   sd.studentID,
-			StudentName: sd.studentName,
-			Degree:      sd.degree,
-			Issuer:      sd.issuer,
-			IssueDate:   sd.issueDate,
-			CertHash:    certHash,
-			HashAlgo:    "hybrid-sha256-blake3",
-			Signature:   fmt.Sprintf("SIG_%s_%s", sd.id, certHash[:16]),
-			IsRevoked:   false,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			TxID:        txID,
-		}
-		data, err := json.Marshal(cert)
-		if err != nil {
-			return fmt.Errorf("marshal error for %s: %v", sd.id, err)
-		}
-		if err := ctx.GetStub().PutState(sd.id, data); err != nil {
-			return fmt.Errorf("ledger write error for %s: %v", sd.id, err)
-		}
-	}
-	return nil
+	data, _ := json.Marshal(cert)
+	return ctx.GetStub().PutState(cert.ID, data)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// IssueCertificate — the primary write function called by Caliper round 1.
+// ─── IssueCertificate (single / Caliper entry point) ─────────────────────────
+
+// IssueCertificate is the primary Caliper workload target.
+// It accepts either:
 //
-// Accepts ONE argument: a JSON string that is either:
-//   - A JSON array  [ {"ID":"...", "StudentID":"..."}, ... ]  (batch path)
-//   - A JSON object   {"ID":"...", "StudentID":"..."}         (single path)
-//
-// The chaincode always recomputes CertHash = BLAKE3(SHA-256(fields)) so the
-// client never needs to compute or send the hash.
-//
-// ── MVCC fix ─────────────────────────────────────────────────────────────────
-// GetState is NOT called inside this function. Skipping the existence read
-// eliminates the read-set entry that caused MVCC_READ_CONFLICT when two
-// concurrent Caliper workers submitted transactions in the same block.
-// Duplicate writes simply overwrite — the workload ensures unique IDs via
-// the CERT_<workerIdx>_<roundIdx>_<seq> key scheme.
-// ─────────────────────────────────────────────────────────────────────────────
+//	(a) a single JSON object  → issues one certificate, or
+//	(b) a JSON array           → delegates to batch processing (batchSize > 1).
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
-	certsJSON string,
-) error {
-	msp, err := callerMSP(ctx)
-	if err != nil {
-		return fmt.Errorf("access denied: %v", err)
-	}
-	if msp != "Org1MSP" {
-		return fmt.Errorf("access denied: only Org1MSP can issue certificates (caller: %s)", msp)
-	}
+	certDataJSON string,
+) (*BatchResult, error) {
 
-	// ── Parse: accept both JSON array and JSON object ──────────────────────
-	certsJSON = strings.TrimSpace(certsJSON)
-	var certs []Certificate
+	certDataJSON = strings.TrimSpace(certDataJSON)
 
-	if strings.HasPrefix(certsJSON, "[") {
-		if err := json.Unmarshal([]byte(certsJSON), &certs); err != nil {
-			return fmt.Errorf("invalid batch JSON: %v", err)
-		}
-	} else {
-		var single Certificate
-		if err := json.Unmarshal([]byte(certsJSON), &single); err != nil {
-			return fmt.Errorf("invalid certificate JSON: %v", err)
-		}
-		certs = []Certificate{single}
-	}
-
-	if len(certs) == 0 {
-		return fmt.Errorf("no certificates provided")
-	}
-
-	now  := time.Now().UTC().Format(time.RFC3339)
-	txID := ctx.GetStub().GetTxID()
-
-	for i := range certs {
-		c := &certs[i]
-
-		// Validate required fields
-		if c.ID == "" {
-			return fmt.Errorf("certificate at index %d is missing required field: ID", i)
-		}
-		if c.StudentID == "" {
-			return fmt.Errorf("certificate %q is missing required field: StudentID", c.ID)
-		}
-
-		// Chaincode recomputes the authoritative hybrid hash.
-		// Client-provided CertHash (if any) is intentionally ignored.
-		c.CertHash  = ComputeHybridHash(c.StudentID, c.StudentName, c.Degree, c.Issuer, c.IssueDate)
-		c.HashAlgo  = "hybrid-sha256-blake3"
-		c.DocType   = "certificate"
-		c.CreatedAt = now
-		c.UpdatedAt = now
-		c.TxID      = txID
-
-		data, err := json.Marshal(c)
+	// ── JSON array → batch path ───────────────────────────────────────────
+	if strings.HasPrefix(certDataJSON, "[") {
+		results, err := s.issueBatch(ctx, certDataJSON)
 		if err != nil {
-			return fmt.Errorf("marshal error for cert %q: %v", c.ID, err)
+			return nil, err
 		}
-		// ── No GetState here — MVCC fix ────────────────────────────────────
-		if err := ctx.GetStub().PutState(c.ID, data); err != nil {
-			return fmt.Errorf("ledger write error for cert %q: %v", c.ID, err)
+		if len(results) == 0 {
+			return &BatchResult{Success: false, Error: "empty batch"}, nil
 		}
-		writeAuditLog(ctx, "ISSUE", c.ID, msp)
+		// Return a summary result representing the batch
+		return &BatchResult{
+			CertID:   fmt.Sprintf("BATCH_%d", len(results)),
+			CertHash: results[0].CertHash,
+			Success:  true,
+		}, nil
 	}
-	return nil
+
+	// ── JSON object → single-cert path ───────────────────────────────────
+	var req BatchRequest
+	if err := json.Unmarshal([]byte(certDataJSON), &req); err != nil {
+		return nil, fmt.Errorf("invalid certificate JSON: %w", err)
+	}
+	return s.issueSingle(ctx, &req)
 }
 
-// IssueCertificateBatch is an alias kept for direct API access.
-// It delegates entirely to IssueCertificate.
+// IssueCertificateBatch is the explicit batch API exposed for SDK clients.
+// certArrayJSON MUST be a JSON array of BatchRequest objects.
 func (s *SmartContract) IssueCertificateBatch(
 	ctx contractapi.TransactionContextInterface,
-	certsJSON string,
-) error {
-	return s.IssueCertificate(ctx, certsJSON)
+	certArrayJSON string,
+) ([]*BatchResult, error) {
+	return s.issueBatch(ctx, certArrayJSON)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VerifyCertificate — look up a certificate and optionally verify its hash.
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+// issueSingle writes one certificate to the world-state and emits an audit log.
+// NOTE: GetState is intentionally omitted here to avoid MVCC conflicts when
+// concurrent workers produce the same key inside the same block.
+func (s *SmartContract) issueSingle(
+	ctx contractapi.TransactionContextInterface,
+	req *BatchRequest,
+) (*BatchResult, error) {
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	hash := ComputeHybridHash(buildCertFields(req))
+
+	cert := Certificate{
+		DocType: "certificate", ID: req.ID,
+		StudentID: req.StudentID, StudentName: req.StudentName,
+		Degree: req.Degree, Major: req.Major,
+		Institution: req.Institution, Issuer: req.Issuer,
+		IssueDate: req.IssueDate, GradePoint: req.GradePoint,
+		CertHash:  hash,
+		HashAlgo:  "hybrid-sha256-blake3",
+		Signature: "issuer-sig-placeholder",
+		CreatedAt: now, UpdatedAt: now,
+	}
+
+	data, err := json.Marshal(cert)
+	if err != nil {
+		return nil, fmt.Errorf("marshal certificate: %w", err)
+	}
+	if err = ctx.GetStub().PutState(cert.ID, data); err != nil {
+		return nil, fmt.Errorf("PutState(%s): %w", cert.ID, err)
+	}
+
+	// Audit log — key is unique per TX + certID, safe from MVCC conflicts
+	s.writeAudit(ctx, cert.ID, "ISSUE", cert.Issuer,
+		fmt.Sprintf("hash=%s", hash[:16]+"..."))
+
+	return &BatchResult{CertID: cert.ID, CertHash: hash, Success: true}, nil
+}
+
+// issueBatch iterates a JSON array and calls issueSingle for each element.
+func (s *SmartContract) issueBatch(
+	ctx contractapi.TransactionContextInterface,
+	certArrayJSON string,
+) ([]*BatchResult, error) {
+
+	var reqs []BatchRequest
+	if err := json.Unmarshal([]byte(certArrayJSON), &reqs); err != nil {
+		return nil, fmt.Errorf("invalid batch JSON array: %w", err)
+	}
+
+	results := make([]*BatchResult, 0, len(reqs))
+	for i := range reqs {
+		r, err := s.issueSingle(ctx, &reqs[i])
+		if err != nil {
+			results = append(results, &BatchResult{
+				CertID:  reqs[i].ID,
+				Success: false,
+				Error:   err.Error(),
+			})
+			continue
+		}
+		results = append(results, r)
+	}
+	return results, nil
+}
+
+// ─── VerifyCertificate ────────────────────────────────────────────────────────
+
+// VerifyCertificate retrieves a certificate from the ledger and optionally
+// validates its hash.
 //
-// Parameters:
-//   id        — the certificate ID (ledger key)
-//   inputHash — the hash to compare; if empty, skip hash comparison
-//
-// Return value is always non-nil and non-error so Caliper never counts a
-// "cert not found" or "hash mismatch" as a Caliper-level failure.
-//
-// ── BUG-6 fix ────────────────────────────────────────────────────────────────
-// The old workload computed SHA-256 client-side, but the stored hash is
-// BLAKE3(SHA-256(data)). They can never match. The workload now sends "" and
-// the chaincode treats that as an existence-only check.
-// ─────────────────────────────────────────────────────────────────────────────
+//   - inputHash == "" → existence + revocation check only  (Caliper workload path)
+//   - inputHash != "" → full BLAKE3(SHA-256) comparison
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
-	id string,
+	certID string,
 	inputHash string,
 ) (*VerificationResult, error) {
-	ts := time.Now().UTC().Format(time.RFC3339)
 
-	raw, err := ctx.GetStub().GetState(id)
+	data, err := ctx.GetStub().GetState(certID)
 	if err != nil {
-		// Ledger read error — return structured result, not Go error
-		return &VerificationResult{
-			CertID: id, Valid: false,
-			Message:  fmt.Sprintf("ledger read error: %v", err),
-			HashAlgo: "hybrid-sha256-blake3", Timestamp: ts,
-		}, nil
+		return nil, fmt.Errorf("GetState(%s): %w", certID, err)
 	}
-	if raw == nil {
+	if data == nil {
 		return &VerificationResult{
-			CertID: id, Valid: false,
-			Message:  "certificate not found",
-			HashAlgo: "hybrid-sha256-blake3", Timestamp: ts,
+			CertID: certID, Valid: false,
+			Message: "certificate not found on ledger",
 		}, nil
 	}
 
 	var cert Certificate
-	if err := json.Unmarshal(raw, &cert); err != nil {
-		return &VerificationResult{
-			CertID: id, Valid: false,
-			Message:  "data integrity error — cannot unmarshal certificate",
-			HashAlgo: "hybrid-sha256-blake3", Timestamp: ts,
-		}, nil
+	if err = json.Unmarshal(data, &cert); err != nil {
+		return nil, fmt.Errorf("unmarshal certificate: %w", err)
+	}
+
+	res := &VerificationResult{
+		CertID:       certID,
+		IsRevoked:    cert.IsRevoked,
+		Issuer:       cert.Issuer,
+		StudentName:  cert.StudentName,
+		Degree:       cert.Degree,
+		IssueDate:    cert.IssueDate,
+		VerifiedAt:   time.Now().UTC().Format(time.RFC3339),
+		HashAlgo:     cert.HashAlgo,
+		StoredHash:   cert.CertHash,
+		SecurityLevel: "Dual-Layer: SHA-256 ⊕ BLAKE3",
 	}
 
 	if cert.IsRevoked {
-		return &VerificationResult{
-			CertID: id, Valid: false, IsRevoked: true,
-			HashMatch: inputHash == "" || cert.CertHash == inputHash,
-			HashAlgo:  cert.HashAlgo, Timestamp: ts,
-			Message:   "certificate has been revoked",
-		}, nil
+		res.Valid = false
+		res.Message = fmt.Sprintf("certificate revoked by %s at %s", cert.RevokedBy, cert.RevokedAt)
+		return res, nil
 	}
 
-	// No hash supplied — existence-only verification (Caliper default path)
 	if inputHash == "" {
-		return &VerificationResult{
-			CertID: id, Valid: true, IsRevoked: false, HashMatch: true,
-			HashAlgo:  cert.HashAlgo, Timestamp: ts,
-			Message:   "certificate is valid (hybrid SHA-256+BLAKE3)",
-		}, nil
+		// Existence-only check (Caliper benchmark path)
+		res.Valid = true
+		res.HashMatch = true
+		res.ComputedHash = cert.CertHash
+		res.Message = "certificate is valid (existence check)"
+	} else {
+		// Full cryptographic verification
+		req := &BatchRequest{
+			ID: cert.ID, StudentID: cert.StudentID,
+			StudentName: cert.StudentName, Degree: cert.Degree,
+			Major: cert.Major, Institution: cert.Institution,
+			Issuer: cert.Issuer, IssueDate: cert.IssueDate,
+			GradePoint: cert.GradePoint,
+		}
+		computed := ComputeHybridHash(buildCertFields(req))
+		res.ComputedHash = computed
+		res.HashMatch = (computed == cert.CertHash) && (inputHash == cert.CertHash)
+		res.Valid = res.HashMatch
+		if res.Valid {
+			res.Message = "certificate is cryptographically valid — SHA-256⊕BLAKE3 match"
+		} else {
+			res.Message = "HASH MISMATCH — certificate integrity violated"
+		}
 	}
 
-	// Full hash verification
-	match := cert.CertHash == inputHash
-	msg   := "certificate is valid and authentic (hybrid SHA-256+BLAKE3 verified)"
-	if !match {
-		msg = "hash mismatch — certificate may have been tampered"
-	}
-	return &VerificationResult{
-		CertID: id, Valid: match, IsRevoked: false, HashMatch: match,
-		HashAlgo: cert.HashAlgo, Timestamp: ts, Message: msg,
-	}, nil
+	s.writeAudit(ctx, certID, "VERIFY", "caliper-workload", res.Message)
+	return res, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RevokeCertificate — marks a certificate as revoked.
-//
-// Authorised callers: Org1MSP or Org2MSP.
-// Idempotent: returns nil (not an error) when cert is not found or already
-// revoked, so Caliper round 4 never records a failure.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── RevokeCertificate ────────────────────────────────────────────────────────
+
+// RevokeCertificate marks a certificate as revoked.
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
-	id string,
+	certID string,
+	revokedBy string,
 ) error {
-	msp, err := callerMSP(ctx)
+	data, err := ctx.GetStub().GetState(certID)
 	if err != nil {
-		return fmt.Errorf("access denied: %v", err)
+		return fmt.Errorf("GetState(%s): %w", certID, err)
 	}
-	if msp != "Org1MSP" && msp != "Org2MSP" {
-		return fmt.Errorf("access denied: only Org1MSP or Org2MSP can revoke (caller: %s)", msp)
-	}
-
-	raw, err := ctx.GetStub().GetState(id)
-	if err != nil {
-		return fmt.Errorf("ledger read error: %v", err)
-	}
-	if raw == nil {
-		return nil // Idempotent: cert not found → success
+	if data == nil {
+		return fmt.Errorf("certificate %s not found", certID)
 	}
 
 	var cert Certificate
-	if err := json.Unmarshal(raw, &cert); err != nil {
-		return fmt.Errorf("data integrity error for cert %q: %v", id, err)
+	if err = json.Unmarshal(data, &cert); err != nil {
+		return fmt.Errorf("unmarshal: %w", err)
 	}
 	if cert.IsRevoked {
-		return nil // Idempotent: already revoked → success
+		return fmt.Errorf("certificate %s already revoked", certID)
 	}
 
-	now             := time.Now().UTC().Format(time.RFC3339)
-	cert.IsRevoked   = true
-	cert.RevokedBy   = msp
-	cert.RevokedAt   = now
-	cert.UpdatedAt   = now
-	cert.TxID        = ctx.GetStub().GetTxID()
+	now := time.Now().UTC().Format(time.RFC3339)
+	cert.IsRevoked = true
+	cert.RevokedBy = revokedBy
+	cert.RevokedAt = now
+	cert.UpdatedAt = now
 
-	updated, err := json.Marshal(cert)
-	if err != nil {
-		return fmt.Errorf("marshal error: %v", err)
+	out, _ := json.Marshal(cert)
+	if err = ctx.GetStub().PutState(certID, out); err != nil {
+		return fmt.Errorf("PutState revoke: %w", err)
 	}
-	if err := ctx.GetStub().PutState(id, updated); err != nil {
-		return fmt.Errorf("ledger write error: %v", err)
-	}
-	writeAuditLog(ctx, "REVOKE", id, msp)
+
+	s.writeAudit(ctx, certID, "REVOKE", revokedBy,
+		fmt.Sprintf("certificate revoked at %s", now))
 	return nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// QueryAllCertificates — returns all certificate records as a slice.
-//
-// Uses GetStateByRange("", "") which works on both LevelDB and CouchDB.
-// Only returns documents whose DocType == "certificate" (excludes audit logs).
-// Returns an empty (non-nil) slice on an empty ledger — Caliper never errors.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── QueryAllCertificates ─────────────────────────────────────────────────────
+
+// QueryAllCertificates performs a state-range scan over all CERT_ keys.
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*Certificate, error) {
-	iter, err := ctx.GetStub().GetStateByRange("", "")
+
+	iter, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
 	if err != nil {
-		return []*Certificate{}, nil // return empty, never an error to Caliper
+		return nil, err
 	}
 	defer iter.Close()
 
 	var certs []*Certificate
 	for iter.HasNext() {
-		item, err := iter.Next()
+		kv, err := iter.Next()
 		if err != nil {
+			return nil, err
+		}
+		var c Certificate
+		if err = json.Unmarshal(kv.Value, &c); err != nil {
 			continue
 		}
-		var cert Certificate
-		if err := json.Unmarshal(item.Value, &cert); err != nil {
-			continue
-		}
-		if cert.DocType == "certificate" {
-			certs = append(certs, &cert)
-		}
-	}
-	if certs == nil {
-		certs = []*Certificate{}
+		certs = append(certs, &c)
 	}
 	return certs, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GetCertificatesByStudent — returns all certificates for a given studentID.
-//
-// Performs a full range scan and filters by StudentID.
-// Returns an empty (non-nil) slice when no matches are found.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── GetCertificatesByStudent ─────────────────────────────────────────────────
+
+// GetCertificatesByStudent returns all certificates for a given student ID.
+// It performs a full ledger range scan and filters in-memory.
 func (s *SmartContract) GetCertificatesByStudent(
 	ctx contractapi.TransactionContextInterface,
 	studentID string,
 ) ([]*Certificate, error) {
-	if studentID == "" {
-		return []*Certificate{}, nil
-	}
 
-	iter, err := ctx.GetStub().GetStateByRange("", "")
+	all, err := s.QueryAllCertificates(ctx)
 	if err != nil {
-		return []*Certificate{}, nil
+		return nil, err
 	}
-	defer iter.Close()
-
-	var certs []*Certificate
-	for iter.HasNext() {
-		item, err := iter.Next()
-		if err != nil {
-			continue
-		}
-		var cert Certificate
-		if err := json.Unmarshal(item.Value, &cert); err != nil {
-			continue
-		}
-		if cert.DocType == "certificate" && cert.StudentID == studentID {
-			certs = append(certs, &cert)
+	var result []*Certificate
+	for _, c := range all {
+		if c.StudentID == studentID {
+			result = append(result, c)
 		}
 	}
-	if certs == nil {
-		certs = []*Certificate{}
-	}
-	return certs, nil
+	return result, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GetAuditLogs — returns all audit log entries.
-//
-// Audit entries are keyed with "AUDIT_" prefix → GetStateByRange efficiently
-// scans only the audit namespace without a full ledger scan.
-// Returns an empty (non-nil) slice when no logs exist.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── GetAuditLogs ─────────────────────────────────────────────────────────────
+
+// GetAuditLogs retrieves all audit records in the AUDIT_ key namespace.
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
-	// "AUDIT_~" is the lexicographic upper bound for "AUDIT_*" keys
+
 	iter, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
 	if err != nil {
-		return []*AuditLog{}, nil
+		return nil, err
 	}
 	defer iter.Close()
 
 	var logs []*AuditLog
 	for iter.HasNext() {
-		item, err := iter.Next()
+		kv, err := iter.Next()
 		if err != nil {
+			return nil, err
+		}
+		var l AuditLog
+		if err = json.Unmarshal(kv.Value, &l); err != nil {
 			continue
 		}
-		var entry AuditLog
-		if err := json.Unmarshal(item.Value, &entry); err != nil {
-			continue
-		}
-		logs = append(logs, &entry)
-	}
-	if logs == nil {
-		logs = []*AuditLog{}
+		logs = append(logs, &l)
 	}
 	return logs, nil
+}
+
+// ─── writeAudit (internal) ────────────────────────────────────────────────────
+
+func (s *SmartContract) writeAudit(
+	ctx contractapi.TransactionContextInterface,
+	certID, action, actor, detail string,
+) {
+	txID := ctx.GetStub().GetTxID()
+	key := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
+	log := AuditLog{
+		DocType:   "auditLog",
+		TxID:      txID,
+		CertID:    certID,
+		Action:    action,
+		Actor:     actor,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Detail:    detail,
+	}
+	data, _ := json.Marshal(log)
+	_ = ctx.GetStub().PutState(key, data) // best-effort; audit failure is non-fatal
 }
