@@ -1,38 +1,33 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v5.0
+#  Hyperledger Caliper Benchmark Configuration v6.0
 #
-#  ── Bug-fix changelog ──────────────────────────────────────────────────────
+#  ── Change-log v6.0 ─────────────────────────────────────────────────────────
 #
-#  BUG-A [CRITICAL / FIXED] Broken YAML indentation → complete parse failure.
-#    Round 1 (IssueCertificate) was at column 0 (no indentation) under the
-#    "rounds:" key that sits at indent-2.  YAML parser treats the unindented
-#    "- label:" as a new top-level document member, which is INVALID inside a
-#    block mapping.  pyyaml raises:
-#      "while parsing a block mapping … expected <block end>, but found '-'"
-#    As a result Caliper could not parse the file at all → 100% failure rate
-#    before a single transaction was ever sent.
+#  REQUEST-1 [IssueCertificate stress-test config]:
+#    workers: type: local, number: 5  (was 8)
+#    txDuration: 60 s                 (was 30 s)
+#    rateControl: linear-rate         (was fixed-rate)
+#      startingTps:  50
+#      finishingTps: 500
+#    batchSize: 10  (Hybrid-Batch scenario)
 #
-#    Additionally, rounds 2-6 were nested inside the `txOptions` block of
-#    round 1 at indent-4, meaning even if Caliper partially loaded the file
-#    it would only see one round with a malformed txOptions tree.
+#  REQUEST-2 [Read-operation rounds — fixed-rate 200 TPS]:
+#    All read operations (VerifyCertificate, QueryAllCertificates,
+#    GetCertificatesByStudent, GetAuditLogs) now run at 200 TPS.
+#    RevokeCertificate remains write-mode but also set to 200 TPS.
 #
-#    Fix: All six round entries are now correctly indented at 4 spaces under
-#    the `rounds:` key, and txOptions blocks are kept at 6 spaces.
+#  REQUEST-3 [batchSize per scenario]:
+#    This config represents the Hybrid-Batch scenario → batchSize: 10
+#    See companion configs for S1/S2/S3 with batchSize: 1.
 #
-#  BUG-B [FIXED] IssueCertificate tps was 50 with a comment suggesting it
-#    should be raised. Set to 100 TPS (8 workers) which matches the paper
-#    target while remaining safe for a standard test-network node.
-#
-#  BUG-C [FIXED] Inconsistent invokerIdentity for GetAuditLogs (trailing
-#    space instead of proper 6-space indent). Fixed.
-#
-#  Resource monitoring block preserved (requires Docker containers running).
+#  Previous fixes (v5.0) preserved:
+#    BUG-A: YAML indentation fixed (all rounds at 4-space indent)
+#    BUG-B: IssueCertificate TPS raised to meaningful stress level
+#    BUG-C: invokerIdentity fixed for all rounds
 # ============================================================================
 
 # ── Resource Monitors ────────────────────────────────────────────────────────
-# Captures CPU% and Memory(MB) per Fabric container during each round.
-# Requires the Docker containers listed below to be running.
 monitors:
   resource:
     - module: docker
@@ -50,37 +45,38 @@ monitors:
 
 # ── Test Suite ───────────────────────────────────────────────────────────────
 test:
-  name: bcms-hybrid-batch-benchmark-v5
+  name: bcms-hybrid-batch-benchmark-v6
   description: >
     BCMS Full Benchmark Suite — Hybrid-Batch Framework (SHA-256 + BLAKE3).
     6 rounds covering all chaincode functions.
+    IssueCertificate: linear-rate 50→500 TPS over 60 s, 5 workers, batch=10.
+    All read-operation rounds: fixed-rate 200 TPS.
     Target: 0% failure rate on all rounds.
-    IssueCertificate uses batch mode (10 certs per Fabric transaction).
   workers:
     type: local
-    number: 8
+    number: 5
 
   rounds:
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Hybrid-Batch Write
+    # Round 1: IssueCertificate — Hybrid-Batch Write (Stress Test)
     #
-    # Workload sends a JSON array of 10 certificates per Fabric transaction.
-    # Chaincode: IssueCertificate(certsJSON) — batch-aware, MVCC-safe.
-    # RBAC: Org1MSP only.
-    # Zero-failure guarantee: unique IDs (CERT_<worker>_<round>_<seq>),
-    #   no GetState inside write loop → no MVCC_READ_CONFLICT.
+    # linear-rate ramps from 50 TPS → 500 TPS over 60 seconds (5 workers).
+    # batchSize: 10 → each Fabric transaction carries 10 certificates.
+    # MVCC-safe: no GetState inside write loop.
+    # Key scheme: CERT_<worker>_<round>_<seq> — globally unique.
     # ──────────────────────────────────────────────────────────────────────────
     - label: IssueCertificate
       description: >
-        Issue certificates via the Hybrid-Batch framework.
-        10 certs per Fabric transaction. Hash: BLAKE3(SHA-256(fields)).
-        MVCC-safe: no read before write inside chaincode.
-      txDuration: 30
+        Issue certificates via Hybrid-Batch framework (SHA-256 + BLAKE3).
+        Stress test: linear ramp from 50 TPS to 500 TPS over 60 seconds.
+        10 certs per Fabric transaction. MVCC-safe, zero-failure design.
+      txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 100
+          startingTps: 50
+          finishingTps: 500
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -89,19 +85,16 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Public ReadOnly
+    # Round 2: VerifyCertificate — Read-Only, 200 TPS
     #
-    # Chaincode: VerifyCertificate(id, inputHash)
-    # Workload sends inputHash="" → chaincode performs existence-only check.
+    # inputHash="" → chaincode performs existence+not-revoked check only.
     # readOnly:true bypasses orderer for maximum peer throughput.
-    # Zero-failure: returns structured result (not error) when cert not found.
     # ──────────────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
         Verify certificate existence on the ledger (readOnly peer query).
-        inputHash is empty — chaincode skips BLAKE3+SHA-256 comparison
-        to avoid hash-mismatch failures during benchmark warm-up.
-      txDuration: 30
+        Fixed-rate 200 TPS. inputHash is empty — existence check only.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
@@ -112,88 +105,80 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — Full Ledger Scan
+    # Round 3: QueryAllCertificates — Full Ledger Scan, 200 TPS
     #
-    # Chaincode: QueryAllCertificates() → []*Certificate
-    # Uses GetStateByRange("","") — works on LevelDB and CouchDB.
-    # readOnly:true — direct peer query, no orderer overhead.
-    # Zero-failure: returns empty slice on empty ledger.
+    # GetStateByRange("","") — works on LevelDB and CouchDB.
+    # readOnly:true — direct peer query.
     # ──────────────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
         Scan and return all certificate records from the ledger.
-        Filters by docType=="certificate" to exclude audit log entries.
-      txDuration: 30
+        Fixed-rate 200 TPS. Filters by docType=="certificate".
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 200
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Org2 RBAC Write
+    # Round 4: RevokeCertificate — Org2 RBAC Write, 200 TPS
     #
-    # Chaincode: RevokeCertificate(id) — sets IsRevoked=true.
-    # RBAC: Org1MSP or Org2MSP (invoked from Org2 here).
     # Idempotent: nil when cert not found or already revoked → 0 failures.
     # certID pattern matches IssueCertificate to target real certs.
     # ──────────────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Revoke certificates. Idempotent: returns nil when cert not found
-        or already revoked. Targets certs issued in round 1.
-      txDuration: 30
+        Revoke certificates. Idempotent: nil when cert not found or revoked.
+        Fixed-rate 200 TPS. Targets certs issued in round 1.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 200
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org2.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Per-Student Query
+    # Round 5: GetCertificatesByStudent — Per-Student Query, 200 TPS
     #
-    # Chaincode: GetCertificatesByStudent(studentID) → []*Certificate
-    # Filters ledger by StudentID field.
     # readOnly:true — direct peer query.
-    # studentID pattern matches IssueCertificate to query real records.
+    # studentID pattern matches IssueCertificate keys.
     # ──────────────────────────────────────────────────────────────────────────
     - label: GetCertificatesByStudent
       description: >
         Query all certificates for a specific student.
-        studentID pattern aligned with IssueCertificate (CERT_w_r_idx).
-      txDuration: 30
+        Fixed-rate 200 TPS. studentID aligned with IssueCertificate keys.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 75
+          tps: 200
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Audit Trail Query
+    # Round 6: GetAuditLogs — Audit Trail Query, 200 TPS
     #
-    # Chaincode: GetAuditLogs() → []*AuditLog
-    # Scans "AUDIT_" … "AUDIT_~" key range — efficient prefix scan.
+    # Scans "AUDIT_" … "AUDIT_~" key range.
     # readOnly:true — direct peer query.
-    # Zero-failure: returns empty slice when no audits exist yet.
     # ──────────────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
-        Query the immutable audit trail written by IssueCertificate and
-        RevokeCertificate. Efficient range scan on AUDIT_ key prefix.
-      txDuration: 30
+        Query the immutable audit trail. Fixed-rate 200 TPS.
+        Efficient range scan on AUDIT_ key prefix.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 200
       workload:
         module: workload/getAuditLogs.js
       txOptions:

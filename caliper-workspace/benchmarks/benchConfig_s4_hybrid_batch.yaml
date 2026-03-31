@@ -1,10 +1,15 @@
 # ============================================================================
-#  BCMS — Scenario S3: Hybrid (SHA-256 + BLAKE3), No Batch  (v6.0)
+#  BCMS — Scenario S4: Hybrid-Batch (SHA-256 + BLAKE3 + Batching)
+#  Hyperledger Caliper Benchmark Configuration
+#
 #  Hash algorithm : Hybrid — BLAKE3(SHA-256(data))
-#  Batch size     : 1 (one certificate per Fabric transaction)
+#  Batch size     : 10 (ten certificates per Fabric transaction)
 #  Workers        : 5 (local)
 #  IssueCertificate: linear-rate 50 → 500 TPS over 60 s
-#  Read rounds    : fixed-rate 200 TPS, 60 s
+#  Read rounds    : fixed-rate 200 TPS
+#
+#  This is the PRIMARY/OPTIMIZED scenario. Effective certificate throughput
+#  = IssueCertificate TPS × batchSize (10×).
 # ============================================================================
 
 monitors:
@@ -23,13 +28,14 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s3-hybrid-no-batch-v6
+  name: bcms-s4-hybrid-batch
   description: >
-    Scenario S3 — Hybrid Hash (SHA-256 + BLAKE3), No Batching (v6.0).
-    batchSize: 1 (single certificate per Fabric transaction).
+    Scenario S4 — Hybrid-Batch (SHA-256 + BLAKE3 + Batch=10).
+    batchSize: 10 (ten certificates per Fabric transaction).
     IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5 workers.
-    All read rounds: fixed-rate 200 TPS, 60 s.
-    Hybrid hash: chaincode computes BLAKE3(SHA-256(fields)) per certificate.
+    All read rounds: fixed-rate 200 TPS.
+    Effective cert throughput = TPS × 10.
+    This is the peak-performance research scenario.
   workers:
     type: local
     number: 5
@@ -38,9 +44,11 @@ test:
 
     - label: IssueCertificate
       description: >
-        S3 Hybrid, no batch — Issue single certificates (batchSize=1).
-        Linear ramp 50→500 TPS over 60 s.
-        Hash: BLAKE3(SHA-256(fields)) — dual-hash, single-cert transactions.
+        S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction.
+        Linear ramp 50→500 TPS over 60 s (5 workers).
+        Hash: BLAKE3(SHA-256(fields)) per certificate.
+        MVCC-safe: no GetState inside write loop.
+        Effective cert throughput at 500 TPS = 5,000 certs/sec.
       txDuration: 60
       rateControl:
         type: linear-rate
@@ -50,7 +58,7 @@ test:
       workload:
         module: workload/issueCertificate.js
         arguments:
-          batchSize: 1
+          batchSize: 10
       txOptions:
         invokerIdentity: User1@org1.example.com
 

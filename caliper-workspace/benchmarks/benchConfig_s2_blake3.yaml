@@ -1,7 +1,10 @@
 # ============================================================================
-#  BCMS Benchmark — Scenario 2: BLAKE3 Alternative
-#  Single certificate per transaction, BLAKE3 hashing only.
-#  Chaincode: chaincode-bcms/blake3
+#  BCMS — Scenario S2: BLAKE3 Alternative  (v6.0)
+#  Hash algorithm : BLAKE3 only
+#  Batch size     : 1 (one certificate per Fabric transaction)
+#  Workers        : 5 (local)
+#  IssueCertificate: linear-rate 50 → 500 TPS over 60 s
+#  Read rounds    : fixed-rate 200 TPS, 60 s
 # ============================================================================
 
 monitors:
@@ -12,26 +15,37 @@ monitors:
         containers:
           - orderer.example.com
           - peer0.org1.example.com
+          - couchdb0
           - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
 
 test:
-  name: bcms-s2-blake3-alternative
+  name: bcms-s2-blake3-alternative-v6
   description: >
-    BLAKE3 hashing benchmark. Replaces SHA-256 with BLAKE3 (3-10x faster).
-    Single-certificate issuance, no batching. Measures BLAKE3 efficiency gains.
+    Scenario S2 — BLAKE3 Alternative (v6.0).
+    batchSize: 1 (single certificate per Fabric transaction).
+    IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5 workers.
+    All read rounds: fixed-rate 200 TPS, 60 s.
+    Requires chaincode deployed with HASH_MODE=blake3.
   workers:
     type: local
-    number: 4
+    number: 5
 
   rounds:
 
     - label: IssueCertificate
-      description: Issue single certificates using BLAKE3 hashing.
-      txDuration: 30
+      description: >
+        S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
+        Linear ramp 50→500 TPS over 60 s. Chaincode: BLAKE3 hash mode.
+      txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 50
+          startingTps: 50
+          finishingTps: 500
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -40,60 +54,60 @@ test:
         invokerIdentity: User1@org1.example.com
 
     - label: VerifyCertificate
-      description: Verify certificate existence (BLAKE3 mode).
-      txDuration: 30
+      description: Fixed-rate 200 TPS read-only verify.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 200
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
-      description: Full ledger scan in BLAKE3 mode.
-      txDuration: 30
+      description: Fixed-rate 200 TPS full ledger scan.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 10
+          tps: 200
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: RevokeCertificate
-      description: Revoke certificates using BLAKE3 chaincode.
-      txDuration: 30
+      description: Fixed-rate 200 TPS revocation (idempotent).
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 200
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org2.example.com
 
     - label: GetCertificatesByStudent
-      description: Per-student certificate query (BLAKE3 mode).
-      txDuration: 30
+      description: Fixed-rate 200 TPS per-student query.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 200
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: GetAuditLogs
-      description: Audit trail range scan (BLAKE3 mode).
-      txDuration: 30
+      description: Fixed-rate 200 TPS audit trail query.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 200
       workload:
         module: workload/getAuditLogs.js
       txOptions:
