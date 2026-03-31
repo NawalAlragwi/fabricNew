@@ -19,11 +19,18 @@ services:
     image: hyperledger/fabric-orderer:latest
     labels:
       service: hyperledger-fabric
+    # ── CPU LIMITS: NONE (Ph.D. Benchmark — mirage-batch) ─────────────────────
+    # No cpus:, cpu_quota:, cpu_shares:, or deploy.resources.limits.cpus keys
+    # are set. This allows the Orderer to use ALL available host CPU cores,
+    # making the HASHING ALGORITHM the true bottleneck (not infrastructure).
+    # Verification: docker inspect orderer.example.com | grep -i cpu  → should show 0 (unlimited)
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_LISTENPORT=7050
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → Go runtime auto-detects all CPU cores (no artificial cap)
+      # Changed from GOMAXPROCS=4 to ensure all cores are available under 1500 TPS load
+      - GOMAXPROCS=0
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       # enabled TLS
@@ -62,10 +69,15 @@ services:
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
+    # ── CPU LIMITS: NONE (Ph.D. Benchmark — mirage-batch) ─────────────────────
+    # No cpus:, cpu_quota:, deploy.resources.limits keys present.
+    # peer0.org1 runs SHA-256/BLAKE3/Hybrid hashing — it MUST have full CPU access
+    # so that the hash algorithm speed (not a Docker CPU quota) is the bottleneck.
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
       - FABRIC_LOGGING_SPEC=INFO
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → auto-detect all host CPUs. Critical for endorsement under 1000 TPS.
+      - GOMAXPROCS=0
       #- FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_PROFILE_ENABLED=false
@@ -102,10 +114,14 @@ services:
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
+    # ── CPU LIMITS: NONE (Ph.D. Benchmark — mirage-batch) ─────────────────────
+    # No cpus:, cpu_quota:, deploy.resources.limits keys present.
+    # peer0.org2 handles RevokeCertificate (Org2 RBAC) and read queries.
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
       - FABRIC_LOGGING_SPEC=INFO
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → auto-detect all host CPUs.
+      - GOMAXPROCS=0
       #- FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_PROFILE_ENABLED=false

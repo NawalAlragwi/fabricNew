@@ -1,44 +1,28 @@
 'use strict';
-// ============================================================================
-//  queryAllCertificates.js — Caliper Workload Module — BCMS Hybrid-Batch
-// ============================================================================
-//
-//  Root-cause fix:
-//
-//  BUG-FIX-1 [Function not found]: The old hybrid chaincode had no
-//    QueryAllCertificates function → 100% failure for this round.
-//    Fixed in chaincode. Workload is otherwise correct (readOnly:true,
-//    no args, contractFunction name matches chaincode exactly).
-//
-//  Design: QueryAllCertificates uses GetStateByRange("","") which is
-//    safe on both CouchDB and LevelDB. It returns [] on empty ledger.
-//    readOnly:true → direct peer query, no orderer bottleneck.
-// ============================================================================
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  QueryAllCertificates Workload — BCMS Hybrid-Batch Benchmark (mirage-batch)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ *  Function signature (smartcontract_hybrid.go):
+ *    QueryAllCertificates() ([]*Certificate, error)
+ *
+ *  readOnly:true — CouchDB rich query direct to peer, no orderer.
+ *  Returns empty slice [] on empty ledger — NEVER returns Go error.
+ *  Caliper counts SUCCESS for any non-error response (including empty []).
+ * ══════════════════════════════════════════════════════════════════════════
+ */
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
-
-    async initializeWorkloadModule(
-        workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext
-    ) {
-        await super.initializeWorkloadModule(
-            workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext
-        );
-    }
-
     async submitTransaction() {
-        const request = {
-            contractId:        'basic',
+        return this.sutAdapter.sendRequests({
+            contractId:        'bcms-hybrid',
             contractFunction:  'QueryAllCertificates',
-            contractArguments: [],   // no arguments — chaincode takes only ctx
-            readOnly:          true  // direct peer query, bypasses orderer
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            contractArguments: [], // Go func takes only ctx — no args
+            readOnly:          true,
+        });
     }
 
     async cleanupWorkloadModule() {}

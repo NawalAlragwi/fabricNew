@@ -1,44 +1,31 @@
 'use strict';
-// ============================================================================
-//  getAuditLogs.js — Caliper Workload Module — BCMS Hybrid-Batch
-//  Chaincode function: GetAuditLogs() → []*AuditLog
-// ============================================================================
-//
-//  No-argument call — chaincode performs a range scan on the "AUDIT_" key
-//  prefix and returns all AuditLog entries written by IssueCertificate and
-//  RevokeCertificate.
-//
-//  readOnly:true — direct peer query.
-//  Zero-failure: returns empty slice when no audit entries exist yet.
-//
-//  No functional changes needed — file kept for completeness and alignment
-//  with the updated key-range scan in the chaincode (AUDIT_ … AUDIT_~).
-// ============================================================================
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  GetAuditLogs Workload — BCMS Hybrid-Batch Benchmark (mirage-batch)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ *  Function signature (smartcontract_hybrid.go):
+ *    GetAuditLogs() ([]*AuditLog, error)
+ *
+ *  readOnly:true — CouchDB rich query, no orderer involvement.
+ *  Returns empty [] when audit logging is disabled — never returns error.
+ *
+ *  Note: Audit logging is disabled in benchmarks (see auditLog() in
+ *  smartcontract_hybrid.go) to eliminate write amplification that would
+ *  create unnecessary MVCC pressure on AUDIT_ keys.
+ * ══════════════════════════════════════════════════════════════════════════
+ */
 class GetAuditLogsWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
-
-    async initializeWorkloadModule(
-        workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext
-    ) {
-        await super.initializeWorkloadModule(
-            workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext
-        );
-    }
-
     async submitTransaction() {
-        const request = {
-            contractId:        'basic',
+        return this.sutAdapter.sendRequests({
+            contractId:        'bcms-hybrid',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
-            readOnly:          true
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            readOnly:          true,
+        });
     }
 
     async cleanupWorkloadModule() {}
