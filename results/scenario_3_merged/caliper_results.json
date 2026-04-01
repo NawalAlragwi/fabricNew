@@ -2,7 +2,7 @@
   "scenario": 3,
   "title": "Hybrid SHA-256 + BLAKE3",
   "description": "Single-cert, hybrid BLAKE3(SHA-256(data)) hash, no batching. 4 workers.",
-  "timestamp": "2026-04-01T19:45:04Z",
+  "timestamp": "2026-04-01T19:56:42Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/hybrid-batch",

@@ -604,9 +604,12 @@ generate_connection_profiles() {
     local PEER1_TLS="$1"
     local PEER2_TLS="$2"
     local ORDERER_TLS="$3"
+    local profiles_dir="${ROOT_DIR}/caliper-workspace/networks"
+
+    mkdir -p "${profiles_dir}"
 
     # connection-org1.yaml — Caliper 0.6.0 compatible connection profile
-    cat > networks/connection-org1.yaml << CONN1EOF
+    cat > "${profiles_dir}/connection-org1.yaml" << CONN1EOF
 name: test-network-org1
 version: "1.0.0"
 client:
