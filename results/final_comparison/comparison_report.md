@@ -1,22 +1,26 @@
 # BCMS Four-Scenario Academic Benchmark Comparison
-> Generated: 2026-03-29 21:00:43  |  Caliper 0.6.0  |  Fabric 2.5.9
 
+> Generated: 2026-04-01 17:26:00  |  Caliper 0.6.0  |  Fabric 2.5.9
+
+
+> ⚠️  **SIMULATED DATA**: Docker/Fabric unavailable. Run `bash setup_and_run_all.sh --all-scenarios` in a Docker-enabled environment for real measurements.
 **All 4 scenarios: 0% failure rate (100% success rate)**
 
-| Scenario | Hash | Batch | IssueCert TPS | Eff. TPS | Lat (ms) | Tx | Fail | Success% |
-|:--|:--|:--:|--:|--:|--:|--:|--:|--:|
-| **S1: SHA-256** | `sha256` | 1 | 32.4 | 32.4 | 1940 | 4,725 | **0** | **100.0%** |
-| **S2: BLAKE3** | `blake3` | 1 | 34.5 | 34.5 | 1820 | 4,950 | **0** | **100.0%** |
-| **S3: Hybrid** | `hybrid-sha256-blake3` | 1 | 38.2 | 38.2 | 1710 | 5,295 | **0** | **100.0%** |
-| **S4: Hybrid+Batch** | `hybrid-sha256-blake3` | 10 | 95.0 | 950.0 | 1420 | 11,541 | **0** | **100.0%** |
+| Scenario | Hash | Batch | Workers | IssueCert TPS | Eff. TPS | Lat (ms) | Tx | Fail | Success% | TPS vs S1 |
+|:--|:--|:--:|:--:|--:|--:|--:|--:|--:|--:|--:|
+| **SHA-256 Baseline** | `sha256` | 1 | 4 | 32.4 | 32.4 | 1940 | 4,725 | **0** | **100.0%** | **+0.0%** |
+| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 34.5 | 34.5 | 1820 | 4,950 | **0** | **100.0%** | **+6.5%** |
+| **Hybrid SHA-256 + BLAKE3** | `hybrid-sha256-blake3` | 1 | 4 | 38.2 | 38.2 | 1710 | 5,295 | **0** | **100.0%** | **+17.9%** |
+| **Hybrid + Batching Optimization** | `hybrid-sha256-blake3` | 10 | 8 | 95.0 | 950.0 | 1420 | 11,541 | **0** | **100.0%** | **+193.2%** |
 
-## Key Improvement: S1→S4
+## Key Improvement: S1 → S4
+
 | Metric | S1 | S4 | Change |
 |:--|--:|--:|--:|
-| IssueCert TPS | 32.4 | 95.0 | **+193%** |
-| Eff. Cert TPS | 32.4 | 475.0 | **+1,366%** |
-| Avg Latency (ms) | 1,940 | 1,420 | **-27%** |
-| Consensus/100 | 100 | 20 | **-80%** |
+| IssueCert TPS | 32.4 | 95.0 | **+193.2%** |
+| Eff. Cert TPS | 32.4 | 950.0 | **+2832.1%** |
+| Avg Latency (ms) | 1940 | 1420 | **-26.8%** |
+| Consensus/100 | 100 | 10 | **-90.0%** |
 | Failures | 0 | 0 | **0% maintained** |
 
 ## Security: Tamarin Prover 11/11 lemmas verified

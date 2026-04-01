@@ -6,6 +6,11 @@ Each report goes inside its own scenario folder:
   results/scenario_2_blake3/report_scenario_2_blake3.html
   results/scenario_3_merged/report_scenario_3_merged.html
   results/scenario_4_batching/report_scenario_4_batching.html
+
+All performance data is read dynamically from:
+  - results/<key>/caliper_results.json        (per-scenario raw data)
+  - results/final_comparison/comparison_data.json  (aggregated, improvement multipliers)
+No hard-coded performance values.
 """
 
 import json
@@ -14,9 +19,10 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-ROOT_DIR = Path(__file__).parent
-RESULTS   = ROOT_DIR / "results"
-CHARTJS   = ROOT_DIR / "results" / "chart.umd.min.js"
+ROOT_DIR    = Path(__file__).parent
+RESULTS     = ROOT_DIR / "results"
+CHARTJS     = ROOT_DIR / "results" / "chart.umd.min.js"
+COMP_DATA   = RESULTS / "final_comparison" / "comparison_data.json"
 
 # ── scenario meta ────────────────────────────────────────────────────────────
 SCENARIOS = [
@@ -122,6 +128,18 @@ def load_data(key: str) -> dict:
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)
 
+def load_all_results() -> dict:
+    """Load comparison_data.json produced by aggregate_results.py."""
+    if not COMP_DATA.exists():
+        # Fall back: run aggregation inline
+        print("  [INFO] comparison_data.json not found — running aggregate_results.py inline")
+        import subprocess, sys as _sys
+        subprocess.run([_sys.executable, str(ROOT_DIR / "aggregate_results.py")], check=True)
+    try:
+        return json.loads(COMP_DATA.read_text())
+    except Exception:
+        return {}
+
 def pct_change(base: float, val: float) -> str:
     if base == 0:
         return "N/A"
@@ -142,7 +160,31 @@ def arrow(base: float, val: float, higher_better: bool = True) -> str:
     return f'<span style="color:{colour}">{symbol}</span>'
 
 # ── per-scenario reference values (S1 as baseline) ──────────────────────────
-def get_baselines() -> dict:
+def get_baselines(cdata: dict | None = None) -> dict:
+    """Get S1 baseline values. Uses comparison_data.json if available, else caliper_results.json."""
+    if cdata and "scenarios" in cdata:
+        s1 = cdata["scenarios"].get("scenario_1_sha256", {})
+        if s1:
+            # Build per-round data from per_operation block in cdata
+            per_op = cdata.get("per_operation", {})
+            rnd = {}
+            for op_name, op_scenarios in per_op.items():
+                r = op_scenarios.get("scenario_1_sha256", {})
+                if r:
+                    rnd[op_name] = {
+                        "tps":             r.get("tps", 0),
+                        "avg_latency_ms":  r.get("avg_latency_ms", 0),
+                        "p50_s":           r.get("p50_s", 0),
+                        "p95_s":           r.get("p95_s", 0),
+                        "p99_s":           r.get("p99_s", 0),
+                    }
+            return {
+                "tps":    s1.get("primary_tps", 0),
+                "effTps": s1.get("effective_cert_tps", 0),
+                "lat":    s1.get("avg_latency_ms", 0),
+                "rounds": rnd,
+            }
+    # fallback: read directly from caliper_results.json
     d = load_data("scenario_1_sha256")
     agg = d["aggregate"]
     rnd = {r["label"]: r for r in d.get("rounds", [])}
@@ -154,7 +196,26 @@ def get_baselines() -> dict:
     }
 
 # ── main HTML builder ────────────────────────────────────────────────────────
-def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
+def build_report(meta: dict, data: dict, baselines: dict, chartjs: str,
+                 cdata: dict | None = None) -> str:
+    """Build a single scenario HTML report.
+    
+    Args:
+        meta:      scenario display metadata (color, label, etc.)
+        data:      caliper_results.json content
+        baselines: S1 reference values
+        chartjs:   embedded Chart.js source
+        cdata:     comparison_data.json content (for improvement multipliers)
+    """
+    # Pull improvement multiplier from comparison_data.json if available
+    key = meta["key"]
+    comp_scenario = (cdata or {}).get("scenarios", {}).get(key, {}) if cdata else {}
+    tps_multiplier   = comp_scenario.get("tps_multiplier", None)
+    eff_multiplier   = comp_scenario.get("eff_tps_multiplier", None)
+    imp_tps_pct      = comp_scenario.get("improvement_tps_vs_s1_pct", None)
+    imp_eff_pct      = comp_scenario.get("improvement_eff_tps_vs_s1_pct", None)
+    imp_lat_pct      = comp_scenario.get("improvement_latency_vs_s1_pct", None)
+    imp_con_pct      = comp_scenario.get("improvement_consensus_vs_s1_pct", None)
     agg   = data["aggregate"]
     runds = {r["label"]: r for r in data.get("rounds", [])}
     res   = data.get("resource_metrics", {})
@@ -179,7 +240,8 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
   \u26a0\ufe0f <strong>SIMULATED DATA</strong> \u2014 These metrics are <em>calibrated estimates</em>, NOT actual Caliper measurements.<br>
   <small>Docker daemon or Fabric network was unavailable when this report was generated.<br>
   To run real benchmarks: start Docker, bring up the Fabric test network, then execute
-  <code>bash setup_and_run_all.sh --all-scenarios</code> in a privileged environment (e.g. a VM or bare-metal Linux with Docker privileged mode).</small>
+  <code>bash setup_and_run_all.sh --all-scenarios</code> in a privileged environment.<br>
+  All improvement percentages are computed dynamically from <code>results/final_comparison/comparison_data.json</code>.</small>
 </div>"""
     else:
         data_banner = ""
@@ -195,9 +257,29 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
     puts_tx  = agg.get("world_state_puts_per_tx", 1)
     cons_100 = agg.get("consensus_rounds_per_100_certs", 100)
 
-    tps_delta   = pct_change(baselines["tps"], tps)
-    lat_delta   = pct_change(baselines["lat"], lat_ms)
-    eff_delta   = pct_change(baselines["effTps"], eff_tps)
+    # Improvement values: prefer comparison_data.json (dynamic), fallback to inline calc
+    if imp_tps_pct is not None:
+        tps_delta = f"+{imp_tps_pct:.1f}%" if imp_tps_pct >= 0 else f"{imp_tps_pct:.1f}%"
+    else:
+        tps_delta = pct_change(baselines["tps"], tps)
+
+    if imp_lat_pct is not None:
+        lat_delta = f"+{imp_lat_pct:.1f}%" if imp_lat_pct >= 0 else f"{imp_lat_pct:.1f}%"
+    else:
+        lat_delta = pct_change(baselines["lat"], lat_ms)
+
+    if imp_eff_pct is not None:
+        eff_delta = f"+{imp_eff_pct:.1f}%" if imp_eff_pct >= 0 else f"{imp_eff_pct:.1f}%"
+    else:
+        eff_delta = pct_change(baselines["effTps"], eff_tps)
+
+    # Multiplier suffix for KPI card
+    mul_suffix = ""
+    if tps_multiplier is not None and tps_multiplier != 1.0:
+        mul_suffix = f" ({tps_multiplier:.2f}\u00d7 baseline)"
+    eff_mul_suffix = ""
+    if eff_multiplier is not None and eff_multiplier != 1.0:
+        eff_mul_suffix = f" ({eff_multiplier:.2f}\u00d7 baseline)"
 
     # Banner with correct tot_tx now available
     if is_simulated:
@@ -397,13 +479,13 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
       <div class="val">{tps:.1f}</div>
       <div class="unit">tx/s</div>
       <div class="lbl">IssueCert TPS</div>
-      <div class="delta">vs S1: {tps_delta}</div>
+      <div class="delta">vs S1: {tps_delta}{mul_suffix}</div>
     </div>
     <div class="kpi highlight">
       <div class="val">{eff_tps:.0f}</div>
       <div class="unit">certs/s</div>
       <div class="lbl">Effective Cert TPS</div>
-      <div class="delta">vs S1: {eff_delta}</div>
+      <div class="delta">vs S1: {eff_delta}{eff_mul_suffix}</div>
     </div>
     <div class="kpi">
       <div class="val">{lat_ms:.0f}</div>
@@ -687,9 +769,12 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str) -> str:
 
 # ── entry point ──────────────────────────────────────────────────────────────
 def main():
-    print("=== Generating individual scenario HTML reports ===\n")
-    chartjs   = load_chartjs()
-    baselines = get_baselines()
+    print("=== Generating individual scenario HTML reports ===")
+    print("  Data source: results/final_comparison/comparison_data.json + per-scenario caliper_results.json\n")
+    chartjs = load_chartjs()
+    # Load comparison_data.json for improvement multipliers
+    cdata     = load_all_results()
+    baselines = get_baselines(cdata)
     errors    = 0
 
     for meta in SCENARIOS:
@@ -698,13 +783,22 @@ def main():
         out_name = f"report_{key}.html"
         out_path = RESULTS / key / out_name
 
+        # Patch meta with live values from comparison_data.json (batch_size, workers)
+        comp_s = (cdata or {}).get("scenarios", {}).get(key, {})
+        if comp_s:
+            meta = dict(meta)  # don't mutate original
+            meta["batch"] = comp_s.get("batch_size", meta["batch"])
+
         print(f"  [{num}/4] {meta['label']} → {out_path.relative_to(ROOT_DIR)}")
         try:
             data = load_data(key)
-            html = build_report(meta, data, baselines, chartjs)
+            html = build_report(meta, data, baselines, chartjs, cdata=cdata)
             out_path.write_text(html, encoding="utf-8")
             size = out_path.stat().st_size // 1024
-            print(f"          ✓ written ({size} KB)")
+            # Show multiplier
+            comp_s = (cdata or {}).get("scenarios", {}).get(key, {})
+            mul    = comp_s.get("eff_tps_multiplier", 1.0)
+            print(f"          ✓ written ({size} KB) — EffTPS multiplier vs S1: {mul:.2f}×")
         except Exception as exc:
             print(f"          ✗ ERROR: {exc}")
             errors += 1
