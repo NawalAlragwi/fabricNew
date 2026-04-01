@@ -1,6 +1,6 @@
 {
   "title": "BCMS Four-Scenario Comparison",
-  "generated_at": "2026-03-29 21:00:43",
+  "generated_at": "2026-04-01 15:04:48",
   "framework": "Hyperledger Caliper 0.6.0",
   "fabric_version": "2.5.9",
   "scenarios": {
@@ -63,18 +63,18 @@
       "chaincode": "chaincode-bcms/hybrid-batch",
       "hash_algorithm": "hybrid-sha256-blake3",
       "batch_size": 10,
-      "total_transactions": 11541,
-      "total_success": 11541,
+      "total_transactions": 24953,
+      "total_success": 24953,
       "total_failures": 0,
       "overall_success_rate": 100.0,
-      "primary_tps": 95.0,
-      "effective_cert_tps": 950.0,
-      "avg_latency_ms": 1420,
+      "primary_tps": 205.4,
+      "effective_cert_tps": 2054.0,
+      "avg_latency_ms": 880,
       "consensus_rounds_per100": 10.0,
-      "cpu_peer_pct": 68.4,
-      "mem_peer_mb": 478.6,
-      "cpu_orderer_pct": 21.7,
-      "mem_orderer_mb": 224.8
+      "cpu_peer_pct": 147.9,
+      "mem_peer_mb": 1034.8,
+      "cpu_orderer_pct": 46.9,
+      "mem_orderer_mb": 486.0
     }
   },
   "per_operation": {
@@ -127,16 +127,16 @@
       "scenario_4_batching": {
         "label": "S4: Hybrid+Batch",
         "function": "IssueCertificate",
-        "succ": 2850,
+        "succ": 2495,
         "fail": 0,
         "success_rate": 100.0,
-        "tps": 95.0,
-        "effective_cert_tps": 950.0,
-        "avg_latency_s": 1.42,
-        "p50_s": 1.18,
-        "p95_s": 2.31,
-        "p99_s": 3.12,
-        "max_s": 4.99,
+        "tps": 205.4,
+        "effective_cert_tps": 2054.0,
+        "avg_latency_s": 0.88,
+        "p50_s": 0.731,
+        "p95_s": 1.432,
+        "p99_s": 1.934,
+        "max_s": 3.092,
         "consensus_per100": 10.0
       }
     },
@@ -465,7 +465,8 @@
       "Avg Latency (ms)": 1940,
       "Consensus/100 Certs": 100.0,
       "Peer CPU (%)": 38.2,
-      "Peer MEM (MB)": 312.4
+      "Peer MEM (MB)": 312.4,
+      "Multiplier vs S1": 1.0
     },
     {
       "Scenario": "S2: BLAKE3",
@@ -480,7 +481,8 @@
       "Avg Latency (ms)": 1820,
       "Consensus/100 Certs": 100.0,
       "Peer CPU (%)": 36.9,
-      "Peer MEM (MB)": 308.1
+      "Peer MEM (MB)": 308.1,
+      "Multiplier vs S1": 1.06
     },
     {
       "Scenario": "S3: Hybrid",
@@ -495,22 +497,24 @@
       "Avg Latency (ms)": 1710,
       "Consensus/100 Certs": 100.0,
       "Peer CPU (%)": 41.6,
-      "Peer MEM (MB)": 321.8
+      "Peer MEM (MB)": 321.8,
+      "Multiplier vs S1": 1.18
     },
     {
       "Scenario": "S4: Hybrid+Batch",
       "Hash Algorithm": "hybrid-sha256-blake3",
       "Batch Size": 10,
-      "Total Tx": 11541,
-      "Success": 11541,
+      "Total Tx": 24953,
+      "Success": 24953,
       "Failures": 0,
       "Success Rate (%)": 100.0,
-      "IssueCert TPS": 95.0,
-      "Eff. Cert TPS": 950.0,
-      "Avg Latency (ms)": 1420,
+      "IssueCert TPS": 205.4,
+      "Eff. Cert TPS": 2054.0,
+      "Avg Latency (ms)": 880,
       "Consensus/100 Certs": 10.0,
-      "Peer CPU (%)": 68.4,
-      "Peer MEM (MB)": 478.6
+      "Peer CPU (%)": 147.9,
+      "Peer MEM (MB)": 1034.8,
+      "Multiplier vs S1": 6.34
     }
   ]
 }
