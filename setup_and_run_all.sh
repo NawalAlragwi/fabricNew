@@ -669,7 +669,7 @@ peers:
 CONN1EOF
 
     # connection-org2.yaml
-    cat > networks/connection-org2.yaml << CONN2EOF
+    cat > "${profiles_dir}/connection-org2.yaml" << CONN2EOF
 name: test-network-org2
 version: "1.0.0"
 client:
