@@ -716,6 +716,73 @@ CONN2EOF
     log "✓ Connection profiles generated: connection-org1.yaml, connection-org2.yaml"
 }
 
+# ─── Caliper network config builder (shared by run_caliper_benchmarks and run_real_caliper_scenario)
+
+generate_caliper_network_config() {
+    local PEER1_TLS_CERT="$1"
+    local PEER2_TLS_CERT="$2"
+    local ORDERER_TLS_CERT="$3"
+
+    mkdir -p "${ROOT_DIR}/caliper-workspace/networks"
+
+    # dynamic identity path resolution
+    local ORG1_USER1_KEY
+    local ORG1_USER1_CERT
+    local ORG2_USER1_KEY
+    local ORG2_USER1_CERT
+
+    ORG1_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
+    ORG1_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
+    ORG2_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
+    ORG2_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
+
+    if [ -z "$ORG1_USER1_KEY" ] || [ -z "$ORG1_USER1_CERT" ] || [ -z "$ORG2_USER1_KEY" ] || [ -z "$ORG2_USER1_CERT" ]; then
+        warn "Could not resolve all Caliper user key/cert paths. Check Fabric identities."
+    fi
+
+    generate_connection_profiles "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
+
+    cat > "${ROOT_DIR}/caliper-workspace/networks/networkConfig.yaml" << NETEOF
+name: bcms-test-network
+version: "2.0.0"
+
+caliper:
+  blockchain: fabric
+
+channels:
+  - channelName: mychannel
+    contracts:
+      - id: basic
+
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: 'User1@org1.example.com'
+          clientPrivateKey:
+            path: '${ORG1_USER1_KEY}'
+          clientSignedCert:
+            path: '${ORG1_USER1_CERT}'
+    connectionProfile:
+      path: 'networks/connection-org1.yaml'
+      discover: false
+
+  - mspid: Org2MSP
+    identities:
+      certificates:
+        - name: 'User1@org2.example.com'
+          clientPrivateKey:
+            path: '${ORG2_USER1_KEY}'
+          clientSignedCert:
+            path: '${ORG2_USER1_CERT}'
+    connectionProfile:
+      path: 'networks/connection-org2.yaml'
+      discover: false
+NETEOF
+
+    log "✓ Caliper networkConfig.yaml generated"
+}
+
 # ─── Caliper Benchmarks ──────────────────────────────────────────────────────
 
 run_caliper_benchmarks() {
@@ -767,20 +834,14 @@ run_caliper_benchmarks() {
     # Generate network configuration
     info "Generating Caliper network configuration..."
     
-    # ── Dynamic certificate path detection ────────────────────────────────────
-    # TLS CA certs (for gRPC TLS)
+    # ── Dynamic TLS certificate path detection
     PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
     PEER2_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com" -name "ca.crt" | grep "peer0.org2" | head -1)
     ORDERER_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" -name "*.pem" | grep "tlsca" | head -1)
-    # User1 identity keys/certs (Caliper 0.6.0 uses User1, not Admin)
-    ORG1_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
-    ORG1_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
-    ORG2_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore" -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
-    ORG2_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts" -name "*.pem" 2>/dev/null | head -1)
-    # Also generate connection profiles for each org
-    generate_connection_profiles "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
 
-    # Generate networkConfig.yaml — Caliper 0.6.0 format
+    generate_caliper_network_config "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
+
+    info "Updated caliper-workspace/networks/networkConfig.yaml"
     # ══════════════════════════════════════════════════════════════════════════
     # ROOT CAUSE FIX #1: caliper.blockchain attribute MUST be present.
     #   Caliper 0.6.0 src: caliper-utils.js assertConfigurationFilePaths()
@@ -1214,6 +1275,12 @@ run_real_caliper_scenario() {
         }
         cd "${ROOT_DIR}"
     fi
+
+    # Ensure network config is generated for Caliper
+    PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
+    PEER2_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com" -name "ca.crt" | grep "peer0.org2" | head -1)
+    ORDERER_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" -name "*.pem" | grep "tlsca" | head -1)
+    generate_caliper_network_config "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
 
     # Run Caliper against this scenario's benchConfig
     cd "${ROOT_DIR}/caliper-workspace"

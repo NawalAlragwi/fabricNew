@@ -9,7 +9,7 @@
 //  HASH_MODE=blake3 (see ../blake3/smartcontract_blake3.go)
 // ============================================================================
 
-package chaincode
+package main
 
 import (
 	"crypto/sha256"

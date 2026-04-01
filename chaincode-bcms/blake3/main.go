@@ -10,11 +10,10 @@ import (
 	"os"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
-	chaincode "github.com/NawalAlragwi/fabricNew/chaincode-bcms/blake3"
 )
 
 func main() {
-	cc, err := contractapi.NewChaincode(&chaincode.SmartContract{})
+	cc, err := contractapi.NewChaincode(&SmartContract{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating BCMS BLAKE3 chaincode: %v\n", err)
 		os.Exit(1)

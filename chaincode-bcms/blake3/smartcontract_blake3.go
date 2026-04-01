@@ -16,7 +16,7 @@
 //  HASH_MODE=blake3 (this file)
 // ============================================================================
 
-package chaincode
+package main
 
 import (
 	"encoding/json"
