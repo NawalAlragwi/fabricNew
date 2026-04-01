@@ -1,6 +1,6 @@
 module github.com/NawalAlragwi/fabricNew/chaincode-bcms/sha256
 
-go 1.21
+go 1.23.0
 
 require (
 	github.com/hyperledger/fabric-chaincode-go/v2 v2.0.0
