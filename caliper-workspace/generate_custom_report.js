@@ -1148,6 +1148,46 @@ ${resourceSection}
 </html>`;
 }
 
+function buildCaliperResults(rounds, resources) {
+    const caliperResults = {
+        timestamp: new Date().toISOString(),
+        framework: 'Hyperledger Fabric v2.5',
+        caliper_version: '0.6.0',
+        channel: 'mychannel',
+        chaincode: 'basic',
+        rounds: rounds.map(r => ({
+            label: r.name,
+            name: r.name,
+            tps: r.throughput || 0,
+            avg_latency_s: r.avgLatency || 0,
+            avg_latency_ms: (r.avgLatency || 0) * 1000,
+            p95_s: r.p95 || 0,
+            p99_s: r.p99 || 0,
+            max_s: r.maxLatency || 0,
+            success_rate_pct: r.succ + r.fail > 0 ? ((r.succ / (r.succ + r.fail)) * 100) : 100,
+            fail: r.fail || 0,
+            succ: r.succ || 0,
+        })),
+        resource_metrics: {},
+    };
+
+    for (const r of resources) {
+        const roundName = r.name || '_unknown';
+        // For this report generator, resources are by container
+    }
+
+    for (const res of resources) {
+        caliperResults.resource_metrics[res.name] = {
+            cpu_pct_avg: Number(res.cpu.toFixed(2)),
+            cpu_pct_max: Number(res.cpu.toFixed(2)),
+            mem_mb_avg:  Number(res.mem.toFixed(2)),
+            mem_mb_max:  Number(res.mem.toFixed(2)),
+        };
+    }
+
+    return caliperResults;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  MAIN EXECUTION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1203,6 +1243,19 @@ function main() {
     const customHtml = buildFullReport(rounds, agg, resources);
     fs.writeFileSync(OUTPUT_REPORT, customHtml, 'utf-8');
     console.log(`[5/5] Custom report written: ${OUTPUT_REPORT} (${customHtml.length} bytes)`);
+
+    // Step 5.1: Also export caliper_results.json for analyzer script
+    const resultDir = path.join(__dirname, '..', 'results', 'blake3');
+    const resultJsonPath = path.join(resultDir, 'caliper_results.json');
+    try {
+        fs.mkdirSync(resultDir, { recursive: true });
+        const caliperJson = buildCaliperResults(rounds, resources);
+        fs.writeFileSync(resultJsonPath, JSON.stringify(caliperJson, null, 2), 'utf-8');
+        console.log(`[5/5] Caliper results JSON written: ${resultJsonPath}`);
+    } catch (err) {
+        console.warn(`[WARNING] Failed to write caliper_results.json: ${err.message}`);
+    }
+
     console.log('');
     console.log('========================================================');
     console.log('  CUSTOM REPORT GENERATION COMPLETE ✓');
