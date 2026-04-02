@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-02T21:41:27.805587Z",
+  "generated_at": "2026-04-02T21:56:51.974249Z",
   "branch": "fabric-blake3",
   "migration": "SHA-256 \u2192 BLAKE3",
   "go_library": "github.com/zeebo/blake3 v0.2.4",
