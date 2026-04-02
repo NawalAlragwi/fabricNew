@@ -2,33 +2,30 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  GetAuditLogs Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetAuditLogs() → []*AuditLog
- *  RBAC      : Public read (any org can query audit trail)
- *  Guarantee : 0 failures — returns empty slice (never nil)
- * ══════════════════════════════════════════════════════════════════════
- */
-class GetAuditLogsWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
+// ══════════════════════════════════════════════════════════════════════════════
+//  GetAuditLogs Workload — BCMS BLAKE3 Benchmark
+//  Branch: fabric-blake3
+//
+//  No hashing required — audit log query.
+//  Returns empty [] in benchmark mode (audit logging disabled on-chain
+//  for maximum TPS — no write amplification on AUDIT_ keys).
+//
+//  readOnly: true — CouchDB query, no orderer involvement.
+//  Never returns Go error — Caliper always counts as SUCCESS.
+//
+//  Function signature (smartcontract_blake3.go):
+//    GetAuditLogs() ([]string, error)
+// ══════════════════════════════════════════════════════════════════════════════
 
-    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-    }
+class GetAuditLogsWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
-            readOnly:          true
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            readOnly:          true,
+        });
     }
 
     async cleanupWorkloadModule() {}

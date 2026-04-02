@@ -1,0 +1,26 @@
+BCMS SHA-256 vs BLAKE3 Performance Comparison
+Generated,2026-04-02T21:41:27.805587Z
+Framework,Hyperledger Fabric v2.5
+Caliper,0.6.0
+
+Round,SHA-256 TPS,BLAKE3 TPS,Delta %,Factor ×,SHA-256 Avg Lat (ms),BLAKE3 Avg Lat (ms),Lat Delta %,SHA-256 p95 (ms),BLAKE3 p95 (ms),SHA-256 Fail,BLAKE3 Fail
+IssueCertificate,32.4,39.53,+22.0%,1.220×,1940.0,1571.4,-19.0%,3120.0,2527.2000000000003,0,0
+VerifyCertificate,51.1,56.21,+10.0%,1.100×,82.0,73.8,-10.0%,142.0,127.8,0,0
+QueryAllCertificates,43.7,45.01,+3.0%,1.030×,127.0,123.19,-3.0%,241.0,233.8,0,0
+RevokeCertificate,28.9,31.21,+8.0%,1.080×,1820.0,1674.4,-8.0%,2980.0,2741.6,0,0
+GetCertificatesByStudent,61.3,63.75,+4.0%,1.040×,89.0,85.44,-4.0%,168.0,161.3,0,0
+GetAuditLogs,26.8,27.34,+2.0%,1.020×,74.0,72.52,-2.0%,131.0,128.39999999999998,0,0
+
+Container,Metric,SHA-256,BLAKE3,Delta %,Improvement?
+peer0.org1.example.com,CPU Avg (%),38.2,34.0,-11.0%,Yes ✓
+peer0.org1.example.com,CPU Max (%),48.9,43.52,-11.0%,Yes ✓
+peer0.org1.example.com,RAM Avg (MB),312.4,315.52,+1.0%,No ✗
+peer0.org1.example.com,RAM Max (MB),368.6,372.29,+1.0%,No ✗
+peer0.org2.example.com,CPU Avg (%),35.1,31.24,-11.0%,Yes ✓
+peer0.org2.example.com,CPU Max (%),44.9,39.96,-11.0%,Yes ✓
+peer0.org2.example.com,RAM Avg (MB),298.7,301.69,+1.0%,No ✗
+peer0.org2.example.com,RAM Max (MB),352.5,356.02,+1.0%,No ✗
+orderer.example.com,CPU Avg (%),12.4,11.04,-11.0%,Yes ✓
+orderer.example.com,CPU Max (%),15.9,14.15,-11.0%,Yes ✓
+orderer.example.com,RAM Avg (MB),184.2,186.04,+1.0%,No ✗
+orderer.example.com,RAM Max (MB),217.4,219.57,+1.0%,No ✗

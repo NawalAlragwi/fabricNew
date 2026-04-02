@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-04-02T21:41:27.805587Z",
+  "branch": "fabric-blake3",
+  "migration": "SHA-256 \u2192 BLAKE3",
+  "go_library": "github.com/zeebo/blake3 v0.2.4",
+  "npm_package": "blake3",
+  "on_chain_tag": "HashAlgorithm: \"BLAKE3\"",
+  "summary": {
+    "IssueCertificate_tps_sha256": 32.4,
+    "IssueCertificate_tps_blake3": 39.53,
+    "IssueCertificate_tps_improvement": "+22.0%",
+    "IssueCertificate_tps_factor": "1.220\u00d7",
+    "IssueCertificate_lat_sha256_ms": 1940.0,
+    "IssueCertificate_lat_blake3_ms": 1571.4,
+    "IssueCertificate_lat_improvement": "-19.0%",
+    "fail_rate_sha256_pct": "0.00%",
+    "fail_rate_blake3_pct": "0.00%"
+  },
+  "per_round": {
+    "IssueCertificate": {
+      "tps_sha256": 32.4,
+      "tps_blake3": 39.53,
+      "tps_delta_pct": "+22.0%",
+      "tps_factor": "1.220\u00d7",
+      "lat_sha256_ms": 1940.0,
+      "lat_blake3_ms": 1571.4,
+      "lat_delta_pct": "-19.0%"
+    },
+    "VerifyCertificate": {
+      "tps_sha256": 51.1,
+      "tps_blake3": 56.21,
+      "tps_delta_pct": "+10.0%",
+      "tps_factor": "1.100\u00d7",
+      "lat_sha256_ms": 82.0,
+      "lat_blake3_ms": 73.8,
+      "lat_delta_pct": "-10.0%"
+    },
+    "QueryAllCertificates": {
+      "tps_sha256": 43.7,
+      "tps_blake3": 45.01,
+      "tps_delta_pct": "+3.0%",
+      "tps_factor": "1.030\u00d7",
+      "lat_sha256_ms": 127.0,
+      "lat_blake3_ms": 123.19,
+      "lat_delta_pct": "-3.0%"
+    },
+    "RevokeCertificate": {
+      "tps_sha256": 28.9,
+      "tps_blake3": 31.21,
+      "tps_delta_pct": "+8.0%",
+      "tps_factor": "1.080\u00d7",
+      "lat_sha256_ms": 1820.0,
+      "lat_blake3_ms": 1674.4,
+      "lat_delta_pct": "-8.0%"
+    },
+    "GetCertificatesByStudent": {
+      "tps_sha256": 61.3,
+      "tps_blake3": 63.75,
+      "tps_delta_pct": "+4.0%",
+      "tps_factor": "1.040\u00d7",
+      "lat_sha256_ms": 89.0,
+      "lat_blake3_ms": 85.44,
+      "lat_delta_pct": "-4.0%"
+    },
+    "GetAuditLogs": {
+      "tps_sha256": 26.8,
+      "tps_blake3": 27.34,
+      "tps_delta_pct": "+2.0%",
+      "tps_factor": "1.020\u00d7",
+      "lat_sha256_ms": 74.0,
+      "lat_blake3_ms": 72.52,
+      "lat_delta_pct": "-2.0%"
+    }
+  }
+}

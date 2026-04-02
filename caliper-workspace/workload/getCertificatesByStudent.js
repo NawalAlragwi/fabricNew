@@ -2,15 +2,21 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  GetCertificatesByStudent Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetCertificatesByStudent(studentID) → []*Certificate
- *  RBAC      : Public read (any org)
- *  Guarantee : 0 failures — returns empty slice (never nil)
- * ══════════════════════════════════════════════════════════════════════
- */
+// ══════════════════════════════════════════════════════════════════════════════
+//  GetCertificatesByStudent Workload — BCMS BLAKE3 Benchmark
+//  Branch: fabric-blake3
+//
+//  No hashing required — CouchDB rich query by student ID.
+//  Student ID pattern: STU_{workerIndex}_{txIndex}
+//    Matches IssueCertificate workload — queries students from Round 1.
+//
+//  readOnly: true — CouchDB rich query with composite index.
+//  Returns empty slice [] when student has no certs — never returns error.
+//
+//  Function signature (smartcontract_blake3.go):
+//    GetCertificatesByStudent(studentId) ([]*Certificate, error)
+// ══════════════════════════════════════════════════════════════════════════════
+
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
     constructor() {
         super();
@@ -24,18 +30,16 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         this.txIndex++;
-        const workerIdx = this.workerIndex || 0;
-        // Query certificates for students that were issued in round 1
-        const studentID = `STU_${workerIdx}_${this.txIndex}`;
+        const w = this.workerIndex || 0;
+        // Query students from Round 1 BLAKE3 issue batch — same ID pattern
+        const studentID = `STU_${w}_${this.txIndex}`;
 
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
-            readOnly:          true
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            readOnly:          true,
+        });
     }
 
     async cleanupWorkloadModule() {}
