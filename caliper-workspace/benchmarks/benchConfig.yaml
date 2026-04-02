@@ -74,11 +74,11 @@ test:
         On-chain certificate records HashAlgorithm: "BLAKE3" for auditability.
         ID pattern: CERT_B3_{worker}_{index}. MVCC-safe: unique keys, idempotent.
         Audit logging disabled for maximum TPS (matches SHA-256 baseline config).
-      txNumber: 1500
+      txNumber: 3000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 100
       workload:
         module: workload/issueCertificate.js
       txOptions:

@@ -589,6 +589,25 @@ if [ -f "report.html" ]; then
 METAEOF
     log "Benchmark metadata saved: ${BLAKE3_RESULTS_DIR}/benchmark_meta.json"
 
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 7.5: GENERATE DYNAMIC CUSTOM REPORT
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    log "Generating dynamic custom report from latest results..."
+    cd caliper-workspace
+    if [ -f "generate_dynamic_report.js" ]; then
+        node generate_dynamic_report.js 2>&1 | tee -a "$LOG_FILE"
+        if [ -f "report_custom.html" ]; then
+            cp "report_custom.html" "${BLAKE3_RESULTS_DIR}/report_custom.html"
+            log "Dynamic custom report generated: ${BLAKE3_RESULTS_DIR}/report_custom.html"
+        else
+            warn "Dynamic custom report generation failed"
+        fi
+    else
+        warn "generate_dynamic_report.js not found — skipping dynamic report generation"
+    fi
+    cd "$ROOT_DIR"
+
 else
     warn "report.html was NOT generated!"
     warn "Check caliper.log for errors."
