@@ -1,0 +1,137 @@
+{
+  "timestamp": "2026-04-03T00:32:26.240Z",
+  "framework": "Hyperledger Fabric v2.5",
+  "caliper_version": "0.6.0",
+  "channel": "mychannel",
+  "chaincode": "basic",
+  "rounds": [
+    {
+      "label": "IssueCertificate",
+      "name": "IssueCertificate",
+      "tps": 58.8,
+      "avg_latency_s": 12.32,
+      "avg_latency_ms": 12320,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 24.32,
+      "success_rate_pct": 100,
+      "fail": 0,
+      "succ": 3000
+    },
+    {
+      "label": "VerifyCertificate",
+      "name": "VerifyCertificate",
+      "tps": 98.7,
+      "avg_latency_s": 0.02,
+      "avg_latency_ms": 20,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 0.23,
+      "success_rate_pct": 100,
+      "fail": 0,
+      "succ": 3000
+    },
+    {
+      "label": "QueryAllCertificates",
+      "name": "QueryAllCertificates",
+      "tps": 17.6,
+      "avg_latency_s": 37.66,
+      "avg_latency_ms": 37660,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 57.6,
+      "success_rate_pct": 100,
+      "fail": 0,
+      "succ": 1496
+    },
+    {
+      "label": "RevokeCertificate",
+      "name": "RevokeCertificate",
+      "tps": 48.5,
+      "avg_latency_s": 1.52,
+      "avg_latency_ms": 1520,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 2.73,
+      "success_rate_pct": 100,
+      "fail": 0,
+      "succ": 1496
+    },
+    {
+      "label": "GetCertificatesByStudent",
+      "name": "GetCertificatesByStudent",
+      "tps": 24.9,
+      "avg_latency_s": 30.99,
+      "avg_latency_ms": 30990,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 57.15,
+      "success_rate_pct": 54.84875444839857,
+      "fail": 1015,
+      "succ": 1233
+    },
+    {
+      "label": "GetAuditLogs",
+      "name": "GetAuditLogs",
+      "tps": 29.9,
+      "avg_latency_s": 0.01,
+      "avg_latency_ms": 10,
+      "p95_s": 0,
+      "p99_s": 0,
+      "max_s": 0.09,
+      "success_rate_pct": 100,
+      "fail": 0,
+      "succ": 896
+    }
+  ],
+  "resource_metrics": {
+    "&#x2F;peer0.org1.example.com": {
+      "cpu_pct_avg": 24.41,
+      "cpu_pct_max": 24.41,
+      "mem_mb_avg": 235,
+      "mem_mb_max": 235
+    },
+    "&#x2F;peer0.org2.example.com": {
+      "cpu_pct_avg": 15.59,
+      "cpu_pct_max": 15.59,
+      "mem_mb_avg": 199,
+      "mem_mb_max": 199
+    },
+    "&#x2F;couchdb0": {
+      "cpu_pct_avg": 13.97,
+      "cpu_pct_max": 13.97,
+      "mem_mb_avg": 102,
+      "mem_mb_max": 102
+    },
+    "&#x2F;orderer.example.com": {
+      "cpu_pct_avg": 6.99,
+      "cpu_pct_max": 6.99,
+      "mem_mb_avg": 105,
+      "mem_mb_max": 105
+    },
+    "&#x2F;couchdb1": {
+      "cpu_pct_avg": 12.25,
+      "cpu_pct_max": 12.25,
+      "mem_mb_avg": 101,
+      "mem_mb_max": 101
+    },
+    "&#x2F;ca_org1": {
+      "cpu_pct_avg": 0,
+      "cpu_pct_max": 0,
+      "mem_mb_avg": 14.8,
+      "mem_mb_max": 14.8
+    },
+    "&#x2F;ca_org2": {
+      "cpu_pct_avg": 0,
+      "cpu_pct_max": 0,
+      "mem_mb_avg": 12.4,
+      "mem_mb_max": 12.4
+    },
+    "&#x2F;ca_orderer": {
+      "cpu_pct_avg": 0,
+      "cpu_pct_max": 0,
+      "mem_mb_avg": 14,
+      "mem_mb_max": 14
+    }
+  }
+}

@@ -602,7 +602,7 @@ METAEOF
     # ═══════════════════════════════════════════════════════════════════════════════
 
     log "Generating custom report from latest Caliper report..."
-    cd caliper-workspace
+    cd "${ROOT_DIR}/caliper-workspace"
     if [ -f "generate_custom_report.js" ]; then
         node generate_custom_report.js 2>&1 | tee -a "$LOG_FILE"
         if [ -f "report_custom.html" ]; then

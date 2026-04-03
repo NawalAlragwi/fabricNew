@@ -1,0 +1,22 @@
+{
+    "branch": "fabric-blake3",
+    "timestamp": "2026-04-03T00:20:56Z",
+    "hash_algorithm": "BLAKE3",
+    "chaincode": "chaincode-bcms/blake3",
+    "go_library": "github.com/zeebo/blake3 v0.2.4",
+    "npm_package": "blake3",
+    "on_chain_tag": "HashAlgorithm: BLAKE3",
+    "audit_logging": "disabled (benchmark mode)",
+    "rounds": 6,
+    "workers": 8,
+    "total_transactions_target": 14550,
+    "tps_settings": {
+        "IssueCertificate": 50,
+        "VerifyCertificate": 100,
+        "QueryAllCertificates": 50,
+        "RevokeCertificate": 50,
+        "GetCertificatesByStudent": 75,
+        "GetAuditLogs": 30
+    },
+    "comparison_baseline": "results/scenario_1_sha256/caliper_results.json"
+}
