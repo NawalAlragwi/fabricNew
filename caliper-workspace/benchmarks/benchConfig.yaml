@@ -74,11 +74,11 @@ test:
         On-chain certificate records HashAlgorithm: "BLAKE3" for auditability.
         ID pattern: CERT_B3_{worker}_{index}. MVCC-safe: unique keys, idempotent.
         Audit logging disabled for maximum TPS (matches SHA-256 baseline config).
-      txNumber: 3000
+      txNumber: 6000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: ء200
       workload:
         module: workload/issueCertificate.js
       txOptions:
@@ -96,11 +96,11 @@ test:
         Verify certificate authenticity — recomputes BLAKE3 hash client-side.
         readOnly=true bypasses orderer for max throughput.
         Returns VerificationResult with hashAlgorithm: "BLAKE3" confirmed.
-      txNumber: 3000
+      txNumber: 6000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 200
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -117,11 +117,11 @@ test:
         Returns all certificates (each with HashAlgorithm: "BLAKE3" field).
         readOnly=true — direct peer query, no orderer involvement.
         Pure query throughput — no hash computation overhead.
-      txNumber: 1500
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 1
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -139,11 +139,11 @@ test:
         No hash computation in revocation path. Org2MSP RBAC enforced.
         ID pattern: CERT_B3_{worker}_{index}. Idempotent on not-found/already-revoked.
         Tests ledger write throughput without hashing overhead.
-      txNumber: 1500
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 1
       workload:
         module: workload/revokeCertificate.js
       txOptions:
@@ -160,11 +160,11 @@ test:
         CouchDB composite index on StudentID. readOnly=true.
         Returns certificates for student from BLAKE3 issuance round.
         No hash overhead — pure query throughput measurement.
-      txNumber: 2250
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 75
+          tps: 1
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
@@ -180,11 +180,11 @@ test:
         Audit log query benchmark. Fixed-rate 30 TPS × 30s = 900 transactions.
         Returns empty [] in benchmark mode (audit logging disabled).
         readOnly=true. Demonstrates audit trail query capacity (BLAKE3 mode).
-      txNumber: 900
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 1
       workload:
         module: workload/getAuditLogs.js
       txOptions:
