@@ -40,7 +40,7 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR"
 TEST_NETWORK_DIR="$ROOT_DIR/test-network"
-CHAINCODE_DIR="$ROOT_DIR/asset-transfer-basic/chaincode-go"
+CHAINCODE_DIR="$ROOT_DIR/chaincode-bcms/hybrid-batch"
 CALIPER_DIR="$ROOT_DIR/caliper-workspace"
 API_DIR="$ROOT_DIR/bcms-api"
 
@@ -172,7 +172,7 @@ if [ "$SKIP_CHAINCODE" = false ]; then
 
     ./network.sh deployCC \
         -ccn basic \
-        -ccp ../asset-transfer-basic/chaincode-go \
+        -ccp ../chaincode-bcms/hybrid-batch \
         -ccl go \
         -c mychannel \
         -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
