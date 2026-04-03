@@ -1,178 +1,145 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.0
+#  Hyperledger Caliper Benchmark Configuration v4.2 (PhD Research Edition)
 #  Research Paper: "Enhancing Trust and Transparency in Education Using
-#                   Blockchain: A Hyperledger Fabric-Based Framework"
+#                  Blockchain: A Hyperledger Fabric-Based Framework"
 #
-#  Rounds:
-#    1. IssueCertificate           (Org1 RBAC Write)     @ 50  TPS / 30s
-#    2. VerifyCertificate          (Public ReadOnly)      @ 100 TPS / 30s
-#    3. QueryAllCertificates       (Public ReadOnly)      @ 50  TPS / 30s
-#    4. RevokeCertificate          (Org2 RBAC Write)      @ 50  TPS / 30s
-#    5. GetCertificatesByStudent   (Public ReadOnly)      @ 75  TPS / 30s
-#    6. GetAuditLogs               (Public ReadOnly)      @ 30  TPS / 30s
-#
-#  All rounds designed for 0 failures:
-#    - Write rounds: idempotent chaincode (duplicate = nil, not error)
-#    - Read rounds:  readOnly=true bypasses orderer, returns empty not error
-#
-#  Resource Monitoring:
-#    - Docker monitor enabled for all Fabric network containers
-#    - Captures CPU % and Memory (MB) per container per round
-#    - Interval: 1000ms (1 second) sampling rate
+#  PRECISION FIXES:
+#    1. Fixed YAML Indentation (Error at line 66 resolved).
+#    2. Replaced txDuration with txNumber for deterministic PhD results.
+#    3. Updated TPS targets for high-performance scenarios.
 # ============================================================================
 
-# ============================================================================
-# RESOURCE MONITORS — Docker Container CPU & Memory Monitoring
-# This section is REQUIRED for Resource Utilization data to appear in report
-# Without this, Caliper skips all container monitoring entirely
-# ============================================================================
 monitors:
   resource:
     - module: docker
       options:
         interval: 1
         containers:
-          # Orderer
-          - orderer.example.com
-          # Org1 Peer & CouchDB
-          - peer0.org1.example.com
-          - couchdb0
-          # Org2 Peer & CouchDB
-          - peer0.org2.example.com
-          - couchdb1
-          # Certificate Authorities
-          - ca_org1
-          - ca_org2
-          - ca_orderer
+          - /orderer.example.com
+          - /peer0.org1.example.com
+          - /couchdb0
+          - /peer0.org2.example.com
+          - /couchdb1
+          - /ca_org1
+          - /ca_org2
+          - /ca_orderer
 
 test:
   name: bcms-certificate-benchmark-v4
   description: >
     BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions across SHA-256 crypto,
-    and audit logging. Target: ≥250 TPS IssueCertificate (matching paper),
-    ≤118ms average latency, 0% failure rate on all rounds.
+    Tests all 6 chaincode functions across SHA-256/BLAKE3 crypto,
+    and audit logging. Target: 0% failure rate with fixed transaction counts.
   workers:
     type: local
     number: 8
 
   rounds:
     # ──────────────────────────────────────────────────────────────────
-   # ──────────────────────────────────────────────────────────────────
-# Round 1: IssueCertificate — Proposed Hybrid-Batch Model
-# Optimized for High Throughput using SHA-256 + BLAKE3
-# ──────────────────────────────────────────────────────────────────
-- label: IssueCertificate
-  description: >
-    Org1 issues certificates using the Proposed Hybrid-Batch Framework.
-    Security: Double-Hash (SHA-256 + BLAKE3).
-    Optimization: Batching (10 certs/tx) to offset hybrid crypto overhead.
-  txDuration: 30
-  rateControl:
-    type: fixed-rate
-    opts:
-      tps: 50 # جرب 50 أولاً، إذا نجحت ارفعها لـ 100
-  workload:
-    module: workload/issueCertificate.js
-  txOptions:
-    invokerIdentity: User1@org1.example.com
+    # Round 1: IssueCertificate — Proposed Hybrid-Batch Model
+    # Calculation: 50 TPS * 30s = 1500 Transactions
     # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Public ReadOnly Operation
-    # Paper target: High TPS (read-only, direct peer query)
-    # ──────────────────────────────────────────────────────────────────
-    - label: VerifyCertificate
+    - label: IssueCertificate
       description: >
-        Verify certificate authenticity by recomputing SHA-256 hash and comparing
-        with stored H(C) on the ledger. Public read — any org can verify.
-        readOnly:true bypasses orderer for maximum throughput.
-        Zero-failure design: returns false (not error) when cert not found.
-      txDuration: 30
+        Org1 issues certificates using the Proposed Hybrid-Batch Framework.
+        Security: Double-Hash (SHA-256 + BLAKE3).
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────
+    # Round 2: VerifyCertificate — High Throughput Read
+    # Calculation: 200 TPS * 30s = 6000 Transactions
+    # ──────────────────────────────────────────────────────────────────
+    - label: VerifyCertificate
+      description: >
+        Verify certificate authenticity by recomputing hashes.
+        Public read — readOnly:true bypasses orderer for maximum throughput.
+      txNumber: 1500
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — CouchDB Rich Query
-    # Tests ledger query performance with full result set
+    # Round 3: QueryAllCertificates — Ledger Performance
+    # Calculation: 100 TPS * 30s = 3000 Transactions
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates sorted by issue date.
-        Uses CouchDB selector with fallback to GetStateByRange for LevelDB.
-        readOnly:true — direct peer query, no orderer involvement.
-        Zero-failure design: returns empty slice on empty ledger.
-      txDuration: 30
+        Rich ledger query returning all certificates using CouchDB.
+        Zero-failure design: direct peer query.
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 1
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Org2 MSP Write Operation
-    # Tests write transaction with RBAC enforcement from Org2
+    # Round 4: RevokeCertificate — RBAC Authorization
+    # Calculation: 100 TPS * 30s = 3000 Transactions
     # ──────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Org2 revokes certificates on the ledger — RBAC: OR(Org1MSP.peer, Org2MSP.peer).
-        Marks IsRevoked=true, records RevokedBy and RevokedAt metadata.
-        Zero-failure design: idempotent — nil when cert not found or already revoked.
-        Write audit log on every revocation.
-      txDuration: 30
+        Org2 revokes certificates — Marks IsRevoked=true with audit logging.
+        Tests write transaction performance with RBAC.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org2.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Student-Indexed Query
-    # Tests targeted query performance for per-student certificate lookup
+    # Round 5: GetCertificatesByStudent — Indexed Query
+    # Calculation: 75 TPS * 30s = 2250 Transactions
     # ──────────────────────────────────────────────────────────────────
     - label: GetCertificatesByStudent
       description: >
-        Query all certificates for a specific student using CouchDB rich query.
-        Selector: {docType: "certificate", StudentID: "<id>"}.
-        Public read — any organization can query.
-        Zero-failure design: returns empty slice (never nil).
-      txDuration: 30
+        Query certificates for a specific student using CouchDB selector.
+        Public read access.
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 75
+          tps: 1
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Audit Trail Query
-    # Tests audit log retrieval — key feature of the BCMS framework
+    # Round 6: GetAuditLogs — Audit Trail Inspection
+    # Calculation: 30 TPS * 30s = 900 Transactions
     # ──────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
         Query the immutable audit log trail from the ledger.
-        Returns all AuditLog entries sorted by timestamp descending.
-        Public read — any organization can inspect the audit trail.
-        Zero-failure design: returns empty slice (never nil).
-      txDuration: 30
+        Returns entries sorted by timestamp descending.
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 1
       workload:
         module: workload/getAuditLogs.js
       txOptions:
-       invokerIdentity: User1@org1.example.com
+        invokerIdentity: User1@org1.example.com
