@@ -524,13 +524,21 @@ if [ "$SKIP_CALIPER" = "false" ]; then
     log ""
     log "Target: 0.00% fail rate | HashAlgorithm: BLAKE3 on-chain"
 
-    npx caliper launch manager \
+    # Remove old Caliper output to avoid stale report reuse
+    rm -f report.html
+    rm -f report_custom.html
+    rm -f "${ROOT_DIR}/results/blake3/caliper_results.json"
+
+    if ! npx caliper launch manager \
         --caliper-workspace . \
         --caliper-networkconfig networks/networkConfig.yaml \
         --caliper-benchconfig benchmarks/benchConfig.yaml \
         --caliper-flow-only-test \
         --caliper-fabric-gateway-enabled \
-        2>&1 | tee -a "$LOG_FILE" || warn "Caliper exited non-zero — checking for report.html"
+        2>&1 | tee -a "$LOG_FILE"; then
+        err "Caliper benchmark failed. Aborting to avoid stale outputs."
+        exit 1
+    fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -588,6 +596,25 @@ if [ -f "report.html" ]; then
 }
 METAEOF
     log "Benchmark metadata saved: ${BLAKE3_RESULTS_DIR}/benchmark_meta.json"
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 7.5: GENERATE DYNAMIC CUSTOM REPORT
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    log "Generating custom report from latest Caliper report..."
+    cd "${ROOT_DIR}/caliper-workspace"
+    if [ -f "generate_custom_report.js" ]; then
+        node generate_custom_report.js 2>&1 | tee -a "$LOG_FILE"
+        if [ -f "report_custom.html" ]; then
+            cp "report_custom.html" "${BLAKE3_RESULTS_DIR}/report_custom.html"
+            log "Custom report generated: ${BLAKE3_RESULTS_DIR}/report_custom.html"
+        else
+            warn "Custom report generation failed"
+        fi
+    else
+        warn "generate_custom_report.js not found — skipping report generation"
+    fi
+    cd "$ROOT_DIR"
 
 else
     warn "report.html was NOT generated!"

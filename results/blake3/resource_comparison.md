@@ -1,6 +1,6 @@
 # BCMS Docker Resource Utilization: SHA-256 vs BLAKE3
 
-> Generated: 2026-04-02T21:41:27.805587Z
+> Generated: 2026-04-02T23:30:46.915111Z
 
 ## Why BLAKE3 Reduces Peer CPU
 
