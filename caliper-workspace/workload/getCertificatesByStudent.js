@@ -2,15 +2,6 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  GetCertificatesByStudent Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetCertificatesByStudent(studentID) → []*Certificate
- *  RBAC      : Public read (any org)
- *  Guarantee : 0 failures — returns empty slice (never nil)
- * ══════════════════════════════════════════════════════════════════════
- */
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
     constructor() {
         super();
@@ -25,14 +16,16 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
-        // Query certificates for students that were issued in round 1
+        
+        // يجب أن نضمن أننا نبحث عن طالب تم إصداره فعلياً في الجولة الأولى
+        // النمط STU_0_1, STU_0_2 ... إلخ
         const studentID = `STU_${workerIdx}_${this.txIndex}`;
 
         const request = {
-            contractId:        'basic',
-            contractFunction:  'GetCertificatesByStudent',
-            contractArguments: [studentID],
-            readOnly:          true
+            contractId:         'basic',
+            contractFunction:   'GetCertificatesByStudent',
+            contractArguments:  [studentID],
+            readOnly:           true // مهم جداً: الاستعلام لا يحتاج موافقة Orderer
         };
 
         return this.sutAdapter.sendRequests(request);

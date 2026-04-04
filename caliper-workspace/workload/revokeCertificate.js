@@ -2,16 +2,6 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  RevokeCertificate Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : RevokeCertificate(id) → error
- *  RBAC      : Org2MSP authorized (policy: OR('Org1MSP.peer','Org2MSP.peer'))
- *  Guarantee : 0 failures — idempotent (nil when cert not found or revoked)
- *  Invoker   : User1@org2.example.com
- * ══════════════════════════════════════════════════════════════════════
- */
 class RevokeCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
@@ -26,22 +16,23 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
-        // Revoke certificates issued in the IssueCertificate round
-        // Uses the same deterministic certID pattern as IssueCertificate workload
-        const certID = `CERT_${workerIdx}_${this.txIndex}`;
+        
+        // يجب أن يتطابق هذا النمط مع ما تم استخدامه في جولة IssueCertificate
+        // إذا لم تستخدمي التاريخ هناك، احذفي الجزء الأخير هنا
+        const certID = `CERT_${workerIdx}_${this.txIndex}`; 
 
         const request = {
-            contractId:        'basic',
-            contractFunction:  'RevokeCertificate',
-            contractArguments: [certID],
-            readOnly:          false    // write transaction — goes through orderer
+            contractId:         'basic',
+            contractFunction:   'RevokeCertificate',
+            contractArguments:  [certID],
+            readOnly:           false // هذه معاملة كتابة (Write) تمر عبر الـ Orderer
         };
 
         return this.sutAdapter.sendRequests(request);
     }
 
     async cleanupWorkloadModule() {
-        // No cleanup needed — idempotent design handles duplicates
+        // تصميم Idempotent لا يحتاج تنظيف
     }
 }
 

@@ -1,13 +1,10 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.2 (PhD Research Edition)
+#  Hyperledger Caliper Benchmark Configuration v4.5 (Individual Hybrid Model)
 #  Research Paper: "Enhancing Trust and Transparency in Education Using
 #                  Blockchain: A Hyperledger Fabric-Based Framework"
 #
-#  PRECISION FIXES:
-#    1. Fixed YAML Indentation (Error at line 66 resolved).
-#    2. Replaced txDuration with txNumber for deterministic PhD results.
-#    3. Updated TPS targets for high-performance scenarios.
+#  STATUS: Corrected for Individual Hybrid Implementation (No Batching)
 # ============================================================================
 
 monitors:
@@ -26,24 +23,22 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-certificate-benchmark-v4
+  name: bcms-individual-hybrid-benchmark
   description: >
-    BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions across SHA-256/BLAKE3 crypto,
-    and audit logging. Target: 0% failure rate with fixed transaction counts.
+    BCMS Individual Hybrid Model — SHA-256 + BLAKE3 Cryptography.
+    Tests all 6 functions: Issue, Verify, QueryAll, Revoke, GetByStudent, GetAuditLogs.
+    Target: 0% failure rate with individual transactions.
   workers:
     type: local
-    number: 8
+    number: 1
 
   rounds:
     # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Proposed Hybrid-Batch Model
-    # Calculation: 50 TPS * 30s = 1500 Transactions
+    # Round 1: IssueCertificate — Individual Hybrid Model
     # ──────────────────────────────────────────────────────────────────
     - label: IssueCertificate
       description: >
-        Org1 issues certificates using the Proposed Hybrid-Batch Framework.
-        Security: Double-Hash (SHA-256 + BLAKE3).
+        Org1 issues individual certificates using SHA-256 + BLAKE3 hybrid hashing.
       txNumber: 1
       rateControl:
         type: fixed-rate
@@ -55,13 +50,12 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — High Throughput Read
-    # Calculation: 200 TPS * 30s = 6000 Transactions
+    # Round 2: VerifyCertificate — Public ReadOnly
     # ──────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
-        Verify certificate authenticity by recomputing hashes.
-        Public read — readOnly:true bypasses orderer for maximum throughput.
+        Verify authenticity by recomputing hybrid hashes.
+        readOnly:true for direct peer query.
       txNumber: 1
       rateControl:
         type: fixed-rate
@@ -73,13 +67,11 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — Ledger Performance
-    # Calculation: 100 TPS * 30s = 3000 Transactions
+    # Round 3: QueryAllCertificates — Rich Query
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates using CouchDB.
-        Zero-failure design: direct peer query.
+        Retrieves all certificates from the ledger using CouchDB.
       txNumber: 1
       rateControl:
         type: fixed-rate
@@ -91,13 +83,11 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — RBAC Authorization
-    # Calculation: 100 TPS * 30s = 3000 Transactions
+    # Round 4: RevokeCertificate — RBAC (Org2 Only)
     # ──────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Org2 revokes certificates — Marks IsRevoked=true with audit logging.
-        Tests write transaction performance with RBAC.
+        Org2 revokes a certificate — Tests RBAC enforcement.
       txNumber: 1
       rateControl:
         type: fixed-rate
@@ -109,13 +99,11 @@ test:
         invokerIdentity: User1@org2.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Indexed Query
-    # Calculation: 75 TPS * 30s = 2250 Transactions
+    # Round 5: GetCertificatesByStudent — Targeted Query
     # ──────────────────────────────────────────────────────────────────
     - label: GetCertificatesByStudent
       description: >
         Query certificates for a specific student using CouchDB selector.
-        Public read access.
       txNumber: 1
       rateControl:
         type: fixed-rate
@@ -127,13 +115,11 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Audit Trail Inspection
-    # Calculation: 30 TPS * 30s = 900 Transactions
+    # Round 6: GetAuditLogs — Audit Trail
     # ──────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
-        Query the immutable audit log trail from the ledger.
-        Returns entries sorted by timestamp descending.
+        Query the immutable audit log trail generated by hybrid transactions.
       txNumber: 1
       rateControl:
         type: fixed-rate

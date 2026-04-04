@@ -4,11 +4,11 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  GetAuditLogs Workload Module — BCMS Benchmark
+ * GetAuditLogs Workload Module — BCMS Benchmark v4.2
  * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetAuditLogs() → []*AuditLog
- *  RBAC      : Public read (any org can query audit trail)
- *  Guarantee : 0 failures — returns empty slice (never nil)
+ * Function  : GetAuditLogs() → []*AuditLog
+ * Purpose   : Performance testing of immutable audit trail retrieval.
+ * Guarantee : Optimized for 0% failure rate.
  * ══════════════════════════════════════════════════════════════════════
  */
 class GetAuditLogsWorkload extends WorkloadModuleBase {
@@ -25,13 +25,16 @@ class GetAuditLogsWorkload extends WorkloadModuleBase {
             contractId:        'basic',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
-            readOnly:          true
+            // 'readOnly: true' أساسي لضمان سرعة الاستجابة وعدم استهلاك موارد الـ Orderer
+            readOnly:          true 
         };
 
         return this.sutAdapter.sendRequests(request);
     }
 
-    async cleanupWorkloadModule() {}
+    async cleanupWorkloadModule() {
+        // لا يوجد عمليات تنظيف مطلوبة لعمليات القراءة
+    }
 }
 
 module.exports = { createWorkloadModule: () => new GetAuditLogsWorkload() };
