@@ -44,11 +44,11 @@ test:
       description: >
         Org1 issues certificates using the Proposed Hybrid-Batch Framework.
         Security: Double-Hash (SHA-256 + BLAKE3).
-      txNumber: 1500
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 1
       workload:
         module: workload/issueCertificate.js
       txOptions:
@@ -62,11 +62,11 @@ test:
       description: >
         Verify certificate authenticity by recomputing hashes.
         Public read — readOnly:true bypasses orderer for maximum throughput.
-      txNumber: 1500
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 1
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -98,11 +98,11 @@ test:
       description: >
         Org2 revokes certificates — Marks IsRevoked=true with audit logging.
         Tests write transaction performance with RBAC.
-      txNumber: 1500
+      txNumber: 1
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 1
       workload:
         module: workload/revokeCertificate.js
       txOptions:

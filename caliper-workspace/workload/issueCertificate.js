@@ -16,10 +16,10 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
         
-        // توليد معرفات فريدة باستخدام رقم العامل (Worker) والفهرس لضمان عدم التكرار (Primary Key)
-        // هذا يضمن 0% Failure Rate بسبب الـ "Keys Collisions"
+        // توليد معرفات فريدة وقابلة للاسترجاع في جولة RevokeCertificate لاحقاً
+        // يجب أن يكون معرف الشهادة نفسه مستخدماً في كلتا الجولتين لكي يتم العثور عليها بنجاح.
         const workerIdx = this.workerIndex || 0;
-        const certID = `CERT_${workerIdx}_${this.txIndex}_${Date.now()}`;
+        const certID = `CERT_${workerIdx}_${this.txIndex}`;
         const studentID = `STU_${workerIdx}_${this.txIndex}`;
         const studentName = `Student Name ${workerIdx}_${this.txIndex}`;
         const degree = 'Bachelor of Computer Science';

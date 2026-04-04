@@ -8,28 +8,42 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
-	"lukechampine.com/blake3" 
+	"lukechampine.com/blake3"
 )
 
 // ─── Data Structures ─────────────────────────────────────────────────────────
 
 type Certificate struct {
-	DocType     string `json:"docType"`     // "certificate"
-	ID          string `json:"ID"`          // IDc
-	StudentID   string `json:"StudentID"`   // IDs
-	StudentName string `json:"StudentName"` 
-	Degree      string `json:"Degree"`      // S
-	Issuer      string `json:"Issuer"`      
-	IssueDate   string `json:"IssueDate"`   // t
-	CertHash    string `json:"CertHash"`    // H(C)
-	HashAlgo    string `json:"HashAlgo"`    // hybrid-sha256-blake3
-	Signature   string `json:"Signature"`   
-	IsRevoked   bool   `json:"IsRevoked"`   
-	RevokedBy   string `json:"RevokedBy"`   
-	RevokedAt   string `json:"RevokedAt"`   
-	CreatedAt   string `json:"CreatedAt"`   
-	UpdatedAt   string `json:"UpdatedAt"`   
-	TxID        string `json:"TxID"`        
+	DocType     string `json:"docType"`   // "certificate"
+	ID          string `json:"ID"`        // IDc
+	StudentID   string `json:"StudentID"` // IDs
+	StudentName string `json:"StudentName"`
+	Degree      string `json:"Degree"` // S
+	Issuer      string `json:"Issuer"`
+	IssueDate   string `json:"IssueDate"` // t
+	CertHash    string `json:"CertHash"`  // H(C)
+	HashAlgo    string `json:"HashAlgo"`  // hybrid-sha256-blake3
+	Signature   string `json:"Signature"`
+	IsRevoked   bool   `json:"IsRevoked"`
+	RevokedBy   string `json:"RevokedBy"`
+	RevokedAt   string `json:"RevokedAt"`
+	CreatedAt   string `json:"CreatedAt"`
+	UpdatedAt   string `json:"UpdatedAt"`
+	TxID        string `json:"TxID"`
+}
+
+// AuditLog — immutable audit trail entry for every chaincode invocation.
+type AuditLog struct {
+	DocType   string `json:"docType"`   // "auditLog"
+	TxID      string `json:"TxID"`      // Fabric transaction ID
+	Function  string `json:"Function"`  // Chaincode function name
+	CertID    string `json:"CertID"`    // Target certificate ID
+	CallerMSP string `json:"CallerMSP"` // Invoker MSP ID
+	CallerCN  string `json:"CallerCN"`  // Invoker certificate CN
+	Role      string `json:"Role"`      // ABAC role attribute (if present)
+	Result    string `json:"Result"`    // "SUCCESS" | "FAILED"
+	Error     string `json:"Error"`     // Error message (empty on success)
+	Timestamp string `json:"Timestamp"` // RFC3339 timestamp
 }
 
 type VerificationResult struct {
@@ -51,13 +65,13 @@ type SmartContract struct {
 // ComputeHybridHash يجمع بين SHA-256 و BLAKE3 للأمن القصوى
 func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate string) string {
 	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
-	
+
 	// الطبقة 1: SHA-256
 	h1 := sha256.Sum256([]byte(data))
-	
+
 	// الطبقة 2: BLAKE3
 	h2 := blake3.Sum256(h1[:])
-	
+
 	return fmt.Sprintf("%x", h2)
 }
 
@@ -219,4 +233,95 @@ func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextI
 		}
 	}
 	return certificates, nil
+}
+
+func (s *SmartContract) GetCertificatesByStudent(
+	ctx contractapi.TransactionContextInterface,
+	studentID string,
+) ([]*Certificate, error) {
+	queryString := fmt.Sprintf(
+		`{"selector":{"docType":"certificate","StudentID":"%s"},"sort":[{"IssueDate":"desc"}]}`,
+		studentID,
+	)
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return []*Certificate{}, nil
+	}
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var cert Certificate
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		certificates = append(certificates, &cert)
+	}
+
+	if certificates == nil {
+		certificates = []*Certificate{}
+	}
+
+	return certificates, nil
+}
+
+func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+	queryString := `{"selector":{"docType":"auditLog"},"sort":[{"Timestamp":"desc"}]}`
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return s.getAuditLogsByRange(ctx)
+	}
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var logEntry AuditLog
+		if err := json.Unmarshal(queryResponse.Value, &logEntry); err != nil {
+			continue
+		}
+		logs = append(logs, &logEntry)
+	}
+
+	if logs == nil {
+		logs = []*AuditLog{}
+	}
+	return logs, nil
+}
+
+func (s *SmartContract) getAuditLogsByRange(
+	ctx contractapi.TransactionContextInterface,
+) ([]*AuditLog, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
+	if err != nil {
+		return []*AuditLog{}, nil
+	}
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var logEntry AuditLog
+		if err := json.Unmarshal(queryResponse.Value, &logEntry); err != nil {
+			continue
+		}
+		logs = append(logs, &logEntry)
+	}
+
+	if logs == nil {
+		logs = []*AuditLog{}
+	}
+	return logs, nil
 }

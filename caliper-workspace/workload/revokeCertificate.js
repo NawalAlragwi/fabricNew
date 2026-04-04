@@ -27,7 +27,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
         // Revoke certificates issued in the IssueCertificate round
-        // Uses same certID pattern as IssueCertificate workload
+        // Uses the same deterministic certID pattern as IssueCertificate workload
         const certID = `CERT_${workerIdx}_${this.txIndex}`;
 
         const request = {
