@@ -117,13 +117,13 @@ echo -e "${GREEN}Step 4: Running Caliper Benchmark...${NC}"
 cd caliper-workspace
 
 # ============================================================
-# FIX #3: Always re-install and re-bind to correct version
-# Old code only installed once and used wrong bind version
-# ============================================================
+============================================================
+FIX #3: Always re-install and re-bind to correct version
+Old code only installed once and used wrong bind version
+============================================================
 echo "Installing Caliper dependencies (clean install)..."
 rm -rf node_modules package-lock.json
 npm install
-
 echo "=== FIX #3: Binding Caliper to fabric:2.5 (matches network 2.5.9) ==="
 npx caliper bind --caliper-bind-sut fabric:2.5 --caliper-bind-args=-g
 
