@@ -4,10 +4,11 @@
 //  Research Paper Implementation: "Enhancing Trust and Transparency in
 //  Education Using Blockchain: A Hyperledger Fabric-Based Framework"
 //
+//  Migration: SHA-256 -> BLAKE3 (Optimized for High Throughput)
 //  Features:
 //    • RBAC enforcement via MSP ID (Org1=Issuer, Org2=Verifier)
 //    • ABAC enforcement via Certificate Attributes (role=issuer/verifier)
-//    • SHA-256 cryptographic hashing of certificate fields
+//    • BLAKE3 cryptographic hashing (Faster, Parallelizable, Merkle-tree based)
 //    • ECDSA-compatible digital signature verification
 //    • Full audit log trail for every invocation (DISABLED FOR PERFORMANCE)
 //    • Rich query support (CouchDB)
@@ -18,34 +19,35 @@
 package chaincode
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
+	"github.com/zeebo/blake3" // تم استبدال crypto/sha256 بمكتبة blake3
 )
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
 // Certificate — core educational record stored on the ledger.
 type Certificate struct {
-	DocType     string `json:"docType"`     // "certificate"
-	ID          string `json:"ID"`          // IDc — unique certificate identifier
-	StudentID   string `json:"StudentID"`   // IDs — student identifier
-	StudentName string `json:"StudentName"` // Human-readable student name
-	Degree      string `json:"Degree"`      // S  — academic score / degree type
-	Issuer      string `json:"Issuer"`      // Issuing institution (Org1)
-	IssueDate   string `json:"IssueDate"`   // t  — timestamp of issuance
-	CertHash    string `json:"CertHash"`    // H(C) — SHA-256 of cert fields
-	Signature   string `json:"Signature"`   // Digital signature from issuer
-	IsRevoked   bool   `json:"IsRevoked"`   // Revocation flag
-	RevokedBy   string `json:"RevokedBy"`   // MSP ID that revoked
-	RevokedAt   string `json:"RevokedAt"`   // Revocation timestamp
-	CreatedAt   string `json:"CreatedAt"`   // Creation timestamp
-	UpdatedAt   string `json:"UpdatedAt"`   // Last update timestamp
-	TxID        string `json:"TxID"`        // Fabric transaction ID
+	DocType       string `json:"docType"`       // "certificate"
+	ID            string `json:"ID"`            // IDc — unique certificate identifier
+	StudentID     string `json:"StudentID"`     // IDs — student identifier
+	StudentName   string `json:"StudentName"`   // Human-readable student name
+	Degree        string `json:"Degree"`        // S  — academic score / degree type
+	Issuer        string `json:"Issuer"`        // Issuing institution (Org1)
+	IssueDate     string `json:"IssueDate"`     // t  — timestamp of issuance
+	CertHash      string `json:"CertHash"`      // H(C) — BLAKE3 of cert fields
+	HashAlgorithm string `json:"HashAlgorithm"` // "BLAKE3" - explicit on-chain audit tag
+	Signature     string `json:"Signature"`     // Digital signature from issuer
+	IsRevoked     bool   `json:"IsRevoked"`     // Revocation flag
+	RevokedBy     string `json:"RevokedBy"`     // MSP ID that revoked
+	RevokedAt     string `json:"RevokedAt"`     // Revocation timestamp
+	CreatedAt     string `json:"CreatedAt"`     // Creation timestamp
+	UpdatedAt     string `json:"UpdatedAt"`     // Last update timestamp
+	TxID          string `json:"TxID"`          // Fabric transaction ID
 }
 
 // AuditLog — immutable audit trail entry for every chaincode invocation.
@@ -64,12 +66,13 @@ type AuditLog struct {
 
 // VerificationResult — returned by VerifyCertificate for detailed reporting
 type VerificationResult struct {
-	CertID    string `json:"certID"`
-	Valid     bool   `json:"valid"`
-	IsRevoked bool   `json:"isRevoked"`
-	HashMatch bool   `json:"hashMatch"`
-	Message   string `json:"message"`
-	Timestamp string `json:"timestamp"`
+	CertID        string `json:"certID"`
+	Valid         bool   `json:"valid"`
+	IsRevoked     bool   `json:"isRevoked"`
+	HashMatch     bool   `json:"hashMatch"`
+	HashAlgorithm string `json:"hashAlgorithm"` // "BLAKE3"
+	Message       string `json:"message"`
+	Timestamp     string `json:"timestamp"`
 }
 
 // SmartContract — the main Hyperledger Fabric contract
@@ -79,9 +82,12 @@ type SmartContract struct {
 
 // ─── Cryptographic Helpers ───────────────────────────────────────────────────
 
+// ComputeCertHash computes BLAKE3(studentID|studentName|degree|issuer|issueDate)
+// BLAKE3 is used here for its 3-10x performance advantage over SHA-256.
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) string {
 	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
-	hash := sha256.Sum256([]byte(data))
+	// blake3.Sum256 produces a 32-byte [32]byte output (256-bit hash)
+	hash := blake3.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash)
 }
 
@@ -148,7 +154,6 @@ func writeAuditLog(
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil || mspID != "Org1MSP" {
-		// writeAuditLog(ctx, "InitLedger", "", "FAILED", "RBAC: only Org1MSP can initialize ledger")
 		return fmt.Errorf("access denied: only Org1MSP can initialize ledger")
 	}
 
@@ -166,19 +171,20 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	for _, seed := range seeds {
 		certHash := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate)
 		cert := Certificate{
-			DocType:     "certificate",
-			ID:          seed.id,
-			StudentID:   seed.studentID,
-			StudentName: seed.studentName,
-			Degree:      seed.degree,
-			Issuer:      seed.issuer,
-			IssueDate:   seed.issueDate,
-			CertHash:    certHash,
-			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
-			IsRevoked:   false,
-			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
-			UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
-			TxID:        ctx.GetStub().GetTxID(),
+			DocType:       "certificate",
+			ID:            seed.id,
+			StudentID:     seed.studentID,
+			StudentName:   seed.studentName,
+			Degree:        seed.degree,
+			Issuer:        seed.issuer,
+			IssueDate:     seed.issueDate,
+			CertHash:      certHash,
+			HashAlgorithm: "BLAKE3",
+			Signature:     fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
+			IsRevoked:     false,
+			CreatedAt:     time.Now().UTC().Format(time.RFC3339),
+			UpdatedAt:     time.Now().UTC().Format(time.RFC3339),
+			TxID:          ctx.GetStub().GetTxID(),
 		}
 		certJSON, err := json.Marshal(cert)
 		if err != nil {
@@ -188,8 +194,6 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			return fmt.Errorf("failed to put certificate %s: %v", seed.id, err)
 		}
 	}
-
-	// writeAuditLog(ctx, "InitLedger", "ALL", "SUCCESS", "")
 	return nil
 }
 
@@ -206,17 +210,14 @@ func (s *SmartContract) IssueCertificate(
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
-		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "failed to read MSP")
 		return fmt.Errorf("access denied: failed to read MSP: %v", err)
 	}
 	if mspID != "Org1MSP" {
-		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "RBAC Error")
 		return fmt.Errorf("access denied: only Org1MSP can issue certificates")
 	}
 
 	role := getCallerRole(ctx)
 	if role != "" && role != "issuer" {
-		// writeAuditLog(ctx, "IssueCertificate", id, "FAILED", "ABAC Error")
 		return fmt.Errorf("access denied: role attribute must be 'issuer'")
 	}
 
@@ -239,19 +240,20 @@ func (s *SmartContract) IssueCertificate(
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	cert := Certificate{
-		DocType:     "certificate",
-		ID:          id,
-		StudentID:   studentID,
-		StudentName: studentName,
-		Degree:      degree,
-		Issuer:      issuer,
-		IssueDate:   issueDate,
-		CertHash:    certHash,
-		Signature:   signature,
-		IsRevoked:   false,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		TxID:        ctx.GetStub().GetTxID(),
+		DocType:       "certificate",
+		ID:            id,
+		StudentID:     studentID,
+		StudentName:   studentName,
+		Degree:        degree,
+		Issuer:        issuer,
+		IssueDate:     issueDate,
+		CertHash:      certHash,
+		HashAlgorithm: "BLAKE3",
+		Signature:     signature,
+		IsRevoked:     false,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+		TxID:          ctx.GetStub().GetTxID(),
 	}
 
 	certJSON, err := json.Marshal(cert)
@@ -262,8 +264,6 @@ func (s *SmartContract) IssueCertificate(
 	if err := ctx.GetStub().PutState(id, certJSON); err != nil {
 		return fmt.Errorf("failed to write certificate to ledger: %v", err)
 	}
-
-	// writeAuditLog(ctx, "IssueCertificate", id, "SUCCESS", "")
 	return nil
 }
 
@@ -277,72 +277,78 @@ func (s *SmartContract) VerifyCertificate(
 	role := getCallerRole(ctx)
 	if role != "" && role != "verifier" && role != "issuer" {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "access denied: unauthorized role",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			HashAlgorithm: "BLAKE3",
+			Message:       "access denied: unauthorized role",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "ledger read error",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			HashAlgorithm: "BLAKE3",
+			Message:       "ledger read error",
+			Timestamp:     ts,
 		}, nil
 	}
 	if certJSON == nil {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "certificate not found",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			HashAlgorithm: "BLAKE3",
+			Message:       "certificate not found",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "data integrity error",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			HashAlgorithm: "BLAKE3",
+			Message:       "data integrity error",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	if cert.IsRevoked {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			IsRevoked: true,
-			HashMatch: cert.CertHash == certHash,
-			Message:   "certificate has been revoked",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			IsRevoked:     true,
+			HashMatch:     cert.CertHash == certHash,
+			HashAlgorithm: "BLAKE3",
+			Message:       "certificate has been revoked",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	hashMatch := cert.CertHash == certHash
 	if !hashMatch {
 		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			IsRevoked: false,
-			HashMatch: false,
-			Message:   "hash mismatch",
-			Timestamp: ts,
+			CertID:        id,
+			Valid:         false,
+			IsRevoked:     false,
+			HashMatch:     false,
+			HashAlgorithm: "BLAKE3",
+			Message:       "hash mismatch",
+			Timestamp:     ts,
 		}, nil
 	}
 
-	// writeAuditLog(ctx, "VerifyCertificate", id, "SUCCESS", "")
 	return &VerificationResult{
-		CertID:    id,
-		Valid:     true,
-		IsRevoked: false,
-		HashMatch: true,
-		Message:   "certificate is valid and authentic",
-		Timestamp: ts,
+		CertID:        id,
+		Valid:         true,
+		IsRevoked:     false,
+		HashMatch:     true,
+		HashAlgorithm: "BLAKE3",
+		Message:       "certificate is valid and authentic (BLAKE3 verified)",
+		Timestamp:     ts,
 	}, nil
 }
 
@@ -362,8 +368,6 @@ func (s *SmartContract) ReadCertificate(
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal certificate")
 	}
-
-	// writeAuditLog(ctx, "ReadCertificate", id, "SUCCESS", "")
 	return &cert, nil
 }
 
@@ -411,8 +415,6 @@ func (s *SmartContract) RevokeCertificate(
 	if err := ctx.GetStub().PutState(id, updatedJSON); err != nil {
 		return fmt.Errorf("failed to update certificate")
 	}
-
-	// writeAuditLog(ctx, "RevokeCertificate", id, "SUCCESS", "")
 	return nil
 }
 
@@ -443,8 +445,6 @@ func (s *SmartContract) QueryAllCertificates(
 	if certificates == nil {
 		certificates = []*Certificate{}
 	}
-
-	// writeAuditLog(ctx, "QueryAllCertificates", "ALL", "SUCCESS", "")
 	return certificates, nil
 }
 
@@ -512,8 +512,6 @@ func (s *SmartContract) GetCertificatesByStudent(
 	if certificates == nil {
 		certificates = []*Certificate{}
 	}
-
-	// writeAuditLog(ctx, "GetCertificatesByStudent", studentID, "SUCCESS", "")
 	return certificates, nil
 }
 
@@ -548,8 +546,6 @@ func (s *SmartContract) GetCertificatesByIssuer(
 	if certificates == nil {
 		certificates = []*Certificate{}
 	}
-
-	// writeAuditLog(ctx, "GetCertificatesByIssuer", issuer, "SUCCESS", "")
 	return certificates, nil
 }
 
@@ -592,9 +588,8 @@ func (s *SmartContract) GetCertificateHistory(
 		}
 		history = append(history, entry)
 	}
-
-	// writeAuditLog(ctx, "GetCertificateHistory", id, "SUCCESS", "")
-	return string("historyJSON_mock"), nil
+	historyJSON, _ := json.Marshal(history)
+	return string(historyJSON), nil
 }
 
 func (s *SmartContract) GetAuditLogs(
