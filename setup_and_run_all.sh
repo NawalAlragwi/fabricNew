@@ -121,6 +121,11 @@ cd caliper-workspace
 FIX #3: Always re-install and re-bind to correct version
 Old code only installed once and used wrong bind version
 ============================================================
+# ... (داخل قسم FIX #3)
+npm install
+npm install blake3  # السطر المطلوب إضافته لدعم خوارزمية BLAKE3 في Caliper
+echo "=== FIX #3: Binding Caliper to fabric:2.5 ==="
+# ...
 echo "Installing Caliper dependencies (clean install)..."
 rm -rf node_modules package-lock.json
 npm install
