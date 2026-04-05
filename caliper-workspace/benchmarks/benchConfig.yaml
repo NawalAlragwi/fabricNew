@@ -1,11 +1,11 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.1 (Fixed Transaction Count)
+#  Hyperledger Caliper Benchmark Configuration v4.1 (BLAKE3 Optimized)
 #  Research Paper: "Enhancing Trust and Transparency in Education Using 
 #                  Blockchain: A Hyperledger Fabric-Based Framework"
 #
-#  Rounds updated from txDuration (Time) to txNumber (Count) for research precision.
-#  All calculations based on: TPS * 30 seconds.
+#  Migration: SHA-256 -> BLAKE3 (Merkle Tree Based Hashing)
+#  Goal: Compare TPS/Latency vs SHA-256 baseline.
 # ============================================================================
 
 monitors:
@@ -24,57 +24,56 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-certificate-benchmark-v4
+  name: bcms-blake3-certificate-benchmark
   description: >
-    BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions across RBAC, ABAC, SHA-256 crypto,
-    and audit logging. Target: 0% failure rate with fixed transaction counts.
+    BCMS Full Benchmark Suite — BLAKE3 Implementation Study.
+    Tests all 6 chaincode functions utilizing BLAKE3 cryptographic hashing.
+    Target: 0% failure rate with optimized CouchDB indexing.
   workers:
     type: local
     number: 8
 
   rounds:
     # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate (50 TPS * 30s = 1500 Transactions)
+    # Round 1: IssueCertificate (BLAKE3 Writing)
     # ──────────────────────────────────────────────────────────────────
     - label: IssueCertificate
       description: >
-        Org1 issues educational certificates to the Hyperledger Fabric ledger.
-        RBAC enforced: only Org1MSP clients can invoke.
+        Org1 issues certificates. BLAKE3 hash computed client-side 
+        and validated on-chain. RBAC: Org1MSP.
       txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
           tps: 50
       workload:
-        module: workload/issueCertificate.js
+        module: workload/issueCertificate.js # تأكدي أن هذا الملف يستخدم مكتبة blake3
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate (100 TPS * 30s = 3000 Transactions)
+    # Round 2: VerifyCertificate (BLAKE3 Verification)
     # ──────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
-        Verify certificate authenticity by recomputing SHA-256 hash.
-        Public read — readOnly:true bypasses orderer.
+        Verify certificate authenticity by recomputing BLAKE3 hash.
+        Bypasses orderer for direct peer performance measurement.
       txNumber: 3000
       rateControl:
         type: fixed-rate
         opts:
           tps: 100
       workload:
-        module: workload/verifyCertificate.js
+        module: workload/verifyCertificate.js # تأكدي أن هذا الملف يستخدم مكتبة blake3
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates (50 TPS * 30s = 1500 Transactions)
+    # Round 3: QueryAllCertificates
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates sorted by issue date.
-        Uses CouchDB selector. readOnly:true — direct peer query.
+        Rich ledger query. Measures BLAKE3-tagged record retrieval speed.
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -86,12 +85,11 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate (50 TPS * 30s = 1500 Transactions)
+    # Round 4: RevokeCertificate
     # ──────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Org2 revokes certificates on the ledger — RBAC: Org2MSP.
-        Write audit log on every revocation.
+        Org2 revokes certificates — RBAC: Org2MSP.
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -103,12 +101,12 @@ test:
         invokerIdentity: User1@org2.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent (75 TPS * 30s = 2250 Transactions)
+    # Round 5: GetCertificatesByStudent (CouchDB Index Test)
     # ──────────────────────────────────────────────────────────────────
     - label: GetCertificatesByStudent
       description: >
-        Query certificates for a specific student using CouchDB rich query.
-        Selector: {docType: "certificate", StudentID: "<id>"}.
+        Query by student ID. Crucial for verifying CouchDB Index performance 
+        with BLAKE3 records.
       txNumber: 2250
       rateControl:
         type: fixed-rate
@@ -120,12 +118,12 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs (30 TPS * 30s = 900 Transactions)
+    # Round 6: GetAuditLogs
     # ──────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
-        Query the immutable audit log trail from the ledger.
-        Returns all AuditLog entries sorted by timestamp descending.
+        Query the audit log trail. (Audit logging remains disabled in chaincode 
+        for pure throughput testing).
       txNumber: 900
       rateControl:
         type: fixed-rate
