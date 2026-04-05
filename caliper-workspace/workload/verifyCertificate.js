@@ -1,16 +1,16 @@
 'use strict';
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const crypto = require('crypto');
+// استبدال المكتبة بـ blake3 لضمان التطابق مع العقد الذكي المحدث
+const blake3 = require('blake3'); 
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  VerifyCertificate Workload Module — BCMS Benchmark
+ * VerifyCertificate Workload Module — BCMS Benchmark (BLAKE3 Mode)
  * ══════════════════════════════════════════════════════════════════════
- *  Function  : VerifyCertificate(id, certHash) → VerificationResult
- *  RBAC      : Public (any org — readOnly query)
- *  Guarantee : 0 failures — returns false (not error) when cert not found
- *  Crypto    : SHA-256 hash computed client-side matching chaincode logic
+ * Function  : VerifyCertificate(id, certHash) → VerificationResult
+ * RBAC      : Public (any org — readOnly query)
+ * Crypto    : BLAKE3 hash computed client-side matching chaincode logic
  * ══════════════════════════════════════════════════════════════════════
  */
 class VerifyCertificateWorkload extends WorkloadModuleBase {
@@ -28,23 +28,24 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         this.txIndex++;
 
         const workerIdx   = this.workerIndex || 0;
-        const certID      = `CERT_${workerIdx}_${this.txIndex}`;
-        const studentID   = `STU_${workerIdx}_${this.txIndex}`;
+        // تأكد أن نمط المعرف (ID) يطابق النمط المستخدم في IssueCertificate
+        const certID      = `CERT_B3_${workerIdx}_${this.txIndex}`;
+        const studentID   = `STU_B3_${workerIdx}_${this.txIndex}`;
         const studentName = `Student_${workerIdx}_${this.txIndex}`;
         const degree      = 'Bachelor of Computer Science';
         const issuer      = 'Digital University';
         const issueDate   = new Date().toISOString().split('T')[0];
 
-        // MUST match exact hash logic in chaincode ComputeCertHash()
+        // حساب الهاش باستخدام BLAKE3 ليتطابق مع ComputeCertHash() في Go chaincode
         const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        const certHash = blake3.hash(fields).toString('hex');
 
         const request = {
             contractId:        'basic',
             contractFunction:  'VerifyCertificate',
             // Args: (id, certHash)
             contractArguments: [certID, certHash],
-            readOnly:          true    // bypass orderer — direct peer query for max TPS
+            readOnly:          true    // استعلام مباشر من الـ Peer لزيادة الـ TPS
         };
 
         return this.sutAdapter.sendRequests(request);
