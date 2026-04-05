@@ -2,39 +2,33 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  QueryAllCertificates Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : QueryAllCertificates() → []*Certificate
- *  RBAC      : Public read (any org)
- *  Guarantee : 0 failures — returns empty slice on empty ledger (never nil)
- *  Note      : readOnly:true — direct peer query, bypasses orderer
- * ══════════════════════════════════════════════════════════════════════
- */
-class QueryAllCertificatesWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
+// ══════════════════════════════════════════════════════════════════════════════
+//  QueryAllCertificates Workload — BCMS BLAKE3 Benchmark
+//  Branch: fabric-blake3
+//
+//  No hashing required — pure CouchDB rich query.
+//  Returns all certificates with HashAlgorithm: "BLAKE3" in BLAKE3 mode.
+//
+//  readOnly: true — direct peer query, bypasses orderer for max TPS.
+//  Returns empty slice [] on empty ledger — NEVER returns Go error.
+//  Caliper counts SUCCESS for any non-error response (including empty []).
+//
+//  Function signature (smartcontract_blake3.go):
+//    QueryAllCertificates() ([]*Certificate, error)
+// ══════════════════════════════════════════════════════════════════════════════
 
-    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-    }
+class QueryAllCertificatesWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'QueryAllCertificates',
-            contractArguments: [],      // no args — Go func takes only ctx
-            readOnly:          true     // essential: prevents orderer bottleneck
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            contractArguments: [], // Go func takes only ctx — no args
+            readOnly:          true, // essential: prevents orderer bottleneck
+        });
     }
 
-    async cleanupWorkloadModule() {
-        // No cleanup needed
-    }
+    async cleanupWorkloadModule() {}
 }
 
 module.exports = { createWorkloadModule: () => new QueryAllCertificatesWorkload() };

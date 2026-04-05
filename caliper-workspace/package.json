@@ -1,13 +1,15 @@
 {
   "name": "caliper-workspace",
   "version": "1.0.0",
-  "description": "Hyperledger Caliper Benchmark — BCMS Certificate System",
+  "description": "Hyperledger Caliper Benchmark — BCMS Certificate System (BLAKE3 Mode)",
   "private": true,
   "scripts": {
     "generate-report": "node generate_custom_report.js"
   },
   "dependencies": {
     "@hyperledger/caliper-cli": "0.6.0",
-    "fabric-network": "^2.2.19"
+    "blake3": "^2.1.7",
+    "fabric-network": "^2.2.19",
+    "js-yaml": "^4.1.1"
   }
 }
