@@ -5,7 +5,7 @@
  *  RevokeCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
  *
  *  Function signature (smartcontract_blake3.go):
  *    RevokeCertificate(id) error
@@ -44,7 +44,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const certID = `CERT_${w}_${this.txIndex}`;
 
         const request = {
-            contractId:        'bcms-blake3',
+            contractId:        'basic',
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false,

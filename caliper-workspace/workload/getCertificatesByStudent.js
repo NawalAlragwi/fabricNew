@@ -5,7 +5,7 @@
  *  GetCertificatesByStudent Workload — BCMS BLAKE3 (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
  *
  *  Function signature (smartcontract_blake3.go):
  *    GetCertificatesByStudent(studentID) ([]*Certificate, error)
@@ -44,7 +44,7 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
         const studentID = `STU_${w}_${this.txIndex}`;
 
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-blake3',
+            contractId:        'basic',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
             readOnly:          true,

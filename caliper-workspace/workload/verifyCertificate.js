@@ -5,7 +5,7 @@
  *  VerifyCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
  *
  *  Function signature (smartcontract_blake3.go):
  *    VerifyCertificate(id, certHash) (*VerificationResult, error)
@@ -70,7 +70,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         const certHash = blake3Hasher(fields);
 
         const request = {
-            contractId:        'bcms-blake3',
+            contractId:        'basic',
             contractFunction:  'VerifyCertificate',
             contractArguments: [certID, certHash],
             readOnly:          true,  // bypass orderer — direct peer query

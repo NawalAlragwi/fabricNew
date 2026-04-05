@@ -5,7 +5,7 @@
  *  GetAuditLogs Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
  *
  *  Function signature (smartcontract_blake3.go):
  *    GetAuditLogs() ([]*AuditLog, error)
@@ -25,7 +25,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 class GetAuditLogsWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-blake3',
+            contractId:        'basic',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
             readOnly:          true,
