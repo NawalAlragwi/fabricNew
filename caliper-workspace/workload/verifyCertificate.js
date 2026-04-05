@@ -66,7 +66,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
             contractFunction:  'VerifyCertificate',
             // Args: (id, certHash)
             contractArguments: [certID, certHash],
-            readOnly:          true    // bypass orderer — direct peer query for max TPS
+            readOnly:          true    // استعلام مباشر من الـ Peer لزيادة الـ TPS
         };
 
         return this.sutAdapter.sendRequests(request);

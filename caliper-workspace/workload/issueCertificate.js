@@ -90,7 +90,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
                 degree,
                 issuer,
                 issueDate,
-                certHash,
+                certHash, // الهاش الجديد (BLAKE3)
                 signature
             ],
             readOnly: false

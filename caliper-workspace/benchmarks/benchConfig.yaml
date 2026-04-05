@@ -74,7 +74,7 @@ test:
         opts:
           tps: 50
       workload:
-        module: workload/issueCertificate.js
+        module: workload/issueCertificate.js # تأكدي أن هذا الملف يستخدم مكتبة blake3
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -93,7 +93,7 @@ test:
         opts:
           tps: 100
       workload:
-        module: workload/verifyCertificate.js
+        module: workload/verifyCertificate.js # تأكدي أن هذا الملف يستخدم مكتبة blake3
       txOptions:
         invokerIdentity: User1@org1.example.com
 
