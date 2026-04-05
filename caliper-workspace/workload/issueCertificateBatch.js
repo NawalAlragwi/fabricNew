@@ -76,7 +76,7 @@ class IssueCertificateBatchWorkload extends WorkloadModuleBase {
         }
 
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-hybrid',
+            contractId:        'bcms-blake3',
             contractFunction:  'IssueCertificateBatch',
             contractArguments: [batchId, JSON.stringify(certs)],
             readOnly:          false,

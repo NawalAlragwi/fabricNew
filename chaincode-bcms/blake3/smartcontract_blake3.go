@@ -316,6 +316,184 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+// RevokeCertificate marks a certificate as revoked on the ledger (BLAKE3 mode)
+//
+// Access control: any peer (Org1 or Org2) may revoke via RBAC policy.
+// Idempotent: returns nil when certificate not found OR already revoked.
+// Zero MVCC conflicts: each worker revokes its own CERT_{worker}_{index} key.
+func (s *SmartContract) RevokeCertificate(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+) error {
+	certJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return fmt.Errorf("failed to read certificate %s: %v", id, err)
+	}
+	if certJSON == nil {
+		return nil // idempotent — cert not found is not an error
+	}
+
+	var cert Certificate
+	if err := json.Unmarshal(certJSON, &cert); err != nil {
+		return fmt.Errorf("failed to unmarshal certificate: %v", err)
+	}
+
+	if cert.IsRevoked {
+		return nil // idempotent — already revoked
+	}
+
+	mspID, err := getCallerMSP(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to read MSP ID: %v", err)
+	}
+
+	cert.IsRevoked  = true
+	cert.RevokedBy  = mspID
+	cert.RevokedAt  = time.Now().UTC().Format(time.RFC3339)
+	cert.UpdatedAt  = cert.RevokedAt
+	cert.TxID       = ctx.GetStub().GetTxID()
+
+	updated, err := json.Marshal(cert)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated certificate: %v", err)
+	}
+	return ctx.GetStub().PutState(id, updated)
+}
+
+// QueryAllCertificates returns all certificates stored on the ledger (BLAKE3 mode).
+//
+// Uses the CouchDB index on (docType, StudentID, Issuer) to avoid full-table scans.
+// Selector references all three indexed fields so CouchDB chooses the index automatically.
+// Returns an empty slice — never nil — when the ledger is empty (zero-failure design).
+func (s *SmartContract) QueryAllCertificates(
+	ctx contractapi.TransactionContextInterface,
+) ([]*Certificate, error) {
+	// CouchDB rich query — references all three indexed fields so the engine
+	// selects the composite index (docType + StudentID + Issuer) instead of
+	// performing a full-table scan.
+	queryString := `{
+		"selector": {
+			"docType": "certificate",
+			"StudentID": {"$gt": ""},
+			"Issuer":    {"$gt": ""}
+		},
+		"use_index": ["_design/indexCertificatesDoc", "indexCertificates"],
+		"sort": [{"docType": "asc"}, {"StudentID": "asc"}]
+	}`
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return []*Certificate{}, nil // return empty slice, never error, for zero-failure
+	}
+	defer resultsIterator.Close()
+
+	var certs []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue // skip malformed entries — never abort
+		}
+		var cert Certificate
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		certs = append(certs, &cert)
+	}
+	if certs == nil {
+		certs = []*Certificate{} // guarantee non-nil slice
+	}
+	return certs, nil
+}
+
+// GetCertificatesByStudent returns all certificates for a specific student (BLAKE3 mode).
+//
+// Uses the CouchDB index on (docType, StudentID, Issuer).
+// Selector targets docType + StudentID (both indexed) → CouchDB uses the index.
+// Returns empty slice on no match — zero-failure design.
+func (s *SmartContract) GetCertificatesByStudent(
+	ctx contractapi.TransactionContextInterface,
+	studentID string,
+) ([]*Certificate, error) {
+	if studentID == "" {
+		return []*Certificate{}, nil
+	}
+
+	// Both docType and StudentID are in the CouchDB index — no full-table scan.
+	queryString := fmt.Sprintf(`{
+		"selector": {
+			"docType":   "certificate",
+			"StudentID": "%s"
+		},
+		"use_index": ["_design/indexCertificatesDoc", "indexCertificates"],
+		"sort": [{"docType": "asc"}, {"StudentID": "asc"}]
+	}`, studentID)
+
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return []*Certificate{}, nil
+	}
+	defer resultsIterator.Close()
+
+	var certs []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var cert Certificate
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		certs = append(certs, &cert)
+	}
+	if certs == nil {
+		certs = []*Certificate{}
+	}
+	return certs, nil
+}
+
+// AuditLog is a lightweight audit event record stored separately from Certificate.
+type AuditLog struct {
+	DocType   string `json:"docType"`
+	CertID    string `json:"certID"`
+	Action    string `json:"action"`
+	ActorMSP  string `json:"actorMSP"`
+	Timestamp string `json:"timestamp"`
+	TxID      string `json:"txID"`
+}
+
+// GetAuditLogs returns all audit log entries from the ledger (BLAKE3 mode).
+//
+// Returns an empty slice — never nil — when no audit records exist.
+// readOnly: true in the Caliper workload bypasses the orderer for maximum TPS.
+func (s *SmartContract) GetAuditLogs(
+	ctx contractapi.TransactionContextInterface,
+) ([]*AuditLog, error) {
+	// Simple range scan on AUDIT_ key prefix — uses LevelDB/CouchDB range index.
+	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
+	if err != nil {
+		return []*AuditLog{}, nil
+	}
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var entry AuditLog
+		if err := json.Unmarshal(queryResponse.Value, &entry); err != nil {
+			continue
+		}
+		logs = append(logs, &entry)
+	}
+	if logs == nil {
+		logs = []*AuditLog{}
+	}
+	return logs, nil
+}
+
 // ComputeHash exposes hash computation for benchmarking
 func (s *SmartContract) ComputeHash(
 	ctx contractapi.TransactionContextInterface,

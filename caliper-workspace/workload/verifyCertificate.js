@@ -5,10 +5,12 @@ const crypto = require('crypto');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  VerifyCertificate Workload — BCMS Hybrid-Batch Benchmark (mirage-batch)
+ *  VerifyCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Function signature (smartcontract_hybrid.go):
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *
+ *  Function signature (smartcontract_blake3.go):
  *    VerifyCertificate(id, certHash) (*VerificationResult, error)
  *
  *  readOnly:true — direct peer query, bypasses orderer for max TPS.
@@ -18,6 +20,10 @@ const crypto = require('crypto');
  *
  *  ID pattern matches issueCertificate.js so certs issued in Round 1
  *  are verified in Round 2 (with hash recomputed identically).
+ *
+ *  CouchDB Index: VerifyCertificate uses GetState (key lookup) — no
+ *  index required. Full index benefit is in QueryAllCertificates /
+ *  GetCertificatesByStudent.
  * ══════════════════════════════════════════════════════════════════════════
  */
 class VerifyCertificateWorkload extends WorkloadModuleBase {
@@ -45,15 +51,15 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         const issuer      = 'Digital University';
         const issueDate   = this.issueDate;
 
-        // Recompute SHA-256 — must match IssueCertificate hash exactly
+        // Recompute SHA-256 — must match IssueCertificate certHashInput exactly
         const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
         const certHash = crypto.createHash('sha256').update(fields).digest('hex');
 
         const request = {
-            contractId:        'bcms-hybrid',
+            contractId:        'bcms-blake3',
             contractFunction:  'VerifyCertificate',
             contractArguments: [certID, certHash],
-            readOnly:          true, // bypass orderer — direct peer query
+            readOnly:          true,  // bypass orderer — direct peer query
         };
 
         return this.sutAdapter.sendRequests(request);

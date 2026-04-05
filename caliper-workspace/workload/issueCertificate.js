@@ -5,39 +5,39 @@ const crypto = require('crypto');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  IssueCertificate Workload — BCMS Hybrid-Batch Benchmark  (mirage-batch)
+ *  IssueCertificate Workload — BCMS BLAKE3 Benchmark  (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/hybrid-batch (deployed as bcms-hybrid)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
  *
- *  Function signature (smartcontract_hybrid.go):
+ *  Function signature (smartcontract_blake3.go):
  *    IssueCertificate(
- *      id, studentId, studentName, degree, issuer, issueDate,
- *      certHash, blake3Hash, signature, batchId
+ *      id, studentID, studentName, degree, issuer, issueDate,
+ *      certHashInput, signature
  *    ) error
  *
  *  MVCC Safety:
  *    - Each worker generates a UNIQUE ID: CERT_{workerIndex}_{txIndex}
- *    - No two workers ever share a key → zero phantom-read conflicts
+ *    - No two workers share a key → zero phantom-read conflicts
  *    - Idempotent: duplicate ID returns nil (not error)
  *
- *  Hybrid Crypto (client-side):
- *    certHash   = SHA-256(studentId|studentName|degree|issuer|issueDate)
- *    blake3Hash = simulated BLAKE3 via SHA-256(SHA-256(fields)) as placeholder
- *                 In production, use a real BLAKE3 library (e.g. @noble/hashes)
- *                 For benchmarking purposes this is sufficient — the chaincode
- *                 stores blake3Hash as advisory metadata and does NOT validate it.
+ *  Native BLAKE3 Crypto (client-side):
+ *    certHash is computed as SHA-256 on the client. The chaincode itself
+ *    applies BLAKE3 natively via lukechampine.com/blake3 on the Go side.
+ *    The client sends certHashInput as a SHA-256 pre-hash; chaincode
+ *    accepts it or recomputes BLAKE3(fields) if empty.
+ *    DO NOT use blake3-js — Native BLAKE3 runs inside the Go chaincode.
  *
- *  Batch Design:
- *    batchId groups certs by worker + round for research paper traceability.
- *    On-chain each cert is still an independent state write (MVCC-safe).
+ *  CouchDB Index Alignment:
+ *    Documents are stored with docType="certificate", StudentID, Issuer
+ *    matching the index defined in META-INF/statedb/couchdb/indexes/
+ *    indexCertificates.json — ensuring all rich queries hit the index.
  * ══════════════════════════════════════════════════════════════════════════
  */
 class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         this.txIndex   = 0;
-        this.batchId   = '';
         this.issueDate = '';
     }
 
@@ -46,8 +46,6 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         this.txIndex   = 0;
         // Freeze issueDate per worker-round so all certs in a batch share the same date
         this.issueDate = new Date().toISOString().split('T')[0];
-        // Unique batch ID per worker × round
-        this.batchId   = `BATCH_W${workerIndex}_R${roundIndex}_${Date.now()}`;
     }
 
     async submitTransaction() {
@@ -55,33 +53,30 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
 
         const w           = this.workerIndex || 0;
         const certID      = `CERT_${w}_${this.txIndex}`;
+        // StudentID and Issuer must match the CouchDB index field names
         const studentID   = `STU_${w}_${this.txIndex}`;
         const studentName = `Student_${w}_${this.txIndex}`;
         const degree      = 'Bachelor of Computer Science';
+        // Issuer matches the index field — avoids full-table scan on GetCertificatesByStudent
         const issuer      = 'Digital University';
         const issueDate   = this.issueDate;
 
-        // ── SHA-256 hash (primary, validated on-chain) ──────────────────
-        // Formula: SHA256(studentId|studentName|degree|issuer|issueDate)
-        // Must match ComputeHybridHash() in smartcontract_hybrid.go exactly.
+        // ── Client-side SHA-256 pre-hash ────────────────────────────────
+        // Chaincode applies native BLAKE3 (lukechampine.com/blake3 in Go).
+        // We pass the field-based hash as certHashInput; chaincode overwrites
+        // with BLAKE3(studentID|studentName|degree|issuer|issueDate) on-chain.
         const fields    = [studentID, studentName, degree, issuer, issueDate].join('|');
         const certHash  = crypto.createHash('sha256').update(fields).digest('hex');
 
-        // ── BLAKE3 advisory hash (stored, NOT validated on-chain) ────────
-        // Simulated as double-SHA256 for benchmarking.
-        // Replace with real BLAKE3 (e.g. require('@noble/hashes/blake3'))
-        // in production deployments.
-        const blake3Hash = crypto.createHash('sha256').update(certHash).digest('hex');
-
         // ── Digital signature placeholder ────────────────────────────────
-        const signature  = `SIG_${certID}_${certHash.substring(0, 16)}`;
+        const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
-            contractId:        'bcms-hybrid',
+            contractId:        'bcms-blake3',
             contractFunction:  'IssueCertificate',
             // Args MUST match Go func signature order exactly:
-            // (id, studentId, studentName, degree, issuer, issueDate,
-            //  certHash, blake3Hash, signature, batchId)
+            // (id, studentID, studentName, degree, issuer, issueDate,
+            //  certHashInput, signature)
             contractArguments: [
                 certID,
                 studentID,
@@ -90,9 +85,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
                 issuer,
                 issueDate,
                 certHash,
-                blake3Hash,
                 signature,
-                this.batchId,
             ],
             readOnly: false,
         };

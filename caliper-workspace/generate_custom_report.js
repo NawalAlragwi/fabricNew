@@ -47,19 +47,20 @@ const INPUT_REPORT  = process.argv[2] || path.join(__dirname, 'report.html');
 const OUTPUT_REPORT = process.argv[3] || path.join(__dirname, 'report_custom.html');
 
 const BENCHMARK_META = {
-    title:       'BCMS Hybrid-Batch Certificate Benchmark',
-    version:     'v5.0',
+    title:       'BCMS Native BLAKE3 Certificate Benchmark',
+    version:     'v6.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
-    chaincode:   'bcms-hybrid',
-    chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
+    chaincode:   'bcms-blake3',
+    chaincodeLanguage: 'Go (fabric-contract-api-go v2 + lukechampine.com/blake3)',
     workers:     8,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
-    branch:      'mirage-batch',
-    crypto:      'Hybrid SHA-256 (on-chain) + BLAKE3 (advisory off-chain)',
-    batching:    'MVCC-safe — each cert at independent state key',
+    branch:      'fabric-blake3-new',
+    crypto:      'Native BLAKE3 (lukechampine.com/blake3 — Go chaincode, NOT blake3-js)',
+    couchdbIndex:'META-INF/statedb/couchdb/indexes/indexCertificates.json — [docType, StudentID, Issuer]',
+    batching:    'MVCC-safe — each cert at independent state key CERT_{worker}_{txIndex}',
 };
 
 // ─── Round Metadata ─────────────────────────────────────────────────────────
@@ -69,15 +70,17 @@ const ROUND_META = {
         emoji: '1',
         badge: 'badge-org1',
         badgeText: 'Org1 RBAC — Write',
-        description: `Org1 issues a new certificate to the blockchain ledger with hybrid crypto.
+        description: `Org1 issues a new certificate to the blockchain ledger using <strong>Native BLAKE3</strong>.<br>
             The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
-            <strong>Hybrid Crypto:</strong> <code>certHash = SHA-256(fields)</code> stored on-chain as primary validator.
-            <code>blake3Hash = BLAKE3(fields)</code> stored as advisory integrity proof (off-chain computation).<br>
+            <strong>Native BLAKE3 (Go):</strong> <code>CertHash = BLAKE3(studentID|name|degree|issuer|date)</code>
+            computed on-chain by <code>lukechampine.com/blake3</code>. NOT blake3-js — this is native Go.<br>
+            <strong>CouchDB Index:</strong> Each cert stored with <code>docType="certificate"</code>,
+            <code>StudentID</code>, <code>Issuer</code> — matching the composite index for fast queries.<br>
             <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
             when Caliper retries under load. Each worker uses unique key <code>CERT_{worker}_{index}</code> → zero MVCC conflicts.`,
         invoker: 'User1@org1.example.com',
         readOnly: false,
-        contractArgs: '[id, studentId, studentName, degree, issuer, issueDate, certHash, blake3Hash, signature, batchId]',
+        contractArgs: '[id, studentID, studentName, degree, issuer, issueDate, certHashInput, signature]',
         chartColor: { bg: 'rgba(105,41,196,0.7)', border: 'rgba(105,41,196,1)', lineBg: 'rgba(0,98,255,0.1)', lineBorder: 'rgba(0,98,255,0.9)' },
     },
     'VerifyCertificate': {
@@ -460,17 +463,30 @@ function parseResourceUtilization(htmlContent) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function computeAggregates(rounds) {
-    const totalSucc = rounds.reduce((s, r) => s + r.succ, 0);
-    const totalFail = rounds.reduce((s, r) => s + r.fail, 0);
+    // Robust empty-result-set guard: if rounds is empty or all zeros, return
+    // safe defaults so the rest of the report pipeline never crashes.
+    if (!rounds || rounds.length === 0) {
+        return {
+            totalSucc: 0, totalFail: 0, totalTx: 0, failRate: '0.00',
+            peakThroughput: '0.0', peakThroughputRound: 'N/A',
+            avgLatency: '0.00', avgThroughput: '0.0',
+        };
+    }
+
+    const totalSucc = rounds.reduce((s, r) => s + (r.succ || 0), 0);
+    const totalFail = rounds.reduce((s, r) => s + (r.fail || 0), 0);
     const totalTx   = totalSucc + totalFail;
     const failRate  = totalTx > 0 ? ((totalFail / totalTx) * 100).toFixed(2) : '0.00';
-    const peakThroughput = Math.max(...rounds.map(r => r.throughput));
-    const peakThroughputRound = rounds.find(r => r.throughput === peakThroughput);
 
-    const weightedLatSum = rounds.reduce((s, r) => s + r.avgLatency * r.succ, 0);
+    // Guard: Math.max() of empty array returns -Infinity
+    const throughputs    = rounds.map(r => r.throughput || 0);
+    const peakThroughput = throughputs.length > 0 ? Math.max(...throughputs) : 0;
+    const peakThroughputRound = rounds.find(r => (r.throughput || 0) === peakThroughput);
+
+    const weightedLatSum = rounds.reduce((s, r) => s + (r.avgLatency || 0) * (r.succ || 0), 0);
     const avgLatency = totalSucc > 0 ? (weightedLatSum / totalSucc).toFixed(2) : '0.00';
     const avgThroughput = rounds.length > 0
-        ? (rounds.reduce((s, r) => s + r.throughput, 0) / rounds.length).toFixed(1)
+        ? (rounds.reduce((s, r) => s + (r.throughput || 0), 0) / rounds.length).toFixed(1)
         : '0.0';
 
     return {
@@ -613,19 +629,33 @@ function buildSummaryTableRows(rounds, agg) {
         'IssueCertificateBatch':  '<span class="badge-org1">Org1 Batch</span>',
     };
 
+    // Robust guard: empty rounds → show placeholder row, never crash
+    if (!rounds || rounds.length === 0) {
+        return `<tr><td colspan="9" style="text-align:center; color:#999;">
+            No benchmark rounds extracted from report — check report.html format.</td></tr>`;
+    }
+
     let rows = '';
     rounds.forEach((r, i) => {
+        // Safely coerce numeric fields — undefined/NaN → 0
+        const succ       = r.succ        || 0;
+        const fail       = r.fail        || 0;
+        const sendRate   = r.sendRate    || 0;
+        const maxLatency = r.maxLatency  || 0;
+        const minLatency = r.minLatency  || 0;
+        const avgLatency = r.avgLatency  || 0;
+        const throughput = r.throughput  || 0;
         rows += `
             <tr>
                 <td>${i + 1}</td>
                 <td>${badgeMap[r.name] || ''}${r.name}</td>
-                <td class="succ-num">${formatNumber(r.succ)}</td>
-                <td class="fail-zero">${r.fail}</td>
-                <td class="tps-num">${r.sendRate.toFixed(1)}</td>
-                <td class="lat-num">${r.maxLatency.toFixed(2)}</td>
-                <td class="lat-num">${r.minLatency.toFixed(2)}</td>
-                <td class="lat-num">${r.avgLatency.toFixed(2)}</td>
-                <td class="tps-num">${r.throughput.toFixed(1)}</td>
+                <td class="succ-num">${formatNumber(succ)}</td>
+                <td class="fail-zero">${fail}</td>
+                <td class="tps-num">${sendRate.toFixed(1)}</td>
+                <td class="lat-num">${maxLatency.toFixed(2)}</td>
+                <td class="lat-num">${minLatency.toFixed(2)}</td>
+                <td class="lat-num">${avgLatency.toFixed(2)}</td>
+                <td class="tps-num">${throughput.toFixed(1)}</td>
             </tr>`;
     });
 
@@ -1204,9 +1234,9 @@ ${resourceSection}
 
 function main() {
     console.log('========================================================');
-    console.log('  BCMS Custom Report Generator v5.0 (mirage-batch)');
+    console.log('  BCMS Custom Report Generator v6.0 (fabric-blake3-new)');
     console.log('  Ph.D. Level Post-Processor for Hyperledger Caliper');
-    console.log('  Chaincode: bcms-hybrid | 7 Rounds | Hybrid SHA-256+BLAKE3 | MVCC-Safe Batch');
+    console.log('  Chaincode: bcms-blake3 | Native BLAKE3 (Go) | CouchDB Index | MVCC-Safe');
     console.log('========================================================');
     console.log('');
 

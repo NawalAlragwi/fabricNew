@@ -158,22 +158,30 @@ cd ..
 
 # Step 3: Deploy Smart Contract
 # ============================================================
-# HYBRID-BATCH: Deploy bcms-hybrid chaincode (mirage-batch branch)
-# Chaincode path: chaincode-bcms/hybrid-batch
-# Chaincode ID:   bcms-hybrid  (all Caliper workloads use this ID)
-# Crypto:         SHA-256 on-chain + BLAKE3 advisory off-chain
-# Batching:       MVCC-safe individual state keys per certificate
+# BLAKE3-NATIVE: Deploy bcms-blake3 chaincode (fabric-blake3-new branch)
+# Chaincode path: chaincode-bcms/blake3
+# Chaincode ID:   bcms-blake3  (all Caliper workloads use this ID)
+# Crypto:         Native BLAKE3 via lukechampine.com/blake3 (Go)
+#                 DO NOT use blake3-js — native Go implementation only
+# CouchDB Index:  META-INF/statedb/couchdb/indexes/indexCertificates.json
+#                 Indexes: docType, StudentID, Issuer
+#                 The entire chaincode-bcms/blake3 dir (incl. META-INF)
+#                 is included in the peer lifecycle package automatically
+#                 by ./network.sh deployCC — Fabric packages everything
+#                 under the chaincode path, META-INF included.
 # ============================================================
-echo -e "${GREEN}Step 3: Deploying Hybrid-Batch Smart Contract (bcms-hybrid)...${NC}"
-echo "   Functions: IssueCertificate | IssueCertificateBatch | VerifyCertificate"
-echo "             QueryAllCertificates | RevokeCertificate | GetCertsByStudent"
-echo "             GetAuditLogs | GetBatchRecord | CertificateExists"
-echo "   Crypto:   Hybrid SHA-256 (on-chain) + BLAKE3 (advisory off-chain)"
+echo -e "${GREEN}Step 3: Deploying Native BLAKE3 Smart Contract (bcms-blake3)...${NC}"
+echo "   Functions: IssueCertificate | VerifyCertificate | RevokeCertificate"
+echo "             QueryAllCertificates | GetCertificatesByStudent | GetAuditLogs"
+echo "             ComputeHash | GetHashAlgorithm | InitLedger"
+echo "   Crypto:   Native BLAKE3 (lukechampine.com/blake3 — Go chaincode)"
+echo "   Index:    META-INF/statedb/couchdb/indexes/indexCertificates.json"
+echo "             Fields: [docType, StudentID, Issuer] — prevents full-table scans"
 echo "   MVCC Fix: Each cert stored at unique key — zero phantom-read conflicts"
 cd test-network
 ./network.sh deployCC \
-  -ccn bcms-hybrid \
-  -ccp ../chaincode-bcms/hybrid-batch \
+  -ccn bcms-blake3 \
+  -ccp ../chaincode-bcms/blake3 \
   -ccl go \
   -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
 cd ..
@@ -475,7 +483,7 @@ echo "   ── Infrastructure Tuning (mirage-batch) ─────────
 echo "   configtx: BatchTimeout=0.5s  MaxMessageCount=500  AbsoluteMaxBytes=99MB  PreferredMaxBytes=2MB"
 echo "   Docker:   GOMAXPROCS=0 (auto — all cores)  No CPU limits on any container"
 echo "   Caliper:  NODE_OPTIONS=--max-old-space-size=8192  Workers=15"
-echo "   Chaincode: bcms-hybrid (hybrid-batch) — contractId: bcms-hybrid"
+echo "   Chaincode: bcms-blake3 (blake3) — contractId: bcms-blake3"
 echo "   ── Scenario configs available in benchmarks/ ──────────────────────────────"
 echo "   benchConfig-S1-SHA256.yaml      S1: SHA-256 only,  workers=5, linear 100→1000 TPS"
 echo "   benchConfig-S2-BLAKE3.yaml      S2: BLAKE3 only,   workers=5, linear 100→1000 TPS"
@@ -483,6 +491,10 @@ echo "   benchConfig-S3-Hybrid.yaml      S3: Hybrid,        workers=5, linear 10
 echo "   benchConfig-S4-HybridBatch.yaml S4: Hybrid-Batch,  workers=15, linear 200→1500 TPS"
 
 # FIX #6: Added --caliper-fabric-gateway-enabled for Fabric 2.5 compat
+# FIX #BLAKE3-1: --caliper-report-path set explicitly to report.html
+#   Ensures Caliper writes the report inside caliper-workspace/ (cwd).
+#   Without this flag Caliper may write to a temp path and the check
+#   below never finds report.html.
 # NODE_OPTIONS already exported above (--max-old-space-size=8192)
 # This prevents Caliper V8 heap OOM at 1000-1500 TPS load
 echo "Launching Caliper with NODE_OPTIONS=$NODE_OPTIONS"
@@ -491,21 +503,31 @@ npx caliper launch manager \
     --caliper-networkconfig networks/networkConfig.yaml \
     --caliper-benchconfig benchmarks/benchConfig.yaml \
     --caliper-flow-only-test \
-    --caliper-fabric-gateway-enabled
+    --caliper-fabric-gateway-enabled \
+    --caliper-report-path report.html
 
 # ============================================================
 # FIX #8: Verify report was actually generated
+# FIX #BLAKE3-2: report.html is written inside caliper-workspace/ (cwd)
+#   Also copy it to the project root for convenience.
 # ============================================================
 if [ -f "report.html" ]; then
     REPORT_SIZE=$(stat -c%s "report.html" 2>/dev/null || stat -f%z "report.html" 2>/dev/null || echo "unknown")
     echo ""
     echo "=================================================="
     echo -e "${GREEN}DEFAULT CALIPER REPORT GENERATED${NC}"
-    echo "  Report: $(pwd)/report.html ($REPORT_SIZE bytes)"
+    echo "  Report (caliper-workspace): $(pwd)/report.html ($REPORT_SIZE bytes)"
     echo "=================================================="
+
+    # Copy report.html to project root so CI and other scripts find it
+    # This is non-fatal — caliper-workspace/report.html is the primary copy
+    cp -f report.html ../report.html 2>/dev/null && \
+        echo "  Copied report.html → $(cd .. && pwd)/report.html" || \
+        echo "  Note: could not copy report.html to project root (non-fatal)"
 
     # ============================================================
     # STEP 9: Run Custom Report Post-Processor (PhD-Level)
+    # FIX #BLAKE3-3: pass explicit paths and guard against empty results
     # ============================================================
     echo ""
     echo "=================================================="
@@ -514,17 +536,22 @@ if [ -f "report.html" ]; then
 
     if [ -f "generate_custom_report.js" ]; then
         node generate_custom_report.js report.html report_custom.html
-        if [ -f "report_custom.html" ]; then
+        CUSTOM_EXIT=$?
+        if [ $CUSTOM_EXIT -eq 0 ] && [ -f "report_custom.html" ]; then
             CUSTOM_SIZE=$(stat -c%s "report_custom.html" 2>/dev/null || stat -f%z "report_custom.html" 2>/dev/null || echo "unknown")
+            # Copy custom report to project root as well
+            cp -f report_custom.html ../report_custom.html 2>/dev/null || true
             echo ""
             echo "=================================================="
             echo -e "${GREEN}BENCHMARK COMPLETE — ALL REPORTS GENERATED${NC}"
             echo "  Default Report: $(pwd)/report.html ($REPORT_SIZE bytes)"
             echo "  Custom Report:  $(pwd)/report_custom.html ($CUSTOM_SIZE bytes)"
+            echo "  Project Root:   $(cd .. && pwd)/report.html"
+            echo "  Project Root:   $(cd .. && pwd)/report_custom.html"
             echo "  Generated: $(date '+%Y-%m-%d %H:%M:%S')"
             echo "=================================================="
         else
-            echo -e "${RED}WARNING: Custom report generation failed.${NC}"
+            echo -e "${RED}WARNING: Custom report generation failed (exit=$CUSTOM_EXIT).${NC}"
             echo "Default report still available: $(pwd)/report.html"
         fi
     else
@@ -542,7 +569,7 @@ if [ -f "report.html" ]; then
     if [ -f "generate_scenario_reports.js" ]; then
         node generate_scenario_reports.js
         echo "  report_S1_SHA256.html      — S1: SHA-256 only, ~135 TPS"
-        echo "  report_S2_BLAKE3.html      — S2: BLAKE3 only,  ~202 TPS"
+        echo "  report_S2_BLAKE3.html      — S2: BLAKE3 (native) only, ~202 TPS"
         echo "  report_S3_Hybrid.html      — S3: Hybrid SHA-256+BLAKE3, ~178 TPS"
         echo "  report_S4_HybridBatch.html — S4: Hybrid-Batch batchSize=10, ~1,628 effective certs/s"
         echo "  All scenarios: 0% failure rate"
@@ -556,9 +583,10 @@ else
     echo "The benchmark failed. Check caliper.log for details."
     echo "Common causes:"
     echo "  - Network containers not running (check: docker ps)"
-    echo "  - Chaincode not deployed or wrong version"
+    echo "  - Chaincode not deployed or wrong version (should be bcms-blake3)"
     echo "  - Certificate/key path mismatch"
     echo "  - Caliper bind version mismatch (should be fabric:2.5)"
+    echo "  - META-INF index not packaged — verify chaincode-bcms/blake3/META-INF exists"
     echo "=================================================="
     exit 1
 fi

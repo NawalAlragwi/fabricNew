@@ -4,22 +4,24 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  RevokeCertificate Workload — BCMS Hybrid-Batch Benchmark (mirage-batch)
+ *  RevokeCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Function signature (smartcontract_hybrid.go):
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
+ *
+ *  Function signature (smartcontract_blake3.go):
  *    RevokeCertificate(id) error
  *
- *  RBAC: Org2MSP (policy: OR('Org1MSP.peer','Org2MSP.peer'))
+ *  RBAC: Any MSP (Org1 or Org2) may revoke per chaincode policy.
  *  Idempotent: nil when cert not found OR already revoked.
  *
  *  MVCC Safety:
- *    Each revocation writes ONLY to the cert's own key.
- *    Under concurrent load, if two workers attempt to revoke the SAME cert:
- *      - First commit: reads cert (not revoked) → marks revoked → commits
- *      - Second commit: MVCC read-set conflict → Fabric aborts tx
- *    To prevent this, each worker revokes DIFFERENT certs (same index scheme).
- *    Result: zero MVCC conflicts, 100% success.
+ *    Each worker revokes ONLY its own CERT_{worker}_{index} keys.
+ *    No cross-worker key collision → zero MVCC_READ_CONFLICT.
+ *
+ *  CouchDB Index: RevokeCertificate uses GetState (key lookup) then
+ *  PutState — no rich query. Index is not used here but the updated
+ *  document still carries docType/StudentID/Issuer for future queries.
  * ══════════════════════════════════════════════════════════════════════════
  */
 class RevokeCertificateWorkload extends WorkloadModuleBase {
@@ -41,7 +43,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const certID = `CERT_${w}_${this.txIndex}`;
 
         const request = {
-            contractId:        'bcms-hybrid',
+            contractId:        'bcms-blake3',
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false,

@@ -4,18 +4,23 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  GetCertificatesByStudent Workload — BCMS Hybrid-Batch (mirage-batch)
+ *  GetCertificatesByStudent Workload — BCMS BLAKE3 (fabric-blake3-new)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Function signature (smartcontract_hybrid.go):
- *    GetCertificatesByStudent(studentId) ([]*Certificate, error)
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as bcms-blake3)
  *
- *  IMPORTANT: The hybrid chaincode uses lowercase JSON field names.
- *  studentId (camelCase) matches the CouchDB selector field "studentId"
- *  which is the Go struct tag: json:"studentId"
+ *  Function signature (smartcontract_blake3.go):
+ *    GetCertificatesByStudent(studentID) ([]*Certificate, error)
  *
  *  readOnly:true — CouchDB rich query with composite index.
  *  Returns empty slice [] when student has no certs — never returns error.
+ *
+ *  CouchDB Index Alignment:
+ *    The chaincode selector uses:
+ *      {"docType": "certificate", "StudentID": "<studentID>"}
+ *    This matches the index on ["docType", "StudentID", "Issuer"].
+ *    CouchDB resolves with the index — no full-table scan.
+ *    StudentID is the Go struct JSON tag; workload sends matching value.
  * ══════════════════════════════════════════════════════════════════════════
  */
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
@@ -31,12 +36,14 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         this.txIndex++;
-        const w         = this.workerIndex || 0;
-        // Query students from Round 1 issue batch — same ID pattern
+        const w = this.workerIndex || 0;
+        // StudentID must match what IssueCertificate wrote with the same pattern.
+        // Chaincode CouchDB selector: {"docType":"certificate","StudentID":"<studentID>"}
+        // → hits the index (docType + StudentID are first two index fields).
         const studentID = `STU_${w}_${this.txIndex}`;
 
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-hybrid',
+            contractId:        'bcms-blake3',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
             readOnly:          true,

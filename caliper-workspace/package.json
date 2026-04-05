@@ -1,7 +1,7 @@
 {
   "name": "caliper-workspace",
   "version": "1.0.0",
-  "description": "Hyperledger Caliper Benchmark — BCMS Certificate System",
+  "description": "Hyperledger Caliper Benchmark — BCMS Native BLAKE3 Certificate System (fabric-blake3-new)",
   "private": true,
   "scripts": {
     "generate-report": "node generate_custom_report.js"
@@ -9,5 +9,13 @@
   "dependencies": {
     "@hyperledger/caliper-cli": "0.6.0",
     "fabric-network": "^2.2.19"
+  },
+  "overrides": {
+    "blake3-wasm": {
+      ".": "npm:blake3@^1.0.0"
+    }
+  },
+  "notes": {
+    "blake3": "DO NOT add blake3-js as a dependency. Native BLAKE3 runs inside the Go chaincode via lukechampine.com/blake3. The npm overrides above redirect any transitive blake3-wasm references to the parent blake3 package. Caliper workloads use only Node.js crypto (SHA-256) on the client side."
   }
 }

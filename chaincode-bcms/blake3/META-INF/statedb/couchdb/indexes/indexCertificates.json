@@ -1,0 +1,8 @@
+{
+  "index": {
+    "fields": ["docType", "StudentID", "Issuer"]
+  },
+  "ddoc": "indexCertificatesDoc",
+  "name": "indexCertificates",
+  "type": "json"
+}
