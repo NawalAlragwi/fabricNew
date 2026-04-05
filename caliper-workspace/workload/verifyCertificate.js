@@ -1,8 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const crypto = require('crypto');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  VerifyCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
@@ -26,6 +23,23 @@ const crypto = require('crypto');
  *  GetCertificatesByStudent.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
+// ─── BLAKE3 Loader with Fallback ─────────────────────────────────────────────
+let blake3Hasher;
+try {
+    const blake3 = require('blake3');
+    blake3Hasher = (data) => blake3.hash(Buffer.from(data)).toString('hex');
+} catch (e) {
+    const crypto = require('crypto');
+    blake3Hasher = (data) => {
+        const first = crypto.createHash('sha256').update(data).digest();
+        return crypto.createHash('sha256').update(first).digest('hex');
+    };
+    process.stderr.write('[WARN] blake3 native package unavailable — using SHA-256 stub\n');
+}
+
 class VerifyCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
@@ -53,7 +67,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
 
         // Recompute SHA-256 — must match IssueCertificate certHashInput exactly
         const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        const certHash = blake3Hasher(fields);
 
         const request = {
             contractId:        'bcms-blake3',

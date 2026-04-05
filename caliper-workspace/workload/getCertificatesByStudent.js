@@ -1,7 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  GetCertificatesByStudent Workload — BCMS BLAKE3 (fabric-blake3-new)
@@ -23,6 +21,9 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *    StudentID is the Go struct JSON tag; workload sends matching value.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
     constructor() {
         super();

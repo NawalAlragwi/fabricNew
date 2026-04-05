@@ -1,7 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  GetAuditLogs Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
@@ -21,6 +19,9 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *  for sequential key access patterns and doesn't require an index.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class GetAuditLogsWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({

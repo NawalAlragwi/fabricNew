@@ -1,10 +1,12 @@
 {
-  "name": "caliper-workspace",
+  "name": "caliper-workspace-blake3",
   "version": "1.0.0",
   "description": "Hyperledger Caliper Benchmark — BCMS Native BLAKE3 Certificate System (fabric-blake3-new)",
   "private": true,
   "scripts": {
-    "generate-report": "node generate_custom_report.js"
+    "generate-report": "node generate_custom_report.js",
+    "benchmark": "npx caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/benchConfig.yaml --caliper-flow-only-test",
+    "install-blake3": "npm install blake3 --ignore-scripts"
   },
   "dependencies": {
     "@hyperledger/caliper-cli": "0.6.0",

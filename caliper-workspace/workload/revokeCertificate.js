@@ -1,7 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  RevokeCertificate Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
@@ -24,6 +22,9 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *  document still carries docType/StudentID/Issuer for future queries.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class RevokeCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();

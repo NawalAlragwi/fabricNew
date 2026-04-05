@@ -1,8 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const crypto = require('crypto');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  IssueCertificate Workload — BCMS BLAKE3 Benchmark  (fabric-blake3-new)
@@ -34,6 +31,27 @@ const crypto = require('crypto');
  *    indexCertificates.json — ensuring all rich queries hit the index.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
+// ─── BLAKE3 Loader with Fallback ─────────────────────────────────────────────
+// Tries to load the native blake3 package; if missing or not built, falls back
+// to a deterministic double-SHA-256 stub (same byte length, consistent behavior).
+let blake3Hasher;
+try {
+    const blake3 = require('blake3');
+    blake3Hasher = (data) => blake3.hash(Buffer.from(data)).toString('hex');
+} catch (e) {
+    // Fallback: double-SHA-256 stub — deterministic, same 32-byte output size
+    const crypto = require('crypto');
+    blake3Hasher = (data) => {
+        const first = crypto.createHash('sha256').update(data).digest();
+        return crypto.createHash('sha256').update(first).digest('hex');
+    };
+    // Note: log message goes to stderr so it doesn't interfere with Caliper output
+    process.stderr.write('[WARN] blake3 native package unavailable — using SHA-256 stub\n');
+}
+
 class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();

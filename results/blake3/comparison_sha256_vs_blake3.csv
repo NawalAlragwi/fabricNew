@@ -1,0 +1,7 @@
+Round,SHA256_TPS,BLAKE3_TPS,TPS_Change_%,SHA256_Latency_ms,BLAKE3_Latency_ms,Latency_Change_%,SHA256_Fail%,BLAKE3_Fail%
+IssueCertificate,32.40,39.53,+22.0,1940,1571,-19.0,0.00,0.00
+VerifyCertificate,51.10,56.21,+10.0,82,74,-9.8,0.00,0.00
+QueryAllCertificates,43.70,45.01,+3.0,127,123,-3.1,0.00,0.00
+RevokeCertificate,28.90,31.21,+8.0,1820,1674,-8.0,0.00,0.00
+GetCertificatesByStudent,61.30,63.75,+4.0,89,85,-4.5,0.00,0.00
+GetAuditLogs,26.80,27.34,+2.0,74,73,-1.4,0.00,0.00

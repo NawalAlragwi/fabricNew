@@ -1,7 +1,5 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  QueryAllCertificates Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
@@ -25,6 +23,9 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *    CouchDB selects the index automatically — no full-table scan.
  * ══════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({
