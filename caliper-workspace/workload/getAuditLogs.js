@@ -1,16 +1,23 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
- * ══════════════════════════════════════════════════════════════════════
- *  GetAuditLogs Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
+ * ══════════════════════════════════════════════════════════════════════════════
+ *  GetAuditLogs Workload Module — BCMS BLAKE3 Benchmark
+ *  Branch: fabric-blake3-new
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
  *  Function  : GetAuditLogs() → []*AuditLog
  *  RBAC      : Public read (any org can query audit trail)
  *  Guarantee : 0 failures — returns empty slice (never nil)
- * ══════════════════════════════════════════════════════════════════════
+ *
+ *  Note: When DISABLE_AUDIT=true in chaincode env, audit logs are not written
+ *  during the benchmark. This round still succeeds (returns empty array).
+ *  The empty-array return is intentional for benchmark TPS measurement.
+ * ══════════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class GetAuditLogsWorkload extends WorkloadModuleBase {
     constructor() {
         super();

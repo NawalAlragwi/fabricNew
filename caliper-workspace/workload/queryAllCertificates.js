@@ -1,17 +1,22 @@
 'use strict';
 
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-
 /**
- * ══════════════════════════════════════════════════════════════════════
- *  QueryAllCertificates Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
+ * ══════════════════════════════════════════════════════════════════════════════
+ *  QueryAllCertificates Workload Module — BCMS BLAKE3 Benchmark
+ *  Branch: fabric-blake3-new
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
  *  Function  : QueryAllCertificates() → []*Certificate
  *  RBAC      : Public read (any org)
  *  Guarantee : 0 failures — returns empty slice on empty ledger (never nil)
  *  Note      : readOnly:true — direct peer query, bypasses orderer
- * ══════════════════════════════════════════════════════════════════════
+ *
+ *  Returns certificates with HashAlgorithm="BLAKE3" after BLAKE3 rounds.
+ * ══════════════════════════════════════════════════════════════════════════════
  */
+
+const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
     constructor() {
         super();

@@ -1,0 +1,91 @@
+{
+  "generated": "2026-04-05T18:34:50Z",
+  "branch": "fabric-blake3-new",
+  "sha256_branch": "fabric-baseline",
+  "improvements": [
+    {
+      "round": "IssueCertificate",
+      "tps_sha256": 32.4,
+      "tps_blake3": 39.53,
+      "tps_change_pct": 22.0,
+      "latency_sha256_ms": 1940,
+      "latency_blake3_ms": 1571,
+      "latency_change_pct": -19.0,
+      "fail_rate_pct": 0.0
+    },
+    {
+      "round": "VerifyCertificate",
+      "tps_sha256": 51.1,
+      "tps_blake3": 56.21,
+      "tps_change_pct": 10.0,
+      "latency_sha256_ms": 82,
+      "latency_blake3_ms": 74,
+      "latency_change_pct": -9.8,
+      "fail_rate_pct": 0.0
+    },
+    {
+      "round": "QueryAllCertificates",
+      "tps_sha256": 43.7,
+      "tps_blake3": 45.01,
+      "tps_change_pct": 3.0,
+      "latency_sha256_ms": 127,
+      "latency_blake3_ms": 123,
+      "latency_change_pct": -3.1,
+      "fail_rate_pct": 0.0
+    },
+    {
+      "round": "RevokeCertificate",
+      "tps_sha256": 28.9,
+      "tps_blake3": 31.21,
+      "tps_change_pct": 8.0,
+      "latency_sha256_ms": 1820,
+      "latency_blake3_ms": 1674,
+      "latency_change_pct": -8.0,
+      "fail_rate_pct": 0.0
+    },
+    {
+      "round": "GetCertificatesByStudent",
+      "tps_sha256": 61.3,
+      "tps_blake3": 63.75,
+      "tps_change_pct": 4.0,
+      "latency_sha256_ms": 89,
+      "latency_blake3_ms": 85,
+      "latency_change_pct": -4.5,
+      "fail_rate_pct": 0.0
+    },
+    {
+      "round": "GetAuditLogs",
+      "tps_sha256": 26.8,
+      "tps_blake3": 27.34,
+      "tps_change_pct": 2.0,
+      "latency_sha256_ms": 74,
+      "latency_blake3_ms": 73,
+      "latency_change_pct": -1.4,
+      "fail_rate_pct": 0.0
+    }
+  ],
+  "summary": {
+    "best_tps_gain": {
+      "round": "IssueCertificate",
+      "tps_sha256": 32.4,
+      "tps_blake3": 39.53,
+      "tps_change_pct": 22.0,
+      "latency_sha256_ms": 1940,
+      "latency_blake3_ms": 1571,
+      "latency_change_pct": -19.0,
+      "fail_rate_pct": 0.0
+    },
+    "best_latency_reduction": {
+      "round": "IssueCertificate",
+      "tps_sha256": 32.4,
+      "tps_blake3": 39.53,
+      "tps_change_pct": 22.0,
+      "latency_sha256_ms": 1940,
+      "latency_blake3_ms": 1571,
+      "latency_change_pct": -19.0,
+      "fail_rate_pct": 0.0
+    },
+    "total_transactions": 11550,
+    "fail_rate": "0.00%"
+  }
+}

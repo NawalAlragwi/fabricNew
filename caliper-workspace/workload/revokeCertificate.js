@@ -1,17 +1,22 @@
 'use strict';
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════════
+ *  RevokeCertificate Workload Module — BCMS BLAKE3 Benchmark
+ *  Branch: fabric-blake3-new
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ *  Function  : RevokeCertificate(id) → error
+ *  RBAC      : Org2MSP authorized (policy: OR('Org1MSP.peer','Org2MSP.peer'))
+ *  Guarantee : 0 failures — idempotent (nil when cert not found or revoked)
+ *  Invoker   : User1@org2.example.com
+ *
+ *  ID Pattern: CERT_B3_{workerIndex}_{txIndex} — must match IssueCertificate
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- * RevokeCertificate Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- * Function  : RevokeCertificate(id) → error
- * RBAC      : Org2MSP authorized (policy: OR('Org1MSP.peer','Org2MSP.peer'))
- * Guarantee : 0 failures — idempotent (nil when cert not found or revoked)
- * Invoker   : User1@org2.example.com
- * ══════════════════════════════════════════════════════════════════════
- */
 class RevokeCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
@@ -26,10 +31,10 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
-        
-        // Revoke certificates issued in the IssueCertificate round
-        // Uses same certID pattern as IssueCertificate workload
-        const certID = `CERT_${workerIdx}_${this.txIndex}`; // ✅ تم التعديل هنا
+
+        // ── ID Pattern: CERT_B3_{workerIndex}_{txIndex} ───────────────────────
+        // Revoke certificates issued in Round 1 (IssueCertificate)
+        const certID = `CERT_B3_${workerIdx}_${this.txIndex}`;
 
         const request = {
             contractId:        'basic',
