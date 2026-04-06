@@ -19,11 +19,19 @@ services:
     image: hyperledger/fabric-orderer:latest
     labels:
       service: hyperledger-fabric
+    # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
+    # No cpus:, cpu_quota:, cpu_shares:, or deploy.resources.limits.cpus keys.
+    # The Orderer must process up to 2000 batch-TX/s (200→2000 TPS ramp).
+    # Removing all CPU caps ensures block-cutting speed is NOT the bottleneck.
+    # Verification: docker inspect orderer.example.com | grep -i cpu → NanoCpus: 0
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_LISTENPORT=7050
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → Go runtime uses ALL available host CPU cores automatically.
+      # Critical for the Orderer under 2000 TPS S4 ramp: Raft leader election,
+      # block cutting (MaxMessageCount=1000), and TLS are all CPU-bound.
+      - GOMAXPROCS=0
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       # enabled TLS
@@ -62,10 +70,18 @@ services:
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
+    # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
+    # peer0.org1 is the PRIMARY ENDORSER for IssueCertificateBatch.
+    # It runs SHA-256 + BLAKE3 hashing per cert (10 hashes per batch TX).
+    # Full CPU access is MANDATORY: any cpu_quota would cap hash throughput,
+    # making infrastructure — not the hash algorithm — the bottleneck.
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
       - FABRIC_LOGGING_SPEC=INFO
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → Go runtime auto-detects ALL host CPUs.
+      # Endorsement of 10-cert batch TX requires parallel SHA-256/BLAKE3
+      # computation. GOMAXPROCS=0 enables goroutine parallelism across cores.
+      - GOMAXPROCS=0
       #- FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_PROFILE_ENABLED=false
@@ -102,10 +118,15 @@ services:
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
+    # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
+    # peer0.org2 handles Org2MSP RevokeCertificate (write) and all read queries.
+    # Under S4 1000-TPS read rounds, CouchDB-backed queries require full CPU.
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
       - FABRIC_LOGGING_SPEC=INFO
-      - GOMAXPROCS=4
+      # GOMAXPROCS=0 → auto-detect all host CPUs.
+      # Revocation writes at 1000 TPS need full goroutine scheduling capacity.
+      - GOMAXPROCS=0
       #- FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_PROFILE_ENABLED=false

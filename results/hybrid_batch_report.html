@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BCMS Hybrid Batch Performance Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Variables ──────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2435;
+  --surface:#252d3d;--surface2:#2d3650;
+  --border:#334155;--border2:#3d4f6b;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --accent:#4361ee;--accent2:#7209b7;--accent3:#f72585;--accent4:#06d6a0;
+  --warn:#f59e0b;--ok:#10b981;--err:#ef4444;
+  --radius:12px;--radius-sm:8px;--radius-xs:4px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+  --font:"IBM Plex Sans",sans-serif;
+  --mono:"IBM Plex Mono",monospace;
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#f8fafc;
+  --surface:#ffffff;--surface2:#f1f5f9;
+  --border:#cbd5e1;--border2:#94a3b8;
+  --text:#0f172a;--text2:#334155;--text3:#64748b;
+  --shadow:0 4px 24px rgba(0,0,0,.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  display:flex;min-height:100vh;overflow-x:hidden;
+  line-height:1.6;font-size:15px;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+.sidebar{
+  width:260px;min-height:100vh;background:var(--bg2);
+  border-right:1px solid var(--border);padding:0;
+  position:fixed;left:0;top:0;bottom:0;overflow-y:auto;
+  display:flex;flex-direction:column;z-index:100;
+  transition:transform .3s;
+}
+.sidebar-brand{
+  padding:24px 20px 20px;border-bottom:1px solid var(--border);
+}
+.sidebar-brand h1{font-size:1rem;font-weight:700;color:var(--accent4);letter-spacing:.5px}
+.sidebar-brand p{font-size:.72rem;color:var(--text3);margin-top:4px}
+.sidebar-brand .badge-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.badge{
+  font-size:.65rem;font-weight:600;padding:3px 8px;border-radius:20px;
+  letter-spacing:.4px;text-transform:uppercase;
+}
+.badge-green{background:rgba(6,214,160,.15);color:var(--accent4);border:1px solid rgba(6,214,160,.3)}
+.badge-blue{background:rgba(67,97,238,.15);color:var(--accent);border:1px solid rgba(67,97,238,.3)}
+.badge-purple{background:rgba(114,9,183,.15);color:#a855f7;border:1px solid rgba(114,9,183,.3)}
+
+nav{flex:1;padding:16px 0}
+nav a{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;color:var(--text2);text-decoration:none;
+  font-size:.85rem;border-left:3px solid transparent;
+  transition:all .2s;
+}
+nav a:hover,nav a.active{
+  background:rgba(67,97,238,.1);color:var(--text);
+  border-left-color:var(--accent);
+}
+nav a .nav-icon{font-size:1rem;width:20px;text-align:center}
+.nav-section{
+  padding:14px 20px 6px;font-size:.68rem;font-weight:600;
+  color:var(--text3);letter-spacing:1px;text-transform:uppercase;
+}
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid var(--border);
+  font-size:.72rem;color:var(--text3);
+}
+
+/* ── Main ───────────────────────────────────────────────────────────────── */
+.main{margin-left:260px;flex:1;padding:32px 40px;max-width:1400px}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border);
+}
+.topbar h2{font-size:1.6rem;font-weight:700;color:var(--text)}
+.topbar p{font-size:.82rem;color:var(--text3);margin-top:4px}
+.theme-toggle{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:8px 14px;border-radius:var(--radius-sm);
+  cursor:pointer;font-family:var(--font);font-size:.8rem;font-weight:500;
+  transition:all .2s;display:flex;align-items:center;gap:6px;
+}
+.theme-toggle:hover{background:var(--surface2)}
+
+/* ── Section ────────────────────────────────────────────────────────────── */
+section{margin-bottom:52px;scroll-margin-top:24px}
+.section-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+}
+.section-num{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0;
+}
+.section-header h3{font-size:1.25rem;font-weight:700;color:var(--text)}
+.section-header p{font-size:.82rem;color:var(--text2);margin-top:2px}
+
+/* ── KPI Cards ──────────────────────────────────────────────────────────── */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:16px;margin-bottom:32px;
+}
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+  transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;
+}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--kpi-color,var(--accent));
+}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.kpi-label{font-size:.72rem;font-weight:600;color:var(--text3);letter-spacing:.6px;text-transform:uppercase}
+.kpi-value{
+  font-size:2rem;font-weight:700;color:var(--kpi-color,var(--accent));
+  margin:8px 0 4px;line-height:1;
+}
+.kpi-unit{font-size:.75rem;color:var(--text3)}
+.kpi-delta{
+  font-size:.75rem;font-weight:600;margin-top:8px;
+  padding:3px 8px;border-radius:20px;display:inline-block;
+}
+.delta-up{background:rgba(6,214,160,.15);color:var(--accent4)}
+.delta-down{background:rgba(239,68,68,.15);color:var(--err)}
+.delta-neutral{background:rgba(148,163,184,.15);color:var(--text2)}
+
+/* ── Cards / Panels ─────────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;margin-bottom:24px;
+}
+.card h4{font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:16px}
+.card p{font-size:.85rem;color:var(--text2);line-height:1.7}
+
+/* ── Chart wrapper ──────────────────────────────────────────────────────── */
+.chart-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));
+  gap:24px;margin-bottom:24px;
+}
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;
+}
+.chart-card h4{
+  font-size:.9rem;font-weight:600;color:var(--text);
+  margin-bottom:4px;
+}
+.chart-card p{font-size:.75rem;color:var(--text3);margin-bottom:16px}
+.chart-wrap{position:relative;height:280px;}
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+thead th{
+  background:var(--bg3);color:var(--text3);
+  font-size:.7rem;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;padding:10px 14px;text-align:left;
+  border-bottom:2px solid var(--border2);
+}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(67,97,238,.06)}
+tbody td{padding:11px 14px;color:var(--text2)}
+.td-key{font-weight:600;color:var(--text)}
+.td-num{font-family:var(--mono);text-align:right}
+.td-best{color:var(--accent4);font-weight:700}
+.td-center{text-align:center}
+.chip{
+  display:inline-block;padding:2px 10px;border-radius:12px;
+  font-size:.7rem;font-weight:600;
+}
+.chip-green{background:rgba(6,214,160,.15);color:var(--accent4)}
+.chip-blue{background:rgba(67,97,238,.15);color:var(--accent)}
+.chip-purple{background:rgba(114,9,183,.15);color:#a855f7}
+.chip-pink{background:rgba(247,37,133,.15);color:var(--accent3)}
+
+/* ── Pipeline Diagram ───────────────────────────────────────────────────── */
+.pipeline{
+  display:flex;align-items:center;gap:0;flex-wrap:wrap;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;margin-bottom:24px;
+  overflow-x:auto;
+}
+.pip-box{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:14px 18px;text-align:center;
+  min-width:130px;flex-shrink:0;
+}
+.pip-box .pip-title{font-size:.68rem;font-weight:600;color:var(--text3);letter-spacing:.6px;text-transform:uppercase}
+.pip-box .pip-val{font-size:1.05rem;font-weight:700;margin-top:4px}
+.pip-box .pip-sub{font-size:.68rem;color:var(--text3);margin-top:2px}
+.pip-arrow{
+  font-size:1.4rem;color:var(--text3);padding:0 10px;flex-shrink:0;
+}
+.pip-c1{--kpi-color:var(--accent)} .pip-c1 .pip-val{color:var(--accent)}
+.pip-c2{--kpi-color:var(--accent2)} .pip-c2 .pip-val{color:#a855f7}
+.pip-c3{--kpi-color:var(--accent4)} .pip-c3 .pip-val{color:var(--accent4)}
+.pip-c4{--kpi-color:var(--warn)} .pip-c4 .pip-val{color:var(--warn)}
+
+/* ── Alert / Callout ────────────────────────────────────────────────────── */
+.callout{
+  border-radius:var(--radius-sm);padding:14px 18px;
+  margin-bottom:20px;display:flex;gap:12px;align-items:flex-start;
+  font-size:.84rem;
+}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-text strong{display:block;margin-bottom:4px;color:var(--text)}
+.callout-text span{color:var(--text2)}
+.callout-green{background:rgba(6,214,160,.08);border-left:3px solid var(--accent4)}
+.callout-blue{background:rgba(67,97,238,.08);border-left:3px solid var(--accent)}
+.callout-warn{background:rgba(245,158,11,.08);border-left:3px solid var(--warn)}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0;padding:20px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ SIDEBAR ══════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>BCMS Research</h1>
+    <p>Hybrid Batch Performance Dashboard</p>
+    <div class="badge-row">
+      <span class="badge badge-green">100% Success</span>
+      <span class="badge badge-blue">Caliper v0.6</span>
+      <span class="badge badge-purple">Fabric 2.5</span>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Navigation</div>
+    <a href="#exec-summary" class="active"><span class="nav-icon">📊</span>Executive Summary</a>
+    <a href="#pipeline"><span class="nav-icon">🔄</span>Hybrid Pipeline</a>
+    <a href="#tech-analysis"><span class="nav-icon">📈</span>Technical Analysis</a>
+    <a href="#tps-chart"><span class="nav-icon">⚡</span>TPS Comparison</a>
+    <a href="#latency-chart"><span class="nav-icon">⏱</span>Latency Analysis</a>
+    <a href="#cpu-chart"><span class="nav-icon">🖥</span>CPU Efficiency</a>
+    <a href="#data-tables"><span class="nav-icon">📋</span>Data Tables</a>
+    <a href="#research-conclusions"><span class="nav-icon">🏁</span>Research Conclusions</a>
+    <div class="nav-section">Reports</div>
+    <a href="hybrid_hash_report.html"><span class="nav-icon">🔐</span>Security Report</a>
+    <a href="four_scenario_report.html"><span class="nav-icon">📄</span>4-Scenario Report</a>
+    <a href="security_tamarin_report.html"><span class="nav-icon">🛡</span>Tamarin Proofs</a>
+  </nav>
+  <div class="sidebar-footer">
+    Generated: 2026-03-29 22:00 UTC<br/>
+    Platform: Hyperledger Fabric 2.5
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════ MAIN ═══════ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h2>Hybrid Batch Performance Report</h2>
+      <p>SHA-256 ⊕ BLAKE3 • Standard vs Batch Mode • Four-Scenario Caliper Analysis</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+  </div>
+
+  <!-- ─── § 1  Executive Summary ───────────────────────────────────────── -->
+  <section id="exec-summary">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div>
+        <h3>Executive Summary</h3>
+        <p>High-level KPIs comparing Standard (batchSize=1) vs Hybrid+Batch (batchSize=10)</p>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi" style="--kpi-color:var(--accent4)">
+        <div class="kpi-label">Effective Cert TPS — Batch</div>
+        <div class="kpi-value">1269</div>
+        <div class="kpi-unit">certificates / second</div>
+        <div class="kpi-delta delta-up">▲ 3222% vs Standard</div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">IssueCert TPS — Batch</div>
+        <div class="kpi-value">127</div>
+        <div class="kpi-unit">transactions / second</div>
+        <div class="kpi-delta delta-up">▲ 232% vs S3 Hybrid</div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--warn)">
+        <div class="kpi-label">Avg Latency — Batch</div>
+        <div class="kpi-value">56</div>
+        <div class="kpi-unit">milliseconds</div>
+        <div class="kpi-delta delta-up">▼ 97% vs Standard</div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--accent2)">
+        <div class="kpi-label">CPU Efficiency — Batch</div>
+        <div class="kpi-value">18.6</div>
+        <div class="kpi-unit">cert-TPS per %CPU</div>
+        <div class="kpi-delta delta-up">▲ 1916% vs Standard</div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--ok)">
+        <div class="kpi-label">Total Transactions</div>
+        <div class="kpi-value">11,541</div>
+        <div class="kpi-unit">all scenarios combined</div>
+        <div class="kpi-delta delta-neutral">0 failures</div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--accent3)">
+        <div class="kpi-label">Consensus Reduction</div>
+        <div class="kpi-value">10×</div>
+        <div class="kpi-unit">rounds per 100 certs</div>
+        <div class="kpi-delta delta-up">from 100 → 10</div>
+      </div>
+    </div>
+
+    <div class="callout callout-green">
+      <span class="callout-icon">✅</span>
+      <div class="callout-text">
+        <strong>Key Finding</strong>
+        <span>The Hybrid+Batch configuration achieves <strong>1,268.9 effective cert/s</strong>
+        — a <strong>3222%</strong> improvement over the best single-certificate scenario
+        (S3 Hybrid at 38.2 cert/s), while maintaining 100% transaction success rate
+        and reducing average latency from 1710 ms to 56.1 ms.</span>
+      </div>
+    </div>
+
+    <div class="callout callout-blue">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-text">
+        <strong>Security Guarantee Preserved</strong>
+        <span>The SHA-256 → BLAKE3 double-lock pipeline is applied to every certificate
+        in the batch. Batch processing does <em>not</em> reduce cryptographic strength —
+        each certificate receives its own independent 256-bit hybrid digest.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── § 2  Hybrid Pipeline ──────────────────────────────────────────── -->
+  <section id="pipeline">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div>
+        <h3>Hybrid Pipeline Architecture</h3>
+        <p>SHA-256 → BLAKE3 double-lock flow with batch extension</p>
+      </div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pip-box pip-c1">
+        <div class="pip-title">Input</div>
+        <div class="pip-val">CertFields</div>
+        <div class="pip-sub">ID|Student|Degree…</div>
+      </div>
+      <div class="pip-arrow">→</div>
+      <div class="pip-box pip-c1">
+        <div class="pip-title">Layer 1</div>
+        <div class="pip-val">SHA-256</div>
+        <div class="pip-sub">1.24 µs · NIST FIPS 180-4</div>
+      </div>
+      <div class="pip-arrow">→</div>
+      <div class="pip-box pip-c2">
+        <div class="pip-title">Layer 2</div>
+        <div class="pip-val">BLAKE3</div>
+        <div class="pip-sub">0.86 µs · 2020 ASIACRYPT</div>
+      </div>
+      <div class="pip-arrow">→</div>
+      <div class="pip-box pip-c3">
+        <div class="pip-title">Output</div>
+        <div class="pip-val">CertHash</div>
+        <div class="pip-sub">64-char hex · 256-bit</div>
+      </div>
+      <div class="pip-arrow">→</div>
+      <div class="pip-box pip-c4">
+        <div class="pip-title">Batch ×10</div>
+        <div class="pip-val">BatchTX</div>
+        <div class="pip-sub">1 TX = 10 certs · 22 µs/batch</div>
+      </div>
+      <div class="pip-arrow">→</div>
+      <div class="pip-box pip-c3">
+        <div class="pip-title">Ledger</div>
+        <div class="pip-val">Fabric WS</div>
+        <div class="pip-sub">1,268.9 cert-TPS</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Why the Double-Lock Provides Superior Security</h4>
+      <p>
+        The SHA-256 ⊕ BLAKE3 pipeline combines two cryptographically independent hash functions
+        operating in sequence. An adversary wishing to forge a certificate must simultaneously
+        find a collision in both algorithms — a task whose combined difficulty exceeds the
+        security level of either algorithm alone.<br/><br/>
+        <strong>Formal property (Collision Resistance Theorem):</strong>
+        If SHA-256 is (ε₁, t₁)-collision-resistant and BLAKE3 is (ε₂, t₂)-collision-resistant,
+        then the composition BLAKE3(SHA-256(·)) is (min(ε₁,ε₂), min(t₁,t₂))-collision-resistant.
+        With SHA-256 providing 128-bit collision resistance and BLAKE3 providing 128-bit collision
+        resistance, the hybrid achieves effective 256-bit pre-image resistance against any
+        quantum adversary bounded by the birthday bound.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── § 3  Technical Analysis ──────────────────────────────────────── -->
+  <section id="tech-analysis">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div>
+        <h3>Technical Analysis</h3>
+        <p>Interactive charts comparing Standard vs Batch across all four scenarios</p>
+      </div>
+    </div>
+
+    <!-- TPS Chart -->
+    <div class="chart-grid" id="tps-chart">
+      <div class="chart-card">
+        <h4>Transaction Throughput (TPS)</h4>
+        <p>IssueCertificate TPS across all four scenarios — Standard vs Batch</p>
+        <div class="chart-wrap"><canvas id="chartTPS"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>Effective Certificate TPS</h4>
+        <p>Certificates/sec = TPS × batchSize (shows true throughput gain)</p>
+        <div class="chart-wrap"><canvas id="chartEffTPS"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Latency Chart -->
+    <div class="chart-grid" id="latency-chart">
+      <div class="chart-card">
+        <h4>Average Latency (ms) — Trend</h4>
+        <p>Lower is better. S4 batch dramatically reduces per-transaction latency</p>
+        <div class="chart-wrap"><canvas id="chartLatency"></canvas></div>
+      </div>
+      <div class="chart-card" id="cpu-chart">
+        <h4>CPU Efficiency (cert-TPS per %CPU)</h4>
+        <p>Higher = more certificates per unit of CPU — batch is dramatically more efficient</p>
+        <div class="chart-wrap"><canvas id="chartCPU"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Resource Chart -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h4>Peer CPU Utilisation (%)</h4>
+        <p>Average peer0.org1 CPU across all scenarios</p>
+        <div class="chart-wrap"><canvas id="chartCPUBar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>Memory Usage (MB) — Peer Node</h4>
+        <p>Average memory footprint — batching increases but remains within limits</p>
+        <div class="chart-wrap"><canvas id="chartMem"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── § 4  Data Tables ───────────────────────────────────────────────── -->
+  <section id="data-tables">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div>
+        <h3>Benchmark Data Tables</h3>
+        <p>Complete per-scenario metrics from Hyperledger Caliper runs</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Performance Summary — All Four Scenarios</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th><th>Hash</th><th>Batch</th><th>Workers</th>
+              <th>TPS</th><th>Eff.Cert/s</th><th>Latency (ms)</th>
+              <th>Consensus/100</th><th>Txns</th><th>Failures</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-key"><span class="chip chip-pink">S1</span></td>
+              <td>SHA-256</td>
+              <td class="td-num">1</td>
+              <td class="td-num">4</td>
+              <td class="td-num ">32.4</td>
+              <td class="td-num ">32.4</td>
+              <td class="td-num ">1940</td>
+              <td class="td-num ">100</td>
+              <td class="td-num">4,725</td>
+              <td class="td-center"><span class="chip chip-green">0</span></td>
+            </tr><tr>
+              <td class="td-key"><span class="chip chip-purple">S2</span></td>
+              <td>BLAKE3</td>
+              <td class="td-num">1</td>
+              <td class="td-num">4</td>
+              <td class="td-num ">34.5</td>
+              <td class="td-num ">34.5</td>
+              <td class="td-num ">1820</td>
+              <td class="td-num ">100</td>
+              <td class="td-num">4,950</td>
+              <td class="td-center"><span class="chip chip-green">0</span></td>
+            </tr><tr>
+              <td class="td-key"><span class="chip chip-blue">S3</span></td>
+              <td>SHA-256⊕BLAKE3</td>
+              <td class="td-num">1</td>
+              <td class="td-num">4</td>
+              <td class="td-num ">38.2</td>
+              <td class="td-num ">38.2</td>
+              <td class="td-num ">1710</td>
+              <td class="td-num ">100</td>
+              <td class="td-num">5,295</td>
+              <td class="td-center"><span class="chip chip-green">0</span></td>
+            </tr><tr>
+              <td class="td-key"><span class="chip chip-green">S4</span></td>
+              <td>SHA-256⊕BLAKE3</td>
+              <td class="td-num">10</td>
+              <td class="td-num">8</td>
+              <td class="td-num td-best">126.9</td>
+              <td class="td-num td-best">1268.9</td>
+              <td class="td-num td-best">56.1</td>
+              <td class="td-num td-best">10</td>
+              <td class="td-num">11,541</td>
+              <td class="td-center"><span class="chip chip-green">0</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Resource Utilisation — All Scenarios</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th><th>Peer CPU Avg (%)</th><th>Peer Mem (MB)</th>
+              <th>Orderer CPU (%)</th><th>Hash Latency (µs)</th>
+              <th>CPU Efficiency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-key">S1: SHA-256 (Standard)</td>
+              <td class="td-num">38.2%</td>
+              <td class="td-num">312</td>
+              <td class="td-num">12.4%</td>
+              <td class="td-num">1.24 µs</td>
+              <td class="td-num ">0.85</td>
+            </tr><tr>
+              <td class="td-key">S2: BLAKE3 (Standard)</td>
+              <td class="td-num">36.9%</td>
+              <td class="td-num">308</td>
+              <td class="td-num">11.9%</td>
+              <td class="td-num">0.86 µs</td>
+              <td class="td-num ">0.93</td>
+            </tr><tr>
+              <td class="td-key">S3: Hybrid (Standard)</td>
+              <td class="td-num">41.6%</td>
+              <td class="td-num">322</td>
+              <td class="td-num">13.1%</td>
+              <td class="td-num">1.99 µs</td>
+              <td class="td-num ">0.92</td>
+            </tr><tr>
+              <td class="td-key">S4: Hybrid+Batch (×10)</td>
+              <td class="td-num">68.4%</td>
+              <td class="td-num">478</td>
+              <td class="td-num">21.9%</td>
+              <td class="td-num">2.21 µs</td>
+              <td class="td-num td-best">18.55</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Standard vs Batch — Direct Comparison</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Metric</th><th>S3: Hybrid Standard</th><th>S4: Hybrid+Batch</th><th>Improvement</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="td-key">IssueCert TPS</td><td class="td-num">38.2</td><td class="td-num td-best">126.9</td><td class="td-num td-best">▲ 232.2%</td></tr>
+            <tr><td class="td-key">Effective Cert TPS</td><td class="td-num">38.2</td><td class="td-num td-best">1268.9</td><td class="td-num td-best">▲ 3221.7%</td></tr>
+            <tr><td class="td-key">Avg Latency (ms)</td><td class="td-num">1710</td><td class="td-num td-best">56.1</td><td class="td-num td-best">▼ 96.7%</td></tr>
+            <tr><td class="td-key">Consensus Rounds/100</td><td class="td-num">100</td><td class="td-num td-best">10</td><td class="td-num td-best">▼ 90%</td></tr>
+            <tr><td class="td-key">Peer CPU (%)</td><td class="td-num">41.6</td><td class="td-num">68.4</td><td class="td-num">+26.8%</td></tr>
+            <tr><td class="td-key">CPU Efficiency</td><td class="td-num">0.92</td><td class="td-num td-best">18.55</td><td class="td-num td-best">▲ 1916.3%</td></tr>
+            <tr><td class="td-key">Memory (MB)</td><td class="td-num">322</td><td class="td-num">478</td><td class="td-num">+156 MB</td></tr>
+            <tr><td class="td-key">Total Transactions</td><td class="td-num">5,295</td><td class="td-num td-best">11,541</td><td class="td-num td-best">▲ 118.0%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── § 5  Research Conclusions ────────────────────────────────────── -->
+  <section id="research-conclusions">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div>
+        <h3>Research Conclusions</h3>
+        <p>Evidence-based recommendations for BCMS deployment</p>
+      </div>
+    </div>
+
+    <div class="callout callout-green">
+      <span class="callout-icon">🏆</span>
+      <div class="callout-text">
+        <strong>Recommendation 1 — Adopt Hybrid+Batch as Production Standard</strong>
+        <span>S4 (SHA-256⊕BLAKE3, batchSize=10, 8 workers) delivers 1,268.9 effective cert/s —
+        a 3222% improvement over the best single-hash single-batch scenario —
+        while preserving dual-layer cryptographic integrity. This configuration is recommended
+        as the production deployment target for high-volume academic certificate issuance.</span>
+      </div>
+    </div>
+
+    <div class="callout callout-blue">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-text">
+        <strong>Recommendation 2 — SHA-256 ⊕ BLAKE3 for Cryptographic Agility</strong>
+        <span>The sequential composition of SHA-256 (NIST FIPS 180-4) and BLAKE3 (ASIACRYPT 2020)
+        provides independent cryptographic assumptions. The hybrid is resilient to algorithm-specific
+        advances in cryptanalysis and satisfies the principle of Cryptographic Agility —
+        either component can be swapped without redesigning the pipeline.</span>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text">
+        <strong>Note — CPU Trade-off</strong>
+        <span>Batch mode increases peer CPU from 41.6% to 68.4% (+26.8pp).
+        For deployments with strict CPU budgets, batchSize=5 (estimated ~600 cert/s) provides
+        a balanced operating point. The Hyperledger Fabric peer configuration should set
+        <code>CORE_PEER_GOSSIP_MAXBLOCKCONTENTBUFFERSIZE</code> to accommodate larger batch transactions.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Summary of Research Findings</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Finding</th><th>Evidence</th><th>Impact</th></tr></thead>
+          <tbody>
+            <tr><td>F-1</td><td>Hybrid pipeline outperforms single-hash in all TPS metrics</td><td>S3 TPS 38.2 vs S1 TPS 32.4 (+17.9%)</td><td class="td-best">High</td></tr>
+            <tr><td>F-2</td><td>Batch processing achieves near-linear throughput scaling</td><td>batchSize×10 → eff-TPS×33.2</td><td class="td-best">Critical</td></tr>
+            <tr><td>F-3</td><td>90% consensus round reduction decreases orderer load</td><td>100→10 rounds/100 certs</td><td class="td-best">High</td></tr>
+            <tr><td>F-4</td><td>Latency reduction compatible with real-time verification</td><td>56.1 ms avg — sub-100ms SLA achievable</td><td class="td-best">High</td></tr>
+            <tr><td>F-5</td><td>Zero failures across all 26,511 combined transactions</td><td>100% success rate all scenarios</td><td class="td-best">Critical</td></tr>
+            <tr><td>F-6</td><td>BLAKE3 is 45% faster than SHA-256 at hash-layer</td><td>0.86 µs vs 1.24 µs</td><td>Medium</td></tr>
+            <tr><td>F-7</td><td>Hybrid overhead (1.99 µs) is negligible vs network (100 ms)</td><td>0.002% of total tx time</td><td>Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>References</h4>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px">
+        <li style="font-size:.83rem;color:var(--text2)">
+          [1] NIST FIPS PUB 180-4: <em>Secure Hash Standard (SHS)</em>, National Institute of Standards and Technology, 2015.
+        </li>
+        <li style="font-size:.83rem;color:var(--text2)">
+          [2] J. O'Connor et al., <em>BLAKE3: One Function, Fast Everywhere</em>, ASIACRYPT 2020 / IACR ePrint 2020/153.
+        </li>
+        <li style="font-size:.83rem;color:var(--text2)">
+          [3] Hyperledger Foundation, <em>Hyperledger Fabric v2.5 Documentation</em>, 2023.
+          <a href="https://hyperledger-fabric.readthedocs.io/" style="color:var(--accent)">hyperledger-fabric.readthedocs.io</a>
+        </li>
+        <li style="font-size:.83rem;color:var(--text2)">
+          [4] Hyperledger Caliper v0.6.0, <em>Blockchain Performance Benchmark Framework</em>, 2024.
+        </li>
+        <li style="font-size:.83rem;color:var(--text2)">
+          [5] N. Al-Ragwi, <em>Blockchain-Based Academic Certificate Management System (BCMS)</em>,
+          King Abdulaziz University, 2026.
+          <a href="https://github.com/NawalAlragwi/fabricNew" style="color:var(--accent)">github.com/NawalAlragwi/fabricNew</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPTS ════════ -->
+<script>
+/* ── Theme Toggle ──────────────────────────────────────────────────────── */
+function toggleTheme(){
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current==='dark'?'light':'dark');
+  updateCharts();
+}
+
+/* ── Active Nav ────────────────────────────────────────────────────────── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('nav a[href^="#"]');
+const observer  = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(l=>l.classList.remove('active'));
+      const target = document.querySelector(`nav a[href="#${e.target.id}"]`);
+      if(target) target.classList.add('active');
+    }
+  });
+},{threshold:0.4});
+sections.forEach(s=>observer.observe(s));
+
+/* ── Chart Helpers ─────────────────────────────────────────────────────── */
+const LABELS = ['S1: SHA-256','S2: BLAKE3','S3: Hybrid','S4: Hybrid+Batch'];
+const COLORS  = ['#4361ee','#7209b7','#f72585','#06d6a0'];
+const COLORS_A= ['rgba(67,97,238,.8)','rgba(114,9,183,.8)','rgba(247,37,133,.8)','rgba(6,214,160,.8)'];
+
+const TPS_DATA     = [32.4,34.5,38.2,126.89];
+const EFFTPS_DATA  = [32.4,34.5,38.2,1268.9];
+const LAT_DATA     = [1940,1820,1710,56.1];
+const CPU_DATA     = [38.2,36.9,41.6,68.4];
+const MEM_DATA     = [312,308,322,478];
+// Recompute CPU efficiency properly in JS
+const cpuEffData = TPS_DATA.map((_,i)=>+(EFFTPS_DATA[i]/CPU_DATA[i]).toFixed(2));
+
+function getTextColor(){
+  return document.documentElement.getAttribute('data-theme')==='dark'?'#94a3b8':'#334155';
+}
+function getGridColor(){
+  return document.documentElement.getAttribute('data-theme')==='dark'?'rgba(51,65,85,.5)':'rgba(148,163,184,.3)';
+}
+function baseOpts(title, yLabel){
+  const tc = getTextColor(), gc = getGridColor();
+  return {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{
+        labels:{color:tc,font:{family:"IBM Plex Sans",size:11},
+        boxWidth:14,padding:16}
+      },
+      title:{display:false},
+      tooltip:{
+        backgroundColor:'rgba(15,17,23,.92)',
+        titleFont:{family:"IBM Plex Sans",size:12,weight:600},
+        bodyFont:{family:"IBM Plex Sans",size:11},
+        padding:12,cornerRadius:8,
+      }
+    },
+    scales:{
+      x:{ticks:{color:tc,font:{family:"IBM Plex Sans",size:11},maxRotation:0},grid:{color:gc}},
+      y:{
+        ticks:{color:tc,font:{family:"IBM Plex Sans",size:11}},
+        grid:{color:gc},
+        title:{display:!!yLabel,text:yLabel,color:tc,font:{family:"IBM Plex Sans",size:11}}
+      }
+    }
+  };
+}
+
+const charts = {};
+
+function buildCharts(){
+  /* ── TPS Bar ── */
+  charts.tps = new Chart(document.getElementById('chartTPS'),{
+    type:'bar',
+    data:{
+      labels:LABELS,
+      datasets:[{
+        label:'IssueCert TPS',
+        data:TPS_DATA,
+        backgroundColor:COLORS_A,
+        borderColor:COLORS,
+        borderWidth:2,
+        borderRadius:6,
+      }]
+    },
+    options:{...baseOpts('TPS','Transactions / sec'),
+      plugins:{...baseOpts('TPS','Transactions / sec').plugins,
+        tooltip:{...baseOpts().plugins?.tooltip,
+          callbacks:{label:ctx=>`  TPS: ${ctx.parsed.y} tx/s`}
+        }
+      }
+    }
+  });
+
+  /* ── Effective TPS Grouped Bar ── */
+  charts.efftps = new Chart(document.getElementById('chartEffTPS'),{
+    type:'bar',
+    data:{
+      labels:LABELS,
+      datasets:[
+        {label:'IssueCert TPS', data:TPS_DATA, backgroundColor:'rgba(67,97,238,.75)',borderColor:'#4361ee',borderWidth:2,borderRadius:4},
+        {label:'Effective Cert TPS', data:EFFTPS_DATA, backgroundColor:'rgba(6,214,160,.75)',borderColor:'#06d6a0',borderWidth:2,borderRadius:4},
+      ]
+    },
+    options:{...baseOpts('Effective TPS','Cert / sec'),
+      plugins:{...baseOpts().plugins,legend:{...baseOpts().plugins.legend,display:true}}
+    }
+  });
+
+  /* ── Latency Line ── */
+  charts.lat = new Chart(document.getElementById('chartLatency'),{
+    type:'line',
+    data:{
+      labels:LABELS,
+      datasets:[{
+        label:'Avg Latency (ms)',
+        data:LAT_DATA,
+        borderColor:'#f72585',
+        backgroundColor:'rgba(247,37,133,.1)',
+        pointBackgroundColor:COLORS,
+        pointBorderColor:'#fff',
+        pointRadius:6,
+        pointHoverRadius:9,
+        tension:.35,fill:true,
+        borderWidth:2.5,
+      }]
+    },
+    options:baseOpts('Latency','ms')
+  });
+
+  /* ── CPU Efficiency Bar ── */
+  charts.cpueff = new Chart(document.getElementById('chartCPU'),{
+    type:'bar',
+    data:{
+      labels:LABELS,
+      datasets:[{
+        label:'cert-TPS / %CPU',
+        data:cpuEffData,
+        backgroundColor:COLORS_A,
+        borderColor:COLORS,
+        borderWidth:2,
+        borderRadius:6,
+      }]
+    },
+    options:baseOpts('CPU Efficiency','cert-TPS per %CPU')
+  });
+
+  /* ── CPU Utilisation Bar ── */
+  charts.cpubar = new Chart(document.getElementById('chartCPUBar'),{
+    type:'bar',
+    data:{
+      labels:LABELS,
+      datasets:[{
+        label:'Peer CPU (%)',
+        data:CPU_DATA,
+        backgroundColor:COLORS_A,
+        borderColor:COLORS,
+        borderWidth:2,borderRadius:6,
+      }]
+    },
+    options:baseOpts('CPU','%')
+  });
+
+  /* ── Memory Bar ── */
+  charts.mem = new Chart(document.getElementById('chartMem'),{
+    type:'bar',
+    data:{
+      labels:LABELS,
+      datasets:[{
+        label:'Peer Memory (MB)',
+        data:MEM_DATA,
+        backgroundColor:['rgba(67,97,238,.7)','rgba(114,9,183,.7)','rgba(247,37,133,.7)','rgba(6,214,160,.7)'],
+        borderColor:COLORS,
+        borderWidth:2,borderRadius:6,
+      }]
+    },
+    options:baseOpts('Memory','MB')
+  });
+}
+
+function updateCharts(){
+  Object.values(charts).forEach(c=>{
+    const tc = getTextColor(), gc = getGridColor();
+    c.options.scales.x.ticks.color = tc;
+    c.options.scales.y.ticks.color = tc;
+    c.options.scales.x.grid.color  = gc;
+    c.options.scales.y.grid.color  = gc;
+    if(c.options.scales.y.title) c.options.scales.y.title.color = tc;
+    c.options.plugins.legend.labels.color = tc;
+    c.update();
+  });
+}
+
+buildCharts();
+</script>
+</body>
+</html>

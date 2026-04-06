@@ -1,0 +1,149 @@
+
+digraph ProtocolFlow {
+    // Graph settings
+    graph [
+        label="BCMS Protocol Flow: Certificate Issuance & Verification\nHyperledger Fabric - Academic Certificate Anti-Forgery System"
+        labelloc="t"
+        fontsize=16
+        fontname="Helvetica-Bold"
+        bgcolor="#F8F9FA"
+        rankdir=TB
+        splines=ortho
+        nodesep=0.8
+        ranksep=1.0
+        pad=0.5
+    ]
+    
+    node [fontname="Helvetica" fontsize=11]
+    edge [fontname="Helvetica" fontsize=10]
+    
+    // ── ACTORS ──────────────────────────────────────────────────────────────
+    
+    subgraph cluster_issuer {
+        label="University (Org1MSP)"
+        style=filled
+        fillcolor="#E3F2FD"
+        color="#1565C0"
+        fontcolor="#1565C0"
+        fontsize=13
+        fontname="Helvetica-Bold"
+        
+        UNI [label="🎓 University\n(Issuer)"
+             shape=rectangle style="filled,rounded"
+             fillcolor="#1565C0" fontcolor=white
+             width=1.8 height=0.7]
+        
+        COMPUTE_HASH [label="Compute Hash\nH(C) = SHA256(fields)"
+                      shape=ellipse style=filled fillcolor="#BBDEFB"
+                      fontcolor="#0D47A1"]
+        
+        SIGN [label="Sign Certificate\nSig = Sign(sk_U, H(C))"
+              shape=ellipse style=filled fillcolor="#BBDEFB"
+              fontcolor="#0D47A1"]
+    }
+    
+    subgraph cluster_student {
+        label="Student (Holder)"
+        style=filled
+        fillcolor="#E8F5E9"
+        color="#2E7D32"
+        fontsize=13
+        fontname="Helvetica-Bold"
+        
+        STU [label="👨‍🎓 Student"
+             shape=rectangle style="filled,rounded"
+             fillcolor="#2E7D32" fontcolor=white
+             width=1.8 height=0.7]
+        
+        STORE_CERT [label="Store Certificate\n(off-chain)"
+                    shape=cylinder style=filled fillcolor="#C8E6C9"
+                    fontcolor="#1B5E20"]
+    }
+    
+    subgraph cluster_blockchain {
+        label="Hyperledger Fabric Blockchain"
+        style=filled
+        fillcolor="#FFF3E0"
+        color="#E65100"
+        fontsize=13
+        fontname="Helvetica-Bold"
+        
+        ORDERER [label="📋 Ordering Service\n(Raft Consensus)"
+                 shape=rectangle style=filled fillcolor="#FF6D00"
+                 fontcolor=white width=2.0 height=0.7]
+        
+        LEDGER [label="🔗 Blockchain Ledger\n(CertID, H(C), Sig, Issuer, Timestamp)"
+                shape=cylinder style=filled fillcolor="#FFB300"
+                fontcolor="#4E342E" width=2.5 height=0.9]
+        
+        CHAINCODE [label="⚙️ Chaincode\nIssueCertificate()\nVerifyCertificate()"
+                   shape=component style=filled fillcolor="#FF8F00"
+                   fontcolor=white width=2.2 height=0.9]
+        
+        PEER1 [label="Peer0.Org1\n(CouchDB)"
+               shape=rectangle style=filled fillcolor="#FFA000"
+               fontcolor=white]
+        
+        PEER2 [label="Peer0.Org2\n(CouchDB)"
+               shape=rectangle style=filled fillcolor="#FFA000"
+               fontcolor=white]
+    }
+    
+    subgraph cluster_verifier {
+        label="Verifier (Org2MSP / Employer)"
+        style=filled
+        fillcolor="#FCE4EC"
+        color="#880E4F"
+        fontsize=13
+        fontname="Helvetica-Bold"
+        
+        VER [label="🔍 Verifier\n(Employer)"
+             shape=rectangle style="filled,rounded"
+             fillcolor="#880E4F" fontcolor=white
+             width=1.8 height=0.7]
+        
+        RECOMPUTE [label="Recompute Hash\nH_check = SHA256(C)"
+                   shape=ellipse style=filled fillcolor="#F8BBD9"
+                   fontcolor="#880E4F"]
+        
+        COMPARE [label="Compare Hashes\nH_check == H_stored?"
+                 shape=diamond style=filled fillcolor="#F48FB1"
+                 fontcolor="#880E4F"]
+        
+        RESULT_VALID [label="✅ VALID\nCertificate Authentic"
+                      shape=rectangle style="filled,rounded"
+                      fillcolor="#4CAF50" fontcolor=white]
+        
+        RESULT_INVALID [label="❌ INVALID\nCertificate Tampered"
+                        shape=rectangle style="filled,rounded"
+                        fillcolor="#F44336" fontcolor=white]
+    }
+    
+    // ── ISSUANCE FLOW ──────────────────────────────────────────────────────
+    
+    UNI -> COMPUTE_HASH [label="1. Build C = (IDs,IDc,S,t)" color="#1565C0" style=bold]
+    COMPUTE_HASH -> SIGN [label="2. H(C) computed" color="#1565C0" style=bold]
+    SIGN -> CHAINCODE [label="3. Submit IssueCertificate()" color="#E65100" style=bold penwidth=2]
+    CHAINCODE -> ORDERER [label="4. Propose transaction" color="#E65100"]
+    ORDERER -> PEER1 [label="5. Order & commit" color="#E65100"]
+    ORDERER -> PEER2 [label="5. Order & commit" color="#E65100"]
+    PEER1 -> LEDGER [label="6. Write H(C) to ledger" color="#E65100" style=bold]
+    CHAINCODE -> STU [label="7. Certificate issued" color="#2E7D32" style=dashed]
+    STU -> STORE_CERT [label="8. Student stores cert" color="#2E7D32"]
+    
+    // ── VERIFICATION FLOW ──────────────────────────────────────────────────
+    
+    STORE_CERT -> VER [label="9. Present certificate\n(off-chain)" color="#880E4F" style=dashed penwidth=2]
+    VER -> RECOMPUTE [label="10. Extract fields" color="#880E4F" style=bold]
+    RECOMPUTE -> CHAINCODE [label="11. Call VerifyCertificate()" color="#880E4F" style=bold penwidth=2]
+    CHAINCODE -> LEDGER [label="12. Read H(C) from ledger" color="#E65100"]
+    LEDGER -> CHAINCODE [label="13. Return stored H(C)" color="#E65100"]
+    CHAINCODE -> COMPARE [label="14. Compare hashes" color="#880E4F"]
+    COMPARE -> RESULT_VALID [label="H match + not revoked" color="#4CAF50" style=bold]
+    COMPARE -> RESULT_INVALID [label="H mismatch OR revoked" color="#F44336" style=bold]
+    
+    // ── RANK ALIGNMENT ─────────────────────────────────────────────────────
+    { rank=same; UNI; STU }
+    { rank=same; CHAINCODE; LEDGER }
+    { rank=same; RESULT_VALID; RESULT_INVALID }
+}

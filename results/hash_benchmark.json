@@ -1,0 +1,104 @@
+{
+    "metadata": {
+        "title": "BCMS Real Hash Benchmark: SHA-256 vs BLAKE3 vs Hybrid",
+        "timestamp": "2026-03-29T21:45:29Z",
+        "platform": "linux",
+        "python_version": "3.12.11",
+        "blake3_native": true,
+        "iterations": 100000,
+        "payload_bytes": 92,
+        "fabric_base_latency_ms": 100.0
+    },
+    "hash_benchmarks": {
+        "sha256": {
+            "mean_us": 1.2375,
+            "median_us": 1.035,
+            "stddev_us": 1.0134,
+            "min_us": 0.96,
+            "max_us": 119.515,
+            "p50_us": 1.035,
+            "p95_us": 1.703,
+            "p99_us": 3.597,
+            "throughput_hps": 808071.55
+        },
+        "blake3": {
+            "mean_us": 0.8553,
+            "median_us": 0.765,
+            "stddev_us": 0.7688,
+            "min_us": 0.728,
+            "max_us": 72.217,
+            "p50_us": 0.765,
+            "p95_us": 1.114,
+            "p99_us": 3.014,
+            "throughput_hps": 1169208.51
+        },
+        "hybrid": {
+            "mean_us": 1.9883,
+            "median_us": 1.833,
+            "stddev_us": 1.2512,
+            "min_us": 1.729,
+            "max_us": 158.381,
+            "p50_us": 1.833,
+            "p95_us": 2.562,
+            "p99_us": 5.715,
+            "throughput_hps": 502951.45
+        },
+        "hybrid_batch_10": {
+            "mean_us": 22.1352,
+            "median_us": 21.078,
+            "stddev_us": 6.6229,
+            "min_us": 20.253,
+            "max_us": 287.495,
+            "p50_us": 21.078,
+            "p95_us": 27.44,
+            "p99_us": 47.757,
+            "throughput_hps": 45176.91
+        },
+        "hybrid_batch_per_cert": {
+            "mean_us": 2.2135,
+            "median_us": 2.1078,
+            "stddev_us": 0.6623,
+            "min_us": 2.0253,
+            "max_us": 28.7495,
+            "p50_us": 2.1078,
+            "p95_us": 2.744,
+            "p99_us": 4.7757,
+            "throughput_hps": 451769.13
+        }
+    },
+    "fabric_metrics": {
+        "S1_sha256": {
+            "tps": 40.23,
+            "latency_ms": 87.5,
+            "workers": 4,
+            "batch_size": 1
+        },
+        "S2_blake3": {
+            "tps": 40.23,
+            "latency_ms": 87.5,
+            "workers": 4,
+            "batch_size": 1
+        },
+        "S3_hybrid": {
+            "tps": 40.23,
+            "latency_ms": 87.5,
+            "workers": 4,
+            "batch_size": 1
+        },
+        "S4_hybrid_batch": {
+            "tps": 125.49,
+            "latency_ms": 56.1,
+            "workers": 8,
+            "batch_size": 10,
+            "effective_cert_tps": 1254.9
+        }
+    },
+    "comparison": {
+        "blake3_vs_sha256_throughput_pct": 44.69,
+        "hybrid_vs_sha256_overhead_pct": 60.67,
+        "batch_cert_throughput_gain_pct": 3019.31,
+        "hybrid_latency_us": 1.9883,
+        "network_latency_ms": 100.0,
+        "hybrid_pct_of_network": 0.002
+    }
+}

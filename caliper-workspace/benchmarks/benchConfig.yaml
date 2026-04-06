@@ -1,11 +1,7 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.1 (Fixed Transaction Count)
-#  Research Paper: "Enhancing Trust and Transparency in Education Using 
-#                  Blockchain: A Hyperledger Fabric-Based Framework"
-#
-#  Rounds updated from txDuration (Time) to txNumber (Count) for research precision.
-#  All calculations based on: TPS * 30 seconds.
+#  Standardized Benchmark Configuration (Fair Comparison Edition)
+#  Target: Identical to SHA-256 Baseline for PhD Research
 # ============================================================================
 
 monitors:
@@ -14,34 +10,25 @@ monitors:
       options:
         interval: 1
         containers:
-          - /orderer.example.com
-          - /peer0.org1.example.com
-          - /couchdb0
-          - /peer0.org2.example.com
-          - /couchdb1
-          - /ca_org1
-          - /ca_org2
-          - /ca_orderer
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1
 
 test:
-  name: bcms-certificate-benchmark-v4
+  name: bcms-fair-comparison-benchmark
   description: >
-    BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions across RBAC, ABAC, SHA-256 crypto,
-    and audit logging. Target: 0% failure rate with fixed transaction counts.
+    Standardized suite for fair comparison between SHA-256 and BLAKE3.
+    Identical transaction counts and rate controls.
   workers:
     type: local
-    number: 8
+    number: 8  # مطابق تماماً لتقرير SHA-256 الأصلي
 
   rounds:
-    # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate (50 TPS * 30s = 1500 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 1: IssueCertificate (Fixed 50 TPS) ---
     - label: IssueCertificate
-      description: >
-        Org1 issues educational certificates to the Hyperledger Fabric ledger.
-        RBAC enforced: only Org1MSP clients can invoke.
-      txNumber: 1500
+      txNumber: 1500  # مطابق لعدد المعاملات في تقريرك المرجعي
       rateControl:
         type: fixed-rate
         opts:
@@ -51,14 +38,9 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate (100 TPS * 30s = 3000 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 2: VerifyCertificate (Fixed 100 TPS) ---
     - label: VerifyCertificate
-      description: >
-        Verify certificate authenticity by recomputing SHA-256 hash.
-        Public read — readOnly:true bypasses orderer.
-      txNumber: 3000
+      txNumber: 3000  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
@@ -68,14 +50,9 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates (50 TPS * 30s = 1500 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 3: QueryAllCertificates (Fixed 50 TPS) ---
     - label: QueryAllCertificates
-      description: >
-        Rich ledger query returning all certificates sorted by issue date.
-        Uses CouchDB selector. readOnly:true — direct peer query.
-      txNumber: 1500
+      txNumber: 1500  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
@@ -85,14 +62,9 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate (50 TPS * 30s = 1500 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 4: RevokeCertificate (Fixed 50 TPS) ---
     - label: RevokeCertificate
-      description: >
-        Org2 revokes certificates on the ledger — RBAC: Org2MSP.
-        Write audit log on every revocation.
-      txNumber: 1500
+      txNumber: 1500  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
@@ -102,14 +74,9 @@ test:
       txOptions:
         invokerIdentity: User1@org2.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent (75 TPS * 30s = 2250 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 5: GetCertificatesByStudent (Fixed 75 TPS) ---
     - label: GetCertificatesByStudent
-      description: >
-        Query certificates for a specific student using CouchDB rich query.
-        Selector: {docType: "certificate", StudentID: "<id>"}.
-      txNumber: 2250
+      txNumber: 2250  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
@@ -119,14 +86,9 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs (30 TPS * 30s = 900 Transactions)
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 6: GetAuditLogs (Fixed 30 TPS) ---
     - label: GetAuditLogs
-      description: >
-        Query the immutable audit log trail from the ledger.
-        Returns all AuditLog entries sorted by timestamp descending.
-      txNumber: 900
+      txNumber: 900  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:

@@ -35,3 +35,10 @@ install-fabric.sh
 **/node_modules
 caliper-workspace/node_modules
 **/*.log
+core
+report_server.py
+setup_run_*.log
+# Go compiled binaries
+chaincode-bcms/hybrid-batch/hybrid-batch
+chaincode-bcms/sha256/sha256
+chaincode-bcms/blake3/blake3

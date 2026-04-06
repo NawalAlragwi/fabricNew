@@ -1,0 +1,120 @@
+
+digraph BlockchainArchitecture {
+    graph [
+        label="BCMS Hyperledger Fabric Network Architecture"
+        labelloc="t"
+        fontsize=16
+        fontname="Helvetica-Bold"
+        bgcolor="#FAFAFA"
+        rankdir=LR
+        splines=curved
+        nodesep=0.6
+        ranksep=1.2
+        pad=0.5
+    ]
+    
+    node [fontname="Helvetica" fontsize=10]
+    edge [fontname="Helvetica" fontsize=9]
+    
+    // ── CLIENTS ──────────────────────────────────────────────────────────
+    
+    subgraph cluster_clients {
+        label="Client Applications"
+        style=filled fillcolor="#E8EAF6" color="#283593"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        CLI1 [label="University App\n(Org1 Client)" shape=rectangle
+              style=filled fillcolor="#3949AB" fontcolor=white]
+        CLI2 [label="Employer App\n(Org2 Client)" shape=rectangle
+              style=filled fillcolor="#3949AB" fontcolor=white]
+        CLI3 [label="Student Portal\n(Public Client)" shape=rectangle
+              style=filled fillcolor="#5C6BC0" fontcolor=white]
+    }
+    
+    // ── ORG1 ─────────────────────────────────────────────────────────────
+    
+    subgraph cluster_org1 {
+        label="Organization 1 — University (Issuer)"
+        style=filled fillcolor="#E3F2FD" color="#0D47A1"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        CA1 [label="CA\nca.org1.example.com\n(Certificate Authority)"
+             shape=rectangle style=filled fillcolor="#1565C0" fontcolor=white]
+        
+        PEER1 [label="peer0.org1.example.com\nEndorsing Peer"
+               shape=rectangle style=filled fillcolor="#1976D2" fontcolor=white]
+        
+        COUCH1 [label="CouchDB\nRich Query Support\n(CertID indexed)"
+                shape=cylinder style=filled fillcolor="#64B5F6" fontcolor="#0D47A1"]
+        
+        CC1 [label="BCMS Chaincode\n(Go v1.21)\nIssueCertificate()\nVerifyCertificate()\nRevokeCertificate()"
+             shape=component style=filled fillcolor="#0288D1" fontcolor=white]
+    }
+    
+    // ── ORG2 ─────────────────────────────────────────────────────────────
+    
+    subgraph cluster_org2 {
+        label="Organization 2 — Verifier (Employer)"
+        style=filled fillcolor="#E8F5E9" color="#1B5E20"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        CA2 [label="CA\nca.org2.example.com\n(Certificate Authority)"
+             shape=rectangle style=filled fillcolor="#2E7D32" fontcolor=white]
+        
+        PEER2 [label="peer0.org2.example.com\nEndorsing Peer"
+               shape=rectangle style=filled fillcolor="#388E3C" fontcolor=white]
+        
+        COUCH2 [label="CouchDB\nRich Query Support\n(CertID indexed)"
+                shape=cylinder style=filled fillcolor="#81C784" fontcolor="#1B5E20"]
+        
+        CC2 [label="BCMS Chaincode\n(Go v1.21)\nIssueCertificate()\nVerifyCertificate()\nRevokeCertificate()"
+             shape=component style=filled fillcolor="#43A047" fontcolor=white]
+    }
+    
+    // ── ORDERING SERVICE ─────────────────────────────────────────────────
+    
+    subgraph cluster_orderer {
+        label="Ordering Service"
+        style=filled fillcolor="#FFF3E0" color="#E65100"
+        fontsize=12 fontname="Helvetica-Bold"
+        
+        CA_ORD [label="CA\nca.orderer.example.com"
+                shape=rectangle style=filled fillcolor="#BF360C" fontcolor=white]
+        
+        ORD [label="orderer.example.com\nRaft Consensus\nPort: 7050"
+             shape=rectangle style=filled fillcolor="#E64A19" fontcolor=white width=2.0]
+    }
+    
+    // ── CHANNEL ──────────────────────────────────────────────────────────
+    
+    CHANNEL [label="mychannel\n(Fabric Channel)"
+             shape=rectangle style="filled,dashed" fillcolor="#F5F5F5"
+             color="#757575" fontsize=11]
+    
+    // ── CONNECTIONS ──────────────────────────────────────────────────────
+    
+    CLI1 -> PEER1 [label="gRPC:7051\nIssueCertificate()" color="#1565C0" style=bold]
+    CLI2 -> PEER2 [label="gRPC:9051\nVerifyCertificate()" color="#2E7D32" style=bold]
+    CLI3 -> PEER1 [label="gRPC:7051\nReadCertificate()" color="#5C6BC0"]
+    
+    PEER1 -> CC1 [label="Endorse" color="#0D47A1"]
+    PEER2 -> CC2 [label="Endorse" color="#1B5E20"]
+    
+    CC1 -> COUCH1 [label="PutState/GetState" color="#0D47A1"]
+    CC2 -> COUCH2 [label="PutState/GetState" color="#1B5E20"]
+    
+    PEER1 -> ORD [label="Submit endorsed tx" color="#E65100" style=bold penwidth=2]
+    PEER2 -> ORD [label="Submit endorsed tx" color="#E65100" style=bold penwidth=2]
+    
+    ORD -> PEER1 [label="Deliver block" color="#E65100"]
+    ORD -> PEER2 [label="Deliver block" color="#E65100"]
+    
+    CA1 -> PEER1 [label="TLS cert" style=dashed color="#9E9E9E"]
+    CA2 -> PEER2 [label="TLS cert" style=dashed color="#9E9E9E"]
+    CA_ORD -> ORD [label="TLS cert" style=dashed color="#9E9E9E"]
+    
+    PEER1 -> CHANNEL [style=invis]
+    PEER2 -> CHANNEL [style=invis]
+    { rank=same; PEER1; CHANNEL; PEER2 }
+    { rank=same; CLI1; CLI2; CLI3 }
+}

@@ -1,0 +1,38 @@
+name: Generate Performance and Security Reports
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-reports:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Prepare Report Environment
+        run: |
+          mkdir -p results
+          # تحميل المكتبة الضرورية للرسوم البيانية
+          curl -L https://cdn.jsdelivr.net/npm/chart.js -o results/chart.umd.min.js
+
+      # تشغيل ملف تقرير Caliper (الأداء)
+      - name: Run Caliper Report Generator
+        run: python3 generate_caliper_report.py
+
+      # تشغيل ملف تقرير Tamarin (الأمن)
+      - name: Run Tamarin Report Generator
+        run: python3 generate_tamarin_report.py
+
+      # رفع النتائج كملفات مرفقة
+      - name: Upload All Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: Performance-and-Security-Reports
+          path: results/

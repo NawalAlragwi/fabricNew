@@ -1,40 +1,42 @@
 'use strict';
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  QueryAllCertificates Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
+ *
+ *  Function signature (smartcontract_blake3.go):
+ *    QueryAllCertificates() ([]*Certificate, error)
+ *
+ *  readOnly:true — CouchDB rich query direct to peer, no orderer.
+ *  Returns empty slice [] on empty ledger — NEVER returns Go error.
+ *  Caliper counts SUCCESS for any non-error response (including empty []).
+ *
+ *  CouchDB Index Alignment:
+ *    The chaincode QueryAllCertificates selector uses:
+ *      {"docType": "certificate", "StudentID": {"$gt": ""}, "Issuer": {"$gt": ""}}
+ *    This exactly matches the index defined in:
+ *      META-INF/statedb/couchdb/indexes/indexCertificates.json
+ *    fields: ["docType", "StudentID", "Issuer"]
+ *    CouchDB selects the index automatically — no full-table scan.
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  QueryAllCertificates Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : QueryAllCertificates() → []*Certificate
- *  RBAC      : Public read (any org)
- *  Guarantee : 0 failures — returns empty slice on empty ledger (never nil)
- *  Note      : readOnly:true — direct peer query, bypasses orderer
- * ══════════════════════════════════════════════════════════════════════
- */
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
-
-    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-    }
-
     async submitTransaction() {
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'QueryAllCertificates',
-            contractArguments: [],      // no args — Go func takes only ctx
-            readOnly:          true     // essential: prevents orderer bottleneck
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            contractArguments: [], // Go func takes only ctx — no args
+            readOnly:          true,
+        });
     }
 
-    async cleanupWorkloadModule() {
-        // No cleanup needed
-    }
+    async cleanupWorkloadModule() {}
 }
 
 module.exports = { createWorkloadModule: () => new QueryAllCertificatesWorkload() };

@@ -1,0 +1,167 @@
+# ============================================================================
+#  BCMS — Scenario S1: SHA-256 Only
+#  Hyperledger Caliper Benchmark Configuration
+#  Branch: mirage-batch | Research Paper Scenario Comparison
+#
+#  S1 Description:
+#    Pure SHA-256 on-chain hashing. The simplest and most widely deployed
+#    algorithm. SHA-256 is the baseline for comparison. It bottlenecks
+#    earliest (~120-150 TPS on IssueCertificate write round) due to
+#    single-hash CPU saturation on the endorsing peer.
+#
+#  Design Rationale:
+#    - workers: 5  →  sufficient for 1000 TPS target; SHA-256 is the first
+#      to saturate the CPU, so more workers add queue backpressure not throughput
+#    - linear-rate 100→1000 TPS → ramps up to find the true CPU bottleneck
+#      rather than running at a fixed rate that may be below or above saturation
+#    - batchSize: 1  → each tx issues one certificate (no batching in S1)
+#    - All read rounds fixed-rate @ 1000 TPS to demonstrate network capacity
+#      when hashing overhead is absent (read-only, no SHA-256 computation)
+#
+#  Expected Results (after tuned configtx.yaml + GOMAXPROCS=0):
+#    IssueCertificate write:  ~120-150 TPS (SHA-256 CPU bottleneck)
+#    Avg Latency (write):     ~0.8-1.2 s
+#    Read rounds:             ~900-1000 TPS (no hash overhead)
+#
+#  Resource Monitor: Docker containers (1s interval)
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
+
+test:
+  name: bcms-S1-sha256-stress-benchmark
+  description: >
+    Scenario S1: SHA-256-only hashing stress test.
+    Linear ramp 100→1000 TPS on IssueCertificate to find the CPU bottleneck.
+    Expected: SHA-256 saturates at ~120-150 TPS. Read rounds run at 1000 TPS
+    to confirm network capacity when compute overhead is absent.
+  workers:
+    type: local
+    number: 5
+
+  rounds:
+    # ────────────────────────────────────────────────────────────────────
+    # Round 1: IssueCertificate — SHA-256 Write Stress
+    # linear-rate: ramps from 100 TPS to 1000 TPS over 60s
+    # Workers: 5 (SHA-256 saturates early; more workers = queue backpressure)
+    # batchSize: 1 (single cert per tx — pure SHA-256 overhead measurement)
+    # ────────────────────────────────────────────────────────────────────
+    - label: IssueCertificate
+      description: >
+        S1: SHA-256 write stress. Linear ramp 100→1000 TPS.
+        SHA-256 is expected to become the CPU bottleneck at ~120-150 TPS.
+        Each tx issues exactly 1 certificate (batchSize=1).
+        MVCC-safe: CERT_{worker}_{index} unique keys, idempotent on duplicate.
+      txDuration: 60
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 100
+          finishingTps: 1000
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ────────────────────────────────────────────────────────────────────
+    # Round 2: VerifyCertificate — Read at 1000 TPS (no hash overhead)
+    # Demonstrates full network read capacity without SHA-256 bottleneck
+    # ────────────────────────────────────────────────────────────────────
+    - label: VerifyCertificate
+      description: >
+        S1: Read-only verify at 1000 TPS. SHA-256 recomputed client-side
+        for hash comparison. readOnly=true bypasses orderer.
+        Shows network read capacity unconstrained by write CPU bottleneck.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/verifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ────────────────────────────────────────────────────────────────────
+    # Round 3: QueryAllCertificates — CouchDB at 1000 TPS
+    # ────────────────────────────────────────────────────────────────────
+    - label: QueryAllCertificates
+      description: >
+        S1: CouchDB rich query at 1000 TPS. readOnly=true.
+        No hashing overhead — pure query throughput measurement.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ────────────────────────────────────────────────────────────────────
+    # Round 4: RevokeCertificate — Write at 1000 TPS (Org2 RBAC)
+    # ────────────────────────────────────────────────────────────────────
+    - label: RevokeCertificate
+      description: >
+        S1: Revocation write at 1000 TPS. Org2MSP RBAC.
+        No hash computation in revoke path — tests write throughput without hash.
+        Idempotent: nil on cert-not-found or already-revoked.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com
+
+    # ────────────────────────────────────────────────────────────────────
+    # Round 5: GetCertificatesByStudent — CouchDB Composite Index at 1000 TPS
+    # ────────────────────────────────────────────────────────────────────
+    - label: GetCertificatesByStudent
+      description: >
+        S1: Student query at 1000 TPS. CouchDB composite index.
+        readOnly=true. Zero hash overhead.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ────────────────────────────────────────────────────────────────────
+    # Round 6: GetAuditLogs — Audit Query at 1000 TPS
+    # ────────────────────────────────────────────────────────────────────
+    - label: GetAuditLogs
+      description: >
+        S1: Audit log query at 1000 TPS. Returns [] in benchmark mode.
+        readOnly=true. Demonstrates audit trail query capacity.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/getAuditLogs.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com

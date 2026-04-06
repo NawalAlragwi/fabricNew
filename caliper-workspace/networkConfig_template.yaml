@@ -1,25 +1,42 @@
-name: Caliper Test
+# ============================================================================
+#  BCMS — Caliper Network Configuration Template
+#  Caliper 0.6.0 — Fabric 2.5 Adapter
+#
+#  This is the TEMPLATE. setup_and_run_all.sh substitutes {{PLACEHOLDERS}}
+#  at runtime. The actual generated file is networks/networkConfig.yaml
+#
+#  KEY FIXES vs original broken config:
+#    1. caliper.blockchain attribute added (was missing → caused error)
+#    2. Array-based organizations format (Caliper 0.6.0 format)
+#    3. identities.certificates[] instead of adminPrivateKey/signedCert
+#    4. connectionProfile.discover: false (avoid DiscoveryService errors)
+# ============================================================================
+
+name: bcms-test-network
 version: "2.0.0"
+
+# ── REQUIRED: Tells Caliper which SUT adapter to load ────────────────────────
 caliper:
   blockchain: fabric
+
 channels:
   - channelName: mychannel
     contracts:
       - id: basic
+
 organizations:
   - mspid: Org1MSP
     identities:
       certificates:
         - name: 'User1@org1.example.com'
           clientPrivateKey:
-            # IMPORTANT: This path is dynamically resolved at runtime by the setup script.
+            # IMPORTANT: This path is dynamically resolved at runtime by setup_and_run_all.sh.
             # The private key filename contains a random hash and changes every time
-            # the network is recreated. Use `find ... -name "*_sk"` to locate it.
-            path: '{{ORG1_PRIVATE_KEY}}'
+            # the network is recreated. Use `find ... -type f` to locate it.
+            path: '{{ORG1_USER1_PRIVATE_KEY}}'
           clientSignedCert:
-            # Certificate path — may be cert.pem or User1@org1.example.com-cert.pem
-            # depending on whether -ca flag was used with network.sh
-            path: '{{ORG1_SIGNED_CERT}}'
+            # Certificate path — resolved at runtime
+            path: '{{ORG1_USER1_SIGNED_CERT}}'
     connectionProfile:
       path: 'networks/connection-org1.yaml'
       # CRITICAL: Must be false when using manual connection profiles
@@ -31,9 +48,9 @@ organizations:
       certificates:
         - name: 'User1@org2.example.com'
           clientPrivateKey:
-            path: '{{ORG2_PRIVATE_KEY}}'
+            path: '{{ORG2_USER1_PRIVATE_KEY}}'
           clientSignedCert:
-            path: '{{ORG2_SIGNED_CERT}}'
+            path: '{{ORG2_USER1_SIGNED_CERT}}'
     connectionProfile:
       path: 'networks/connection-org2.yaml'
       discover: false

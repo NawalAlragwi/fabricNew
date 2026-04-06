@@ -1,0 +1,113 @@
+# ============================================================================
+#  BCMS — Scenario S1: SHA-256 Baseline  (v6.0)
+#  Hash algorithm : SHA-256 only
+#  Batch size     : 1 (one certificate per Fabric transaction)
+#  Workers        : 5 (local)
+#  IssueCertificate: linear-rate 50 → 500 TPS over 60 s
+#  Read rounds    : fixed-rate 200 TPS, 60 s
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
+
+test:
+  name: bcms-s1-sha256-baseline-v6
+  description: >
+    Scenario S1 — SHA-256 Baseline (v6.0).
+    batchSize: 1 (single certificate per Fabric transaction).
+    IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5 workers.
+    All read rounds: fixed-rate 200 TPS, 60 s.
+  workers:
+    type: local
+    number: 5
+
+  rounds:
+
+    - label: IssueCertificate
+      description: >
+        S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
+        Linear ramp 50→500 TPS over 60 s. Chaincode: SHA-256 hash mode.
+      txDuration: 60
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 50
+          finishingTps: 500
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: VerifyCertificate
+      description: Fixed-rate 200 TPS read-only verify.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workload/verifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: Fixed-rate 200 TPS full ledger scan.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: RevokeCertificate
+      description: Fixed-rate 200 TPS revocation (idempotent).
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com
+
+    - label: GetCertificatesByStudent
+      description: Fixed-rate 200 TPS per-student query.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: GetAuditLogs
+      description: Fixed-rate 200 TPS audit trail query.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workload/getAuditLogs.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com

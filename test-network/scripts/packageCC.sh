@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH=/workspaces/fabricNew/bin:$PATH
 
 source scripts/utils.sh
 
@@ -80,6 +81,36 @@ verifyResult() {
 }
 
 packageChaincode() {
+  # Log diagnostic information
+  infoln "📋 Packaging Diagnostic Information:"
+  infoln "  Current directory: $(pwd)"
+  infoln "  Chaincode name: ${CC_NAME}"
+  infoln "  Chaincode source path: ${CC_SRC_PATH}"
+  infoln "  Chaincode language: ${CC_SRC_LANGUAGE} (runtime: ${CC_RUNTIME_LANGUAGE})"
+  infoln "  Version: ${CC_VERSION}"
+  
+  # Verify source path exists
+  if [ ! -d "${CC_SRC_PATH}" ]; then
+    fatalln "❌ Chaincode source path does not exist: ${CC_SRC_PATH}"
+  fi
+  infoln "  ✓ Source path exists"
+  
+  # For Go chaincode, verify go.mod exists
+  if [ "${CC_RUNTIME_LANGUAGE}" = "golang" ]; then
+    if [ ! -f "${CC_SRC_PATH}/go.mod" ]; then
+      fatalln "❌ go.mod not found in ${CC_SRC_PATH}/go.mod"
+    fi
+    infoln "  ✓ go.mod found"
+    
+    # List Go files
+    infoln "  Go files in source:"
+    ls -1 ${CC_SRC_PATH}/*.go | sed 's/^/    /'
+  fi
+  
+  # Clean up old package files
+  rm -f ${CC_NAME}.tar.gz log.txt
+  infoln "  ✓ Cleaned up old package files"
+  
   set -x
   if [ ${CC_PACKAGE_ONLY} = true ] ; then
     mkdir -p packagedChaincode
@@ -90,9 +121,24 @@ packageChaincode() {
   res=$?
   { set +x; } 2>/dev/null
   cat log.txt
-  PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid ${CC_NAME}.tar.gz)
+  
+  # Verify package file was created
+  if [ ${CC_PACKAGE_ONLY} = true ]; then
+    if [ ! -f "packagedChaincode/${CC_NAME}_${CC_VERSION}.tar.gz" ]; then
+      fatalln "❌ Package file was not created: packagedChaincode/${CC_NAME}_${CC_VERSION}.tar.gz"
+    fi
+    infoln "  ✓ Package created: packagedChaincode/${CC_NAME}_${CC_VERSION}.tar.gz"
+    PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid packagedChaincode/${CC_NAME}_${CC_VERSION}.tar.gz)
+  else
+    if [ ! -f "${CC_NAME}.tar.gz" ]; then
+      fatalln "❌ Package file was not created: ${CC_NAME}.tar.gz"
+    fi
+    infoln "  ✓ Package created: ${CC_NAME}.tar.gz"
+    PACKAGE_ID=$(peer lifecycle chaincode calculatepackageid ${CC_NAME}.tar.gz)
+  fi
+  
   verifyResult $res "Chaincode packaging has failed"
-  successln "Chaincode is packaged"
+  successln "✅ Chaincode is packaged (ID: ${PACKAGE_ID})"
 }
 
 ## package the chaincode

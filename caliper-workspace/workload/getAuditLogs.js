@@ -1,34 +1,35 @@
 'use strict';
 
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  GetAuditLogs Workload — BCMS BLAKE3 Benchmark (fabric-blake3-new)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ *  Target chaincode: chaincode-bcms/blake3 (deployed as basic)
+ *
+ *  Function signature (smartcontract_blake3.go):
+ *    GetAuditLogs() ([]*AuditLog, error)
+ *
+ *  readOnly:true — GetStateByRange("AUDIT_", "AUDIT_~") range scan,
+ *  bypasses orderer for maximum TPS.
+ *  Returns empty [] when no audit records exist — never returns error.
+ *
+ *  Note: The blake3 chaincode uses key-range scan for audit logs
+ *  (GetStateByRange) rather than CouchDB rich query, which is faster
+ *  for sequential key access patterns and doesn't require an index.
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- *  GetAuditLogs Workload Module — BCMS Benchmark
- * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetAuditLogs() → []*AuditLog
- *  RBAC      : Public read (any org can query audit trail)
- *  Guarantee : 0 failures — returns empty slice (never nil)
- * ══════════════════════════════════════════════════════════════════════
- */
 class GetAuditLogsWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-    }
-
-    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-    }
-
     async submitTransaction() {
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
-            readOnly:          true
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            readOnly:          true,
+        });
     }
 
     async cleanupWorkloadModule() {}
