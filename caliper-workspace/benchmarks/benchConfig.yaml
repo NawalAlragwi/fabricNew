@@ -1,138 +1,98 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v6.1 (Fixed)
+#  Standardized Benchmark Configuration (Fair Comparison Edition)
+#  Target: Identical to SHA-256 Baseline for PhD Research
 # ============================================================================
 
-# ── Resource Monitors ────────────────────────────────────────────────────────
 monitors:
   resource:
     - module: docker
       options:
         interval: 1
         containers:
-          - orderer.example.com
           - peer0.org1.example.com
-          - couchdb0
           - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
           - couchdb1
-          - ca_org1
-          - ca_org2
-          - ca_orderer
 
-# ── Test Suite ───────────────────────────────────────────────────────────────
 test:
-  name: bcms-hybrid-batch-benchmark-v6
+  name: bcms-fair-comparison-benchmark
   description: >
-    BCMS Full Benchmark Suite — Hybrid-Batch Framework (BLAKE3).
-    6 rounds covering all chaincode functions.
-    IssueCertificate: linear-rate 50→500 TPS over 60 s, 5 workers.
-    All read-operation rounds: fixed-rate 200 TPS.
+    Standardized suite for fair comparison between SHA-256 and BLAKE3.
+    Identical transaction counts and rate controls.
   workers:
     type: local
-    number: 5
+    number: 8  # مطابق تماماً لتقرير SHA-256 الأصلي
 
   rounds:
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Write Stress Test
-    # ──────────────────────────────────────────────────────────────────────────
+    # --- Round 1: IssueCertificate (Fixed 50 TPS) ---
     - label: IssueCertificate
-      description: >
-        Issue certificates using BLAKE3 hash.
-        Linear ramp 50→500 TPS over 60 seconds. MVCC-safe.
-      txDuration: 60
-      rateControl:
-        type: linear-rate
-        opts:
-          startingTps: 50
-          finishingTps: 500
-      workload:
-        module: workload/issueCertificate.js
-        arguments:
-          batchSize: 1
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Read-Only, 200 TPS
-    # ──────────────────────────────────────────────────────────────────────────
-    - label: VerifyCertificate
-      description: >
-        Verify certificate existence on the ledger (readOnly peer query).
-        Fixed-rate 200 TPS.
-      txDuration: 60
+      txNumber: 1500  # مطابق لعدد المعاملات في تقريرك المرجعي
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 50
       workload:
-        # ✅ إصلاح: نقل التعليق لسطر منفصل بعيداً عن قيمة module
+        module: workload/issueCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # --- Round 2: VerifyCertificate (Fixed 100 TPS) ---
+    - label: VerifyCertificate
+      txNumber: 3000  # مطابق للتقرير الأصلي
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — Full Ledger Scan, 200 TPS
-    # ──────────────────────────────────────────────────────────────────────────
+    # --- Round 3: QueryAllCertificates (Fixed 50 TPS) ---
     - label: QueryAllCertificates
-      description: >
-        Scan and return all certificate records from the ledger.
-        Fixed-rate 200 TPS.
-      txDuration: 60
+      txNumber: 1500  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Write, 200 TPS
-    # ──────────────────────────────────────────────────────────────────────────
+    # --- Round 4: RevokeCertificate (Fixed 50 TPS) ---
     - label: RevokeCertificate
-      description: >
-        Revoke certificates. Idempotent design — zero failures.
-        Fixed-rate 200 TPS.
-      txDuration: 60
+      txNumber: 1500  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org2.example.com
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Read-Only, 200 TPS
-    # ──────────────────────────────────────────────────────────────────────────
+    # --- Round 5: GetCertificatesByStudent (Fixed 75 TPS) ---
     - label: GetCertificatesByStudent
-      description: >
-        Query all certificates for a specific student.
-        Fixed-rate 200 TPS.
-      txDuration: 60
+      txNumber: 2250  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 75
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Read-Only, 200 TPS
-    # ──────────────────────────────────────────────────────────────────────────
+    # --- Round 6: GetAuditLogs (Fixed 30 TPS) ---
     - label: GetAuditLogs
-      description: >
-        Query the immutable audit trail. Fixed-rate 200 TPS.
-      txDuration: 60
+      txNumber: 900  # مطابق للتقرير الأصلي
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 30
       workload:
         module: workload/getAuditLogs.js
       txOptions:

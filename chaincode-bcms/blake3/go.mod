@@ -4,6 +4,8 @@ go 1.21
 
 require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.0.0
+	github.com/json-iterator/go v1.1.12
+	github.com/valyala/bytebufferpool v1.0.0
 	lukechampine.com/blake3 v1.3.0
 )
 
@@ -21,6 +23,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

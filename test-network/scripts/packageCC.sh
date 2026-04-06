@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH=/workspaces/fabricNew/bin:$PATH
 
 source scripts/utils.sh
 
