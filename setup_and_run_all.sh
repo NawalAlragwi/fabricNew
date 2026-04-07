@@ -288,10 +288,10 @@ setup_fabric_network() {
     log "Waiting 30 seconds for network stabilization..."
     sleep 30
     
-    # Deploy BCMS chaincode
-   info "Deploying BCMS Hybrid-Batch chaincode (Proposed Model)..."
+    # Deploy BCMS Hybrid SHA-256 XOR BLAKE3 chaincode
+   info "Deploying BCMS Hybrid chaincode (SHA-256 XOR BLAKE3)..."
    ./network.sh deployCC \
-    -ccn basic \
+    -ccn bcms-hybrid \
     -ccp "${ROOT_DIR}/chaincode-bcms/hybrid-batch" \
     -ccl go \
     -c mychannel \
@@ -319,7 +319,7 @@ setup_fabric_network() {
         --tls \
         --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
         -C mychannel \
-        -n basic \
+        -n bcms-hybrid \
         --peerAddresses localhost:7051 \
         --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
         --peerAddresses localhost:9051 \
@@ -726,7 +726,7 @@ caliper:
 channels:
   - channelName: mychannel
     contracts:
-      - id: basic
+      - id: bcms-hybrid
 
 # ── ORGANIZATIONS (Caliper 0.6.0 array format) ───────────────────────────────
 organizations:
@@ -873,9 +873,9 @@ generate_summary_report() {
 ## 1. Repository Analysis
 - **Repository:** https://github.com/NawalAlragwi/fabricNew
 - **Framework:** Hyperledger Fabric v2.5.9
-- **Chaincode:** Go (asset-transfer-basic/chaincode-go)
+- **Chaincode:** Go (chaincode-bcms/hybrid-batch) — Hybrid SHA-256 XOR BLAKE3
 - **API:** Node.js REST (bcms-api/)
-- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificateHistory, GetAuditLogs
+- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificatesByStudent, GetAuditLogs
 
 ## 2. Formal Verification Results
 - **Tool:** Tamarin Prover v1.6.1+
@@ -916,8 +916,7 @@ fi)
 | File | Description |
 |---|---|
 | \`security/tamarin/academic_certificate_protocol.spthy\` | Tamarin formal model |
-| \`chaincode-bcms/sha256/smartcontract_sha256.go\` | SHA-256 chaincode |
-| \`chaincode-bcms/blake3/smartcontract_blake3.go\` | BLAKE3 chaincode |
+| \`chaincode-bcms/hybrid-batch/chaincode/smartcontract.go\` | Hybrid SHA-256 XOR BLAKE3 chaincode |
 | \`benchmark/python/hash_benchmark.py\` | Hash benchmark script |
 | \`benchmark/python/generate_diagrams.py\` | Diagram generator |
 | \`results/hash_benchmark.json\` | Raw benchmark data |

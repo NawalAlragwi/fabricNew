@@ -1,24 +1,26 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.1
+#  Hyperledger Caliper Benchmark Configuration v5.0 (mirage branch)
+#
 #  Research Paper: "Enhancing Trust and Transparency in Education Using
 #                   Blockchain: A Hyperledger Fabric-Based Framework"
 #
+#  Hash Algorithm: Hybrid SHA-256 XOR BLAKE3 (sha256-xor-blake3)
+#
+#  Chaincode: bcms-hybrid  (chaincode-bcms/hybrid-batch)
+#  Channel:   mychannel
+#
 #  Rounds:
 #    1. IssueCertificate           (Org1 RBAC Write)     @ 50  TPS / 30s
-#    2. VerifyCertificate          (Public ReadOnly)      @ 200 TPS / 30s
-#    3. QueryAllCertificates       (Public ReadOnly)      @ 100 TPS / 30s
-#    4. RevokeCertificate          (Org2 RBAC Write)      @ 100 TPS / 30s
-#    5. GetCertificatesByStudent   (Public ReadOnly)      @ 75  TPS / 30s
-#    6. GetAuditLogs               (Public ReadOnly)      @ 30  TPS / 30s
+#    2. VerifyCertificate          (Public ReadOnly)      @ 100 TPS / 30s
+#    3. QueryAllCertificates       (Public ReadOnly)      @  50 TPS / 30s
+#    4. RevokeCertificate          (Org1/Org2 RBAC Write) @  50 TPS / 30s
+#    5. GetCertificatesByStudent   (Public ReadOnly)      @  75 TPS / 30s
+#    6. GetAuditLogs               (Public ReadOnly)      @  30 TPS / 30s
 #
-#  All rounds designed for 0 failures:
+#  Zero-failure design:
 #    - Write rounds: idempotent chaincode (duplicate = nil, not error)
 #    - Read rounds:  readOnly=true bypasses orderer, returns empty not error
-#
-#  FIX v4.1: Corrected YAML indentation — rounds 2-6 were previously nested
-#  inside round 1's txOptions block (invalid YAML structure).  All rounds
-#  are now top-level entries under test.rounds[].
 # ============================================================================
 
 # ============================================================================
@@ -32,21 +34,18 @@ monitors:
         containers:
           - orderer.example.com
           - peer0.org1.example.com
-          - couchdb0
           - peer0.org2.example.com
-          - orderer.example.com
           - couchdb0
           - couchdb1
           - ca_org1
           - ca_org2
-          - ca_orderer
 
 test:
-  name: bcms-fair-comparison-benchmark
+  name: bcms-hybrid-benchmark
   description: >
-    BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions with SHA-256 hashing.
-    Target: ≥250 TPS IssueCertificate, ≤118ms average latency, 0% failure.
+    BCMS Hybrid SHA-256 XOR BLAKE3 Benchmark — Research Paper Implementation.
+    Tests all 6 chaincode functions with the hybrid hash algorithm.
+    Target: 0% failure rate across all rounds.
   workers:
     type: local
     number: 8
@@ -57,9 +56,9 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: IssueCertificate
       description: >
-        Org1 issues a single certificate per transaction (SHA-256 hash).
+        Org1 issues a single certificate per transaction.
+        Hash: Hybrid SHA-256 XOR BLAKE3 computed server-side.
         RBAC: Org1MSP only. Idempotent: duplicate ID returns nil (0 fail).
-        certHash computed client-side: SHA256(studentId|name|degree|issuer|date).
       txDuration: 30
       rateControl:
         type: fixed-rate
@@ -75,22 +74,10 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
-        Verify certificate authenticity by comparing SHA-256 hash.
+        Verify certificate authenticity against hybrid hash.
         readOnly:true bypasses orderer. Returns struct (never error).
-        Zero-failure design: returns false (not error) when cert not found.
+        Zero-failure design: returns {valid:false} (not error) when cert not found.
       txDuration: 30
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/issueCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    # Round 2: VerifyCertificate — 100 TPS × 30s = 3000 tx
-    - label: VerifyCertificate
-      txNumber: 3000
       rateControl:
         type: fixed-rate
         opts:
@@ -105,8 +92,8 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates sorted by issue date.
-        CouchDB selector with fallback to GetStateByRange for LevelDB.
+        Rich ledger query returning all certificates sorted by IssueDate.
+        CouchDB selector with indexCertificates index hint.
         readOnly:true — direct peer query, no orderer involvement.
         Zero-failure design: returns empty slice on empty ledger.
       txDuration: 30
@@ -120,11 +107,11 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Org2 MSP Write
+    # Round 4: RevokeCertificate — Org1/Org2 MSP Write
     # ──────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Org2 revokes certificates — RBAC: OR(Org1MSP.peer, Org2MSP.peer).
+        Revoke certificates — RBAC: OR(Org1MSP, Org2MSP).
         Marks IsRevoked=true, records RevokedBy and RevokedAt metadata.
         Zero-failure: idempotent — nil when cert not found or already revoked.
       txDuration: 30
@@ -143,7 +130,8 @@ test:
     - label: GetCertificatesByStudent
       description: >
         Query all certificates for a specific student using CouchDB rich query.
-        Selector: {docType: "certificate", studentId: "<id>"}.
+        Selector: {docType: "certificate", StudentID: "<id>"}.
+        Uses indexStudentId CouchDB index for efficient lookup.
         Public read — any organization can query.
         Zero-failure design: returns empty slice (never nil).
       txDuration: 30
@@ -160,6 +148,11 @@ test:
     # Round 6: GetAuditLogs — Audit Trail Query
     # ──────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
+      description: >
+        Retrieve full audit trail via range scan on AUDIT_ prefix.
+        Faster than CouchDB rich query for sequential prefix keys.
+        Public read — any organization.
+        Zero-failure: returns empty slice (never Go error).
       txNumber: 900
       rateControl:
         type: fixed-rate

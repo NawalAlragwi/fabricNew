@@ -7,6 +7,7 @@ require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0
 	github.com/hyperledger/fabric-protos-go-apiv2 v0.3.4
 	google.golang.org/protobuf v1.36.4
+	lukechampine.com/blake3 v1.3.0
 )
 
 require (

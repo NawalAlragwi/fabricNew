@@ -4,18 +4,19 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  GetCertificatesByStudent Workload Module — BCMS Benchmark
+ *  GetCertificatesByStudent Workload Module — BCMS Benchmark (mirage)
  * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetCertificatesByStudent(studentId) → []*Certificate
+ *  Function  : GetCertificatesByStudent(studentID) → []*Certificate
  *  RBAC      : Public read (any org)
+ *  Index     : Uses CouchDB indexStudentId (docType, StudentID, IssueDate)
  *
  *  Zero-failure guarantee:
  *    - chaincode returns empty slice (never error) when no certs found
  *    - readOnly:true bypasses orderer
  *
  *  StudentID pattern: STU_{workerIndex}_{txIndex}
- *    Matches the studentId stored by IssueCertificate workload in round 1.
- *    CouchDB query field: "studentId" (lowercase 'i') — matches JSON tag.
+ *    Matches the StudentID stored by IssueCertificate workload in round 1.
+ *    CouchDB query field: "StudentID" (uppercase) — matches JSON tag.
  * ══════════════════════════════════════════════════════════════════════
  */
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
@@ -38,7 +39,7 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
         const studentID = `STU_${workerIdx}_${this.txIndex}`;
 
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
             readOnly:          true   // direct peer query — no orderer overhead

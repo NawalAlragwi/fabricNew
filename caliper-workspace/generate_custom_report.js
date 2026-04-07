@@ -44,16 +44,18 @@ const INPUT_REPORT  = process.argv[2] || path.join(__dirname, 'report.html');
 const OUTPUT_REPORT = process.argv[3] || path.join(__dirname, 'report_custom.html');
 
 const BENCHMARK_META = {
-    title:       'BCMS Certificate Benchmark',
-    version:     'v4.0',
+    title:       'BCMS Hybrid Certificate Benchmark',
+    version:     'v5.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
-    chaincode:   'basic',
+    chaincode:   'bcms-hybrid',
     chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
+    hashAlgorithm: 'Hybrid SHA-256 XOR BLAKE3 (sha256-xor-blake3)',
     workers:     8,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
+    branch:      'mirage',
 };
 
 // ─── Round Metadata ─────────────────────────────────────────────────────────
@@ -77,12 +79,12 @@ const ROUND_META = {
         emoji: '2',
         badge: 'badge-public',
         badgeText: 'Public Read',
-        description: `Any organisation can verify a certificate's authenticity by comparing its stored SHA-256 hash.<br>
+        description: `Any organisation can verify a certificate's authenticity by comparing its stored Hybrid SHA-256 XOR BLAKE3 hash.<br>
             <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
-            queries go directly to peers. Chaincode returns <code>false</code> (not error) when cert not found.`,
+            queries go directly to peers. Chaincode returns <code>{valid:false}</code> (not error) when cert not found.`,
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[certID, certHash]   // SHA-256 — matches IssueCertificate',
+        contractArgs: '[certID, certHash]   // Hybrid SHA-256 XOR BLAKE3 — empty string accepted',
         chartColor: { bg: 'rgba(0,93,93,0.7)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,0.9)' },
     },
     'QueryAllCertificates': {
@@ -562,7 +564,7 @@ function buildRoundSection(round, meta, chartData) {
             <details style="margin-top:10px;">
                 <summary style="cursor:pointer; font-size:13px; color:#0062ff;">Show workload configuration</summary>
                 <pre>
-contractId:       'basic'
+contractId:       'bcms-hybrid'
 contractFunction: '${round.name}'
 contractArguments: ${meta.contractArgs}
 readOnly:         ${meta.readOnly}
@@ -1092,7 +1094,7 @@ ${resourceSection}
                 <tr><td>Smart Contract Functions</td><td>IssueCertificate | VerifyCertificate | QueryAllCertificates | RevokeCertificate | CertificateExists | GetCertificatesByStudent | GetAuditLogs</td></tr>
                 <tr><td>RBAC</td><td>IssueCertificate → Org1MSP only | RevokeCertificate → Org1MSP or Org2MSP</td></tr>
                 <tr><td>Idempotency</td><td>IssueCertificate + RevokeCertificate are fully idempotent</td></tr>
-                <tr><td>Hash Algorithm</td><td>SHA-256 (certificate integrity verification)</td></tr>
+                <tr><td>Hash Algorithm</td><td>Hybrid SHA-256 XOR BLAKE3 — both algorithms run independently, XOR-combined for a 256-bit digest</td></tr>
             </table>
 
             <h3 style="margin-top:20px;">Applied Fixes (Root Cause Analysis)</h3>

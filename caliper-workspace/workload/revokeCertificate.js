@@ -4,7 +4,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  RevokeCertificate Workload Module — BCMS Benchmark
+ *  RevokeCertificate Workload Module — BCMS Benchmark (mirage branch)
  * ══════════════════════════════════════════════════════════════════════
  *  Function  : RevokeCertificate(id) → error
  *  RBAC      : Org1MSP or Org2MSP authorized
@@ -40,7 +40,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const certID = `CERT_${workerIdx}_${this.txIndex}`;
 
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false   // write transaction — goes through orderer
