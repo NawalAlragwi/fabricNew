@@ -39,7 +39,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         // SHA-256 H(C) = SHA256(studentID || studentName || degree || issuer || issueDate)
         // Must match ComputeCertHash() in Go chaincode exactly
         const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        const certHash = blake3Hasher(fields);
         const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
