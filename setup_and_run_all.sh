@@ -642,9 +642,15 @@ run_caliper_benchmarks() {
     rm -f report.html report_custom.html caliper.log 2>/dev/null || true
     
     # Install Caliper
+    # FIX: Use --legacy-peer-deps to resolve peer-dependency conflicts between
+    # @hyperledger/caliper-cli@0.6.0 and fabric-network@^2.2.19
     if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/caliper" ]; then
-        info "Installing Caliper dependencies..."
-        npm install 2>&1 | tee -a "$LOG_FILE" || warn "npm install had some issues"
+        info "Installing Caliper dependencies (--legacy-peer-deps)..."
+        # Clean stale lock file to avoid ETARGET errors from old entries
+        rm -f package-lock.json 2>/dev/null || true
+        # Remove any node_modules to ensure clean install
+        rm -rf node_modules 2>/dev/null || true
+        npm install --legacy-peer-deps 2>&1 | tee -a "$LOG_FILE" || warn "npm install had some issues"
     else
         log "✓ Caliper dependencies already installed"
     fi
@@ -661,13 +667,14 @@ run_caliper_benchmarks() {
         log "✓ Removed @hyperledger/fabric-gateway (conflict resolved)"
     fi
 
-    # Bind Caliper to Fabric 2.5 SDK
-    # NOTE: fabric:2.5 instructs Caliper to install the Fabric 2.x SDK packages
-    # (fabric-network, fabric-ca-client). This is separate from npm install above.
+    # Bind Caliper to Fabric 2.2 SDK
+    # NOTE: fabric:2.2 is the correct binding for fabric-network@2.2.x
+    #       (fabric:2.5 would install a different version than package.json)
+    #       --legacy-peer-deps is required to resolve caliper peer-dep conflicts
     if [ ! -d "node_modules/fabric-network" ]; then
-        info "Binding Caliper to Fabric 2.5 SDK..."
-        npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee -a "$LOG_FILE" \
-            || warn "Caliper bind fabric:2.5 had issues — continuing with pre-installed fabric-network"
+        info "Binding Caliper to Fabric 2.2 SDK..."
+        npx caliper bind --caliper-bind-sut fabric:2.2 --legacy-peer-deps 2>&1 | tee -a "$LOG_FILE" \
+            || warn "Caliper bind fabric:2.2 had issues — continuing with pre-installed fabric-network"
     else
         log "✓ Fabric SDK already bound (fabric-network found)"
     fi

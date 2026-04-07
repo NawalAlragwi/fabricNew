@@ -6,9 +6,16 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  * ══════════════════════════════════════════════════════════════════════
  *  GetCertificatesByStudent Workload Module — BCMS Benchmark
  * ══════════════════════════════════════════════════════════════════════
- *  Function  : GetCertificatesByStudent(studentID) → []*Certificate
+ *  Function  : GetCertificatesByStudent(studentId) → []*Certificate
  *  RBAC      : Public read (any org)
- *  Guarantee : 0 failures — returns empty slice (never nil)
+ *
+ *  Zero-failure guarantee:
+ *    - chaincode returns empty slice (never error) when no certs found
+ *    - readOnly:true bypasses orderer
+ *
+ *  StudentID pattern: STU_{workerIndex}_{txIndex}
+ *    Matches the studentId stored by IssueCertificate workload in round 1.
+ *    CouchDB query field: "studentId" (lowercase 'i') — matches JSON tag.
  * ══════════════════════════════════════════════════════════════════════
  */
 class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
@@ -25,14 +32,16 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
-        // Query certificates for students that were issued in round 1
+
+        // STU_{workerIndex}_{txIndex} — same pattern as IssueCertificate
+        // so this query returns actual certificates from the ledger.
         const studentID = `STU_${workerIdx}_${this.txIndex}`;
 
         const request = {
             contractId:        'basic',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
-            readOnly:          true
+            readOnly:          true   // direct peer query — no orderer overhead
         };
 
         return this.sutAdapter.sendRequests(request);
