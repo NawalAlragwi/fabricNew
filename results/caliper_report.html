@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-certificate-benchmark-v4</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">BCMS Full Benchmark Suite — Research Paper Implementation. Tests all 6 chaincode functions across RBAC, ABAC, SHA-256 crypto, and audit logging. Target: 0% failure rate with fixed transaction counts.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-hybrid-benchmark</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BCMS Hybrid SHA-256 XOR BLAKE3 Benchmark — Research Paper Implementation. Tests all 6 chaincode functions with the hybrid hash algorithm. Target: 0% failure rate across all rounds.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">6</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -158,30 +158,31 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1481</td> <td>15</td> <td>49.2</td> <td>1.69</td> <td>0.15</td> <td>0.51</td> <td>48.1</td>
+                         <td>IssueCertificate</td> <td>1451</td> <td>61</td> <td>48.9</td> <td>1.90</td> <td>0.17</td> <td>0.62</td> <td>48.6</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>99.3</td> <td>0.08</td> <td>0.01</td> <td>0.02</td> <td>99.3</td>
+                         <td>VerifyCertificate</td> <td>3008</td> <td>0</td> <td>99.0</td> <td>0.27</td> <td>0.01</td> <td>0.02</td> <td>98.9</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>0</td> <td>1496</td> <td>49.7</td> <td>-</td> <td>-</td> <td>-</td> <td>36.9</td>
+                         <td>QueryAllCertificates</td> <td>1</td> <td>1511</td> <td>49.5</td> <td>35.41</td> <td>35.41</td> <td>35.41</td> <td>22.9</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>0</td> <td>1496</td> <td>49.3</td> <td>-</td> <td>-</td> <td>-</td> <td>49.2</td>
+                         <td>RevokeCertificate</td> <td>1468</td> <td>44</td> <td>49.3</td> <td>1.09</td> <td>0.17</td> <td>0.50</td> <td>48.5</td>
                     </tr>
                     <tr>
-                         <td>GetCertificatesByStudent</td> <td>0</td> <td>2248</td> <td>74.5</td> <td>-</td> <td>-</td> <td>-</td> <td>25.0</td>
+                         <td>GetCertificatesByStudent</td> <td>0</td> <td>2264</td> <td>74.2</td> <td>-</td> <td>-</td> <td>-</td> <td>25.1</td>
                     </tr>
                     <tr>
-                         <td>GetAuditLogs</td> <td>0</td> <td>896</td> <td>29.8</td> <td>-</td> <td>-</td> <td>-</td> <td>13.8</td>
+                         <td>GetAuditLogs</td> <td>0</td> <td>896</td> <td>29.4</td> <td>-</td> <td>-</td> <td>-</td> <td>12.9</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>Org1 issues educational certificates to the Hyperledger Fabric ledger. RBAC enforced: only Org1MSP clients can invoke.
+                <p>Org1 issues a single certificate per transaction. Hash: Hybrid SHA-256 XOR BLAKE3 computed server-side. RBAC: Org1MSP only. Idempotent: duplicate ID returns nil (0 fail).
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
   type: fixed-rate
   opts:
     tps: 50
@@ -192,53 +193,18 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1481</td> <td>15</td> <td>49.2</td> <td>1.69</td> <td>0.15</td> <td>0.51</td> <td>48.1</td>
+                                     <td>IssueCertificate</td> <td>1451</td> <td>61</td> <td>48.9</td> <td>1.90</td> <td>0.17</td> <td>0.62</td> <td>48.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>28.99</td> <td>21.75</td> <td>334</td> <td>222</td> <td>14.8</td> <td>10.2</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>31.83</td> <td>22.4</td> <td>439</td> <td>312</td> <td>14.8</td> <td>9.39</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>13.62</td> <td>7.1</td> <td>69.6</td> <td>53.5</td> <td>8.76</td> <td>16.7</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>60.52</td> <td>26.62</td> <td>86.1</td> <td>81.2</td> <td>1.97</td> <td>1.16</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>59.59</td> <td>28.01</td> <td>90.8</td> <td>84.9</td> <td>1.97</td> <td>1.16</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>14.3</td> <td>14.3</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>14.8</td> <td>14.7</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>15.1</td> <td>14.9</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>Verify certificate authenticity by recomputing SHA-256 hash. Public read — readOnly:true bypasses orderer.
+                <p>Verify certificate authenticity against hybrid hash. readOnly:true bypasses orderer. Returns struct (never error). Zero-failure design: returns {valid:false} (not error) when cert not found.
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
   type: fixed-rate
   opts:
     tps: 100
@@ -249,53 +215,18 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>99.3</td> <td>0.08</td> <td>0.01</td> <td>0.02</td> <td>99.3</td>
+                                     <td>VerifyCertificate</td> <td>3008</td> <td>0</td> <td>99.0</td> <td>0.27</td> <td>0.01</td> <td>0.02</td> <td>98.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>33.93</td> <td>25.47</td> <td>215</td> <td>213</td> <td>9.77</td> <td>13.2</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>3.18</td> <td>1.8</td> <td>287</td> <td>287</td> <td>0.0648</td> <td>0.0693</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>0.88</td> <td>0.1</td> <td>74.0</td> <td>73.8</td> <td>0.0329</td> <td>0.0395</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>36.55</td> <td>24.34</td> <td>86.7</td> <td>85.3</td> <td>0.863</td> <td>1.87</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>0.79</td> <td>0.39</td> <td>90.8</td> <td>89.4</td> <td>0.00105</td> <td>0.00105</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>14.3</td> <td>14.3</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>14.8</td> <td>14.8</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0.55</td> <td>0.03</td> <td>14.9</td> <td>14.9</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>Rich ledger query returning all certificates sorted by issue date. Uses CouchDB selector. readOnly:true — direct peer query.
+                <p>Rich ledger query returning all certificates sorted by IssueDate. CouchDB selector with indexCertificates index hint. readOnly:true — direct peer query, no orderer involvement. Zero-failure design: returns empty slice on empty ledger.
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
   type: fixed-rate
   opts:
     tps: 50
@@ -306,53 +237,18 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>0</td> <td>1496</td> <td>49.7</td> <td>-</td> <td>-</td> <td>-</td> <td>36.9</td>
+                                     <td>QueryAllCertificates</td> <td>1</td> <td>1511</td> <td>49.5</td> <td>35.41</td> <td>35.41</td> <td>35.41</td> <td>22.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>46.46</td> <td>34.6</td> <td>702</td> <td>437</td> <td>271</td> <td>22.1</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>3.36</td> <td>1.32</td> <td>287</td> <td>287</td> <td>0.0729</td> <td>0.0781</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>0.36</td> <td>0.06</td> <td>74.4</td> <td>74.4</td> <td>0.0331</td> <td>0.0395</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>290.56</td> <td>219.95</td> <td>970</td> <td>612</td> <td>14.7</td> <td>268</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>0.65</td> <td>0.39</td> <td>88.5</td> <td>88.5</td> <td>0.00247</td> <td>0.00146</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>14.3</td> <td>14.3</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>14.8</td> <td>14.7</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>14.9</td> <td>14.9</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>Org2 revokes certificates on the ledger — RBAC: Org2MSP. Write audit log on every revocation.
+                <p>Revoke certificates — RBAC: OR(Org1MSP, Org2MSP). Marks IsRevoked&#x3D;true, records RevokedBy and RevokedAt metadata. Zero-failure: idempotent — nil when cert not found or already revoked.
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
   type: fixed-rate
   opts:
     tps: 50
@@ -363,53 +259,18 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>0</td> <td>1496</td> <td>49.3</td> <td>-</td> <td>-</td> <td>-</td> <td>49.2</td>
+                                     <td>RevokeCertificate</td> <td>1468</td> <td>44</td> <td>49.3</td> <td>1.09</td> <td>0.17</td> <td>0.50</td> <td>48.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>40.85</td> <td>24.62</td> <td>850</td> <td>633</td> <td>28.9</td> <td>4.57</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>46.46</td> <td>19.97</td> <td>289</td> <td>288</td> <td>3.04</td> <td>3.22</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>1.75</td> <td>0.17</td> <td>74.5</td> <td>74.5</td> <td>0.0333</td> <td>0.0394</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>269.37</td> <td>45.72</td> <td>851</td> <td>459</td> <td>0.959</td> <td>18.0</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>0.72</td> <td>0.42</td> <td>88.5</td> <td>86.9</td> <td>0.000160</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>16.2</td> <td>15.5</td> <td>0.000160</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>14.7</td> <td>14.7</td> <td>0.000160</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>16.2</td> <td>14.9</td> <td>0.000160</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetCertificatesByStudent">
                 <h2>Benchmark round: GetCertificatesByStudent</h2>
-                <p>Query certificates for a specific student using CouchDB rich query. Selector: {docType: &quot;certificate&quot;, StudentID: &quot;&lt;id&gt;&quot;}.
+                <p>Query all certificates for a specific student using CouchDB rich query. Selector: {docType: &quot;certificate&quot;, StudentID: &quot;&lt;id&gt;&quot;}. Uses indexStudentId CouchDB index for efficient lookup. Public read — any organization can query. Zero-failure design: returns empty slice (never nil).
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
   type: fixed-rate
   opts:
     tps: 75
@@ -420,51 +281,15 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetCertificatesByStudent</td> <td>0</td> <td>2248</td> <td>74.5</td> <td>-</td> <td>-</td> <td>-</td> <td>25.0</td>
+                                     <td>GetCertificatesByStudent</td> <td>0</td> <td>2264</td> <td>74.2</td> <td>-</td> <td>-</td> <td>-</td> <td>25.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetCertificatesByStudent</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>43.81</td> <td>20.24</td> <td>743</td> <td>660</td> <td>6.45</td> <td>10.9</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>4.62</td> <td>2.07</td> <td>289</td> <td>289</td> <td>0.121</td> <td>0.125</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>0.91</td> <td>0.08</td> <td>74.6</td> <td>74.5</td> <td>0.0406</td> <td>0.0460</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>267.55</td> <td>212.27</td> <td>981</td> <td>789</td> <td>5.79</td> <td>1.47</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>0.82</td> <td>0.37</td> <td>94.0</td> <td>88.4</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0.02</td> <td>0</td> <td>16.2</td> <td>16.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0.01</td> <td>0</td> <td>15.6</td> <td>15.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>16.2</td> <td>16.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetAuditLogs">
                 <h2>Benchmark round: GetAuditLogs</h2>
-                <p>Query the immutable audit log trail from the ledger. Returns all AuditLog entries sorted by timestamp descending.
+                <p>Retrieve full audit trail via range scan on AUDIT_ prefix. Faster than CouchDB rich query for sequential prefix keys. Public read — any organization. Zero-failure: returns empty slice (never Go error).
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
@@ -477,65 +302,30 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetAuditLogs</td> <td>0</td> <td>896</td> <td>29.8</td> <td>-</td> <td>-</td> <td>-</td> <td>13.8</td>
+                                     <td>GetAuditLogs</td> <td>0</td> <td>896</td> <td>29.4</td> <td>-</td> <td>-</td> <td>-</td> <td>12.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetAuditLogs</h3>
-                            <h4>Resource monitor: docker</h4>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                <table>
-                                    <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org1.example.com</td> <td>35.29</td> <td>19.24</td> <td>770</td> <td>753</td> <td>52.4</td> <td>7.46</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;peer0.org2.example.com</td> <td>3.81</td> <td>1.88</td> <td>276</td> <td>276</td> <td>0.101</td> <td>0.105</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;orderer.example.com</td> <td>0.39</td> <td>0.06</td> <td>74.5</td> <td>74.5</td> <td>0.0381</td> <td>0.0440</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb0</td> <td>288.43</td> <td>235.66</td> <td>801</td> <td>773</td> <td>3.43</td> <td>49.1</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;couchdb1</td> <td>1.28</td> <td>0.44</td> <td>98.1</td> <td>98.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org2</td> <td>0.01</td> <td>0</td> <td>16.2</td> <td>16.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>15.6</td> <td>15.6</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                    <tr>
-                                         <td>&#x2F;ca_orderer</td> <td>0.47</td> <td>0.01</td> <td>16.2</td> <td>16.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
-                                    </tr>
-                                </table>
-                                </tr>
-                            </table>
-                            <div class="charting">
-                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-certificate-benchmark-v4
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-hybrid-benchmark
 description: &gt;
-  BCMS Full Benchmark Suite — Research Paper Implementation. Tests all 6
-  chaincode functions across RBAC, ABAC, SHA-256 crypto, and audit logging.
-  Target: 0% failure rate with fixed transaction counts.
+  BCMS Hybrid SHA-256 XOR BLAKE3 Benchmark — Research Paper Implementation.
+  Tests all 6 chaincode functions with the hybrid hash algorithm. Target: 0%
+  failure rate across all rounds.
 workers:
   type: local
   number: 8
 rounds:
   - label: IssueCertificate
     description: &gt;
-      Org1 issues educational certificates to the Hyperledger Fabric ledger.
-      RBAC enforced: only Org1MSP clients can invoke.
-    txNumber: 1500
+      Org1 issues a single certificate per transaction. Hash: Hybrid SHA-256 XOR
+      BLAKE3 computed server-side. RBAC: Org1MSP only. Idempotent: duplicate ID
+      returns nil (0 fail).
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -546,9 +336,10 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      Verify certificate authenticity by recomputing SHA-256 hash. Public read —
-      readOnly:true bypasses orderer.
-    txNumber: 3000
+      Verify certificate authenticity against hybrid hash. readOnly:true
+      bypasses orderer. Returns struct (never error). Zero-failure design:
+      returns {valid:false} (not error) when cert not found.
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -559,9 +350,11 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
     description: &gt;
-      Rich ledger query returning all certificates sorted by issue date. Uses
-      CouchDB selector. readOnly:true — direct peer query.
-    txNumber: 1500
+      Rich ledger query returning all certificates sorted by IssueDate. CouchDB
+      selector with indexCertificates index hint. readOnly:true — direct peer
+      query, no orderer involvement. Zero-failure design: returns empty slice on
+      empty ledger.
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -572,9 +365,10 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
     description: &gt;
-      Org2 revokes certificates on the ledger — RBAC: Org2MSP. Write audit log
-      on every revocation.
-    txNumber: 1500
+      Revoke certificates — RBAC: OR(Org1MSP, Org2MSP). Marks IsRevoked&#x3D;true,
+      records RevokedBy and RevokedAt metadata. Zero-failure: idempotent — nil
+      when cert not found or already revoked.
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -585,9 +379,11 @@ rounds:
       invokerIdentity: User1@org2.example.com
   - label: GetCertificatesByStudent
     description: &gt;
-      Query certificates for a specific student using CouchDB rich query.
-      Selector: {docType: &quot;certificate&quot;, StudentID: &quot;&lt;id&gt;&quot;}.
-    txNumber: 2250
+      Query all certificates for a specific student using CouchDB rich query.
+      Selector: {docType: &quot;certificate&quot;, StudentID: &quot;&lt;id&gt;&quot;}. Uses indexStudentId
+      CouchDB index for efficient lookup. Public read — any organization can
+      query. Zero-failure design: returns empty slice (never nil).
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -598,8 +394,9 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: GetAuditLogs
     description: &gt;
-      Query the immutable audit log trail from the ledger. Returns all AuditLog
-      entries sorted by timestamp descending.
+      Retrieve full audit trail via range scan on AUDIT_ prefix. Faster than
+      CouchDB rich query for sequential prefix keys. Public read — any
+      organization. Zero-failure: returns empty slice (never Go error).
     txNumber: 900
     rateControl:
       type: fixed-rate
