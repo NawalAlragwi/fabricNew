@@ -146,8 +146,7 @@ func (s *SmartContract) RevokeCertificate(ctx contractapi.TransactionContextInte
 }
 
 func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
-	queryString := `{"selector":{"docType":"auditLog"}}`
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
 	if err != nil { return nil, err }
 	defer resultsIterator.Close()
 	var logs []*AuditLog
@@ -161,7 +160,7 @@ func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface
 }
 
 func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","StudentID":"%s"}}`, studentID)
+	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","StudentID":"%s"},"use_index":["indexStudentIdDoc","indexStudentId"]}`, studentID)
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil { return nil, err }
 	defer resultsIterator.Close()
@@ -176,7 +175,8 @@ func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionCont
 }
 
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	queryString := `{"selector":{"docType":"certificate"},"use_index":["indexCertificatesDoc","indexCertificates"]}`
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil { return nil, err }
 	defer resultsIterator.Close()
 	var certificates []*Certificate

@@ -1,5 +1,5 @@
 # BCMS Analysis Summary Report
-## Generated: 2026-04-08 21:50:44
+## Generated: 2026-04-08 23:19:38
 
 ## 1. Repository Analysis
 - **Repository:** https://github.com/NawalAlragwi/fabricNew
@@ -18,8 +18,8 @@
 ## 3. Hash Benchmark Results
 | Algorithm | Throughput (h/s) | Mean Latency (µs) |
 |---|---|---|
-| SHA-256 | 151521.28 | 2.999 |
-| BLAKE3  | 110099.82 | 5.65 |
+| SHA-256 | 116031.49 | 4.018 |
+| BLAKE3  | 124390.34 | 4.268 |
 
 ## 4. Caliper Network Benchmark
 | Function | TPS (Actual) | Avg Latency | Error Rate |
