@@ -49,7 +49,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const signature = `SIG_${certID}`;
 
         const request = {
-            contractId: 'basic',
+            contractId: 'bcms-hybrid',
             contractFunction: 'IssueCertificate',
             // إرسال المتغيرات الثمانية كعناصر مستقلة في المصفوفة كما يتوقعها العقد الذكي (Individual)
             contractArguments: [

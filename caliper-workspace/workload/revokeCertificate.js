@@ -22,7 +22,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const certID = `CERT_${workerIdx}_${this.txIndex}`; 
 
         const request = {
-            contractId:         'basic',
+            contractId:         'bcms-hybrid',
             contractFunction:   'RevokeCertificate',
             contractArguments:  [certID],
             readOnly:           false // هذه معاملة كتابة (Write) تمر عبر الـ Orderer

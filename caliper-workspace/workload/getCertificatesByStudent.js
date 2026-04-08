@@ -22,7 +22,7 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
         const studentID = `STU_${workerIdx}_${this.txIndex}`;
 
         const request = {
-            contractId:         'basic',
+            contractId:         'bcms-hybrid',
             contractFunction:   'GetCertificatesByStudent',
             contractArguments:  [studentID],
             readOnly:           true // مهم جداً: الاستعلام لا يحتاج موافقة Orderer

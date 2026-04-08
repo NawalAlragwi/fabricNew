@@ -1,12 +1,12 @@
 # BCMS Analysis Summary Report
-## Generated: 2026-04-08 23:19:38
+## Generated: 2026-04-09 01:37:34
 
 ## 1. Repository Analysis
 - **Repository:** https://github.com/NawalAlragwi/fabricNew
 - **Framework:** Hyperledger Fabric v2.5.9
-- **Chaincode:** Go (asset-transfer-basic/chaincode-go)
+- **Chaincode:** Go (chaincode-bcms/hybrid-batch) — Hybrid SHA-256 XOR BLAKE3
 - **API:** Node.js REST (bcms-api/)
-- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificateHistory, GetAuditLogs
+- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificatesByStudent, GetAuditLogs
 
 ## 2. Formal Verification Results
 - **Tool:** Tamarin Prover v1.6.1+
@@ -18,8 +18,8 @@
 ## 3. Hash Benchmark Results
 | Algorithm | Throughput (h/s) | Mean Latency (µs) |
 |---|---|---|
-| SHA-256 | 116031.49 | 4.018 |
-| BLAKE3  | 124390.34 | 4.268 |
+| SHA-256 | 158395.26 | 2.824 |
+| BLAKE3  | 132592.52 | 3.825 |
 
 ## 4. Caliper Network Benchmark
 | Function | TPS (Actual) | Avg Latency | Error Rate |
@@ -36,8 +36,7 @@
 | File | Description |
 |---|---|
 | `security/tamarin/academic_certificate_protocol.spthy` | Tamarin formal model |
-| `chaincode-bcms/sha256/smartcontract_sha256.go` | SHA-256 chaincode |
-| `chaincode-bcms/blake3/smartcontract_blake3.go` | BLAKE3 chaincode |
+| `chaincode-bcms/hybrid-batch/chaincode/smartcontract.go` | Hybrid SHA-256 XOR BLAKE3 chaincode |
 | `benchmark/python/hash_benchmark.py` | Hash benchmark script |
 | `benchmark/python/generate_diagrams.py` | Diagram generator |
 | `results/hash_benchmark.json` | Raw benchmark data |
@@ -65,4 +64,4 @@ cat docs/security_and_performance_analysis.md
 ```
 
 ---
-*BCMS Analysis Pipeline — 2026-04-08*
+*BCMS Analysis Pipeline — 2026-04-09*
