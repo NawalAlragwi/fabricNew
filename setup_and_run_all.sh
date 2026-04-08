@@ -288,10 +288,10 @@ setup_fabric_network() {
     log "Waiting 30 seconds for network stabilization..."
     sleep 30
     
-    # Deploy BCMS chaincode
-   info "Deploying BCMS Hybrid-Batch chaincode (Proposed Model)..."
+    # Deploy BCMS Hybrid SHA-256 XOR BLAKE3 chaincode
+   info "Deploying BCMS Hybrid chaincode (SHA-256 XOR BLAKE3)..."
    ./network.sh deployCC \
-    -ccn basic \
+    -ccn bcms-hybrid \
     -ccp "${ROOT_DIR}/chaincode-bcms/hybrid-batch" \
     -ccl go \
     -c mychannel \
@@ -319,7 +319,7 @@ setup_fabric_network() {
         --tls \
         --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
         -C mychannel \
-        -n basic \
+        -n bcms-hybrid \
         --peerAddresses localhost:7051 \
         --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
         --peerAddresses localhost:9051 \
@@ -657,9 +657,15 @@ run_caliper_benchmarks() {
     rm -f report.html report_custom.html caliper.log 2>/dev/null || true
     
     # Install Caliper
+    # FIX: Use --legacy-peer-deps to resolve peer-dependency conflicts between
+    # @hyperledger/caliper-cli@0.6.0 and fabric-network@^2.2.19
     if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/caliper" ]; then
-        info "Installing Caliper dependencies..."
-        npm install 2>&1 | tee -a "$LOG_FILE" || warn "npm install had some issues"
+        info "Installing Caliper dependencies (--legacy-peer-deps)..."
+        # Clean stale lock file to avoid ETARGET errors from old entries
+        rm -f package-lock.json 2>/dev/null || true
+        # Remove any node_modules to ensure clean install
+        rm -rf node_modules 2>/dev/null || true
+        npm install --legacy-peer-deps 2>&1 | tee -a "$LOG_FILE" || warn "npm install had some issues"
     else
         log "✓ Caliper dependencies already installed"
     fi
@@ -676,13 +682,14 @@ run_caliper_benchmarks() {
         log "✓ Removed @hyperledger/fabric-gateway (conflict resolved)"
     fi
 
-    # Bind Caliper to Fabric 2.5 SDK
-    # NOTE: fabric:2.5 instructs Caliper to install the Fabric 2.x SDK packages
-    # (fabric-network, fabric-ca-client). This is separate from npm install above.
+    # Bind Caliper to Fabric 2.2 SDK
+    # NOTE: fabric:2.2 is the correct binding for fabric-network@2.2.x
+    #       (fabric:2.5 would install a different version than package.json)
+    #       --legacy-peer-deps is required to resolve caliper peer-dep conflicts
     if [ ! -d "node_modules/fabric-network" ]; then
-        info "Binding Caliper to Fabric 2.5 SDK..."
-        npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee -a "$LOG_FILE" \
-            || warn "Caliper bind fabric:2.5 had issues — continuing with pre-installed fabric-network"
+        info "Binding Caliper to Fabric 2.2 SDK..."
+        npx caliper bind --caliper-bind-sut fabric:2.2 --legacy-peer-deps 2>&1 | tee -a "$LOG_FILE" \
+            || warn "Caliper bind fabric:2.2 had issues — continuing with pre-installed fabric-network"
     else
         log "✓ Fabric SDK already bound (fabric-network found)"
     fi
@@ -734,7 +741,7 @@ caliper:
 channels:
   - channelName: mychannel
     contracts:
-      - id: basic
+      - id: bcms-hybrid
 
 # ── ORGANIZATIONS (Caliper 0.6.0 array format) ───────────────────────────────
 organizations:
@@ -881,9 +888,9 @@ generate_summary_report() {
 ## 1. Repository Analysis
 - **Repository:** https://github.com/NawalAlragwi/fabricNew
 - **Framework:** Hyperledger Fabric v2.5.9
-- **Chaincode:** Go (asset-transfer-basic/chaincode-go)
+- **Chaincode:** Go (chaincode-bcms/hybrid-batch) — Hybrid SHA-256 XOR BLAKE3
 - **API:** Node.js REST (bcms-api/)
-- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificateHistory, GetAuditLogs
+- **Functions:** IssueCertificate, VerifyCertificate, RevokeCertificate, QueryAllCertificates, GetCertificatesByStudent, GetAuditLogs
 
 ## 2. Formal Verification Results
 - **Tool:** Tamarin Prover v1.6.1+
@@ -924,8 +931,7 @@ fi)
 | File | Description |
 |---|---|
 | \`security/tamarin/academic_certificate_protocol.spthy\` | Tamarin formal model |
-| \`chaincode-bcms/sha256/smartcontract_sha256.go\` | SHA-256 chaincode |
-| \`chaincode-bcms/blake3/smartcontract_blake3.go\` | BLAKE3 chaincode |
+| \`chaincode-bcms/hybrid-batch/chaincode/smartcontract.go\` | Hybrid SHA-256 XOR BLAKE3 chaincode |
 | \`benchmark/python/hash_benchmark.py\` | Hash benchmark script |
 | \`benchmark/python/generate_diagrams.py\` | Diagram generator |
 | \`results/hash_benchmark.json\` | Raw benchmark data |

@@ -22,7 +22,7 @@ class GetAuditLogsWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
             // 'readOnly: true' أساسي لضمان سرعة الاستجابة وعدم استهلاك موارد الـ Orderer

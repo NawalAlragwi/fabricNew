@@ -1,0 +1,8 @@
+{
+    "index": {
+        "fields": ["docType", "StudentID", "issueDate"]
+    },
+    "ddoc": "indexStudentIdValue",
+    "name": "indexStudentId",
+    "type": "json"
+}

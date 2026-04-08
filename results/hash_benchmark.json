@@ -67,7 +67,7 @@
     },
     "VerifyCertificate": {
       "sha256": {
-        "avg_latency_ms": 82.6,
+        "avg_latency_ms": 82.61,
         "throughput_tps": 12.1,
         "hash_contribution_ms": 0.004,
         "success_rate": "100%"

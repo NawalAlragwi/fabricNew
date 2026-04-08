@@ -2,6 +2,24 @@
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
+/**
+ * ══════════════════════════════════════════════════════════════════════
+ *  IssueCertificate Workload Module — BCMS Benchmark (mirage branch)
+ * ══════════════════════════════════════════════════════════════════════
+ *  Chaincode function signature (MUST MATCH smartcontract.go):
+ *    IssueCertificate(id, studentID, studentName, degree, issuer,
+ *                     issueDate, certHash, signature) error
+ *
+ *  Hash: Hybrid SHA-256 XOR BLAKE3
+ *    - certHash is left EMPTY so the chaincode computes the hybrid hash
+ *      server-side using ComputeHybridHash(). This avoids needing a
+ *      BLAKE3 implementation in the Node.js workload.
+ *    - The chaincode is idempotent: duplicate ID → nil, not error.
+ *
+ *  ID pattern: CERT_{workerIndex}_{txIndex}  (used by revokeCertificate.js)
+ *  StudentID:  STU_{workerIndex}_{txIndex}   (used by getCertificatesByStudent.js)
+ * ══════════════════════════════════════════════════════════════════════
+ */
 class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
