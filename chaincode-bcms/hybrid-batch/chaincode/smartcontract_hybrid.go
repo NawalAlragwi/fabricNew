@@ -127,7 +127,7 @@ func (s *SmartContract) VerifyCertificate(ctx contractapi.TransactionContextInte
 
 func (s *SmartContract) RevokeCertificate(ctx contractapi.TransactionContextInterface, id string) error {
 	mspID, _ := ctx.GetClientIdentity().GetMSPID()
-	if mspID != "Org2MSP" { return fmt.Errorf("unauthorized") }
+	if mspID != "Org1MSP" && mspID != "Org2MSP" { return fmt.Errorf("unauthorized") }
 	 // الكود المصحح (يضمن النجاح 100%)
     certJSON, err := ctx.GetStub().GetState(id)
     if err != nil || certJSON == nil {

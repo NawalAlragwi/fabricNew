@@ -581,6 +581,9 @@ peers:
 CONN1EOF
 
     # connection-org2.yaml
+    # FIX: Added peer0.org1 as endorsingPeer — required by default endorsement
+    # policy (both orgs must endorse). Without this, RevokeCertificate fails
+    # with "No valid responses from any peers".
     cat > networks/connection-org2.yaml << CONN2EOF
 name: test-network-org2
 version: "1.0.0"
@@ -597,6 +600,11 @@ channels:
     orderers:
       - orderer.example.com
     peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: false
+        ledgerQuery: false
+        eventSource: false
       peer0.org2.example.com:
         endorsingPeer: true
         chaincodeQuery: true
@@ -619,6 +627,13 @@ orderers:
       path: '${ORDERER_TLS}'
 
 peers:
+  peer0.org1.example.com:
+    url: grpcs://localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      hostnameOverride: peer0.org1.example.com
+    tlsCACerts:
+      path: '${PEER1_TLS}'
   peer0.org2.example.com:
     url: grpcs://localhost:9051
     grpcOptions:

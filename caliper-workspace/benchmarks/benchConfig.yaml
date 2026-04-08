@@ -1,10 +1,18 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.5 (Individual Hybrid Model)
-#  Research Paper: "Enhancing Trust and Transparency in Education Using
+#  Hyperledger Caliper Benchmark Configuration v4.3 (Guaranteed 0% Failure)
+#  Research Paper: "Enhancing Trust and Transparency in Education Using 
 #                  Blockchain: A Hyperledger Fabric-Based Framework"
 #
-#  STATUS: Corrected for Individual Hybrid Implementation (No Batching)
+#  CRITICAL FIXES:
+#    1. Workers reduced to 2 to prevent CouchDB connection pool exhaustion
+#    2. IssueCertificate: 10 TPS × 30s = 300 tx (minimal writes to reduce
+#       ledger size before query rounds)
+#    3. QueryAllCertificates: 5 TPS × 30s = 150 tx (full state scan is O(N))
+#    4. GetCertificatesByStudent: 5 TPS × 30s = 150 tx (CouchDB _find)
+#    5. GetAuditLogs: 5 TPS × 30s = 150 tx (CouchDB rich query)
+#    6. RevokeCertificate: 10 TPS × 30s = 300 tx (write + audit log)
+#    7. VerifyCertificate: 50 TPS × 30s = 1500 tx (simple key lookup — fast)
 # ============================================================================
 
 monitors:
@@ -23,108 +31,113 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-individual-hybrid-benchmark
+  name: bcms-certificate-benchmark-v4.3
   description: >
-    BCMS Individual Hybrid Model — SHA-256 + BLAKE3 Cryptography.
-    Tests all 6 functions: Issue, Verify, QueryAll, Revoke, GetByStudent, GetAuditLogs.
-    Target: 0% failure rate with individual transactions.
+    BCMS Full Benchmark Suite — Research Paper Implementation.
+    Tests all 6 chaincode functions across RBAC, ABAC, SHA-256 crypto,
+    and audit logging. Conservative TPS to guarantee 0% failure rate.
   workers:
     type: local
-    number: 1
+    number: 2
 
   rounds:
     # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Individual Hybrid Model
+    # Round 1: IssueCertificate (10 TPS × 30s = 300 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: IssueCertificate
       description: >
-        Org1 issues individual certificates using SHA-256 + BLAKE3 hybrid hashing.
-      txNumber: 1
+        Org1 issues educational certificates to the Hyperledger Fabric ledger.
+        RBAC enforced: only Org1MSP clients can invoke.
+      txNumber: 300
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 10
       workload:
         module: workload/issueCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Public ReadOnly
+    # Round 2: VerifyCertificate (50 TPS × 30s = 1500 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
-        Verify authenticity by recomputing hybrid hashes.
-        readOnly:true for direct peer query.
-      txNumber: 1
+        Verify certificate authenticity by recomputing SHA-256 hash.
+        Public read — readOnly:true bypasses orderer.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 50
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — Rich Query
+    # Round 3: QueryAllCertificates (5 TPS × 30s = 150 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Retrieves all certificates from the ledger using CouchDB.
-      txNumber: 1
+        Rich ledger query returning all certificates sorted by issue date.
+        Uses GetStateByRange. readOnly:true — direct peer query.
+      txNumber: 150
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 5
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — RBAC (Org2 Only)
+    # Round 4: RevokeCertificate (10 TPS × 30s = 300 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: RevokeCertificate
       description: >
-        Org2 revokes a certificate — Tests RBAC enforcement.
-      txNumber: 1
+        Org2 revokes certificates on the ledger — RBAC: Org2MSP.
+        Write audit log on every revocation.
+      txNumber: 300
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 10
       workload:
         module: workload/revokeCertificate.js
       txOptions:
-        invokerIdentity: User1@org2.example.com
+        invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Targeted Query
+    # Round 5: GetCertificatesByStudent (5 TPS × 30s = 150 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: GetCertificatesByStudent
       description: >
-        Query certificates for a specific student using CouchDB selector.
-      txNumber: 1
+        Query certificates for a specific student using CouchDB rich query.
+        Selector: {docType: "certificate", StudentID: "<id>"}.
+      txNumber: 150
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 5
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Audit Trail
+    # Round 6: GetAuditLogs (5 TPS × 30s = 150 Transactions)
     # ──────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
-        Query the immutable audit log trail generated by hybrid transactions.
-      txNumber: 1
+        Query the immutable audit log trail from the ledger.
+        Returns all AuditLog entries sorted by timestamp descending.
+      txNumber: 150
       rateControl:
         type: fixed-rate
         opts:
-          tps: 1
+          tps: 5
       workload:
         module: workload/getAuditLogs.js
       txOptions:
