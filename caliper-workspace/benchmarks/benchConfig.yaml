@@ -95,3 +95,69 @@ test:
       workload:
         module: workload/getAuditLogs.js
       postIterationWaitTime: 10000
+
+    # ========================================================================
+    # Phase 3 — Batch Operations (mirage-batch branch)
+    # ========================================================================
+    # RESEARCH COMPARISON:
+    #   Rounds 1-6: Individual operations (Baseline)
+    #   Rounds 7-9: Batch operations (Batch Size = 5)
+    #
+    # Fair comparison: same total certificates processed, fewer transactions.
+    #   Round 7 vs Round 1: 300 txs x 5 = 1500 certs (same as Round 1)
+    #   Round 8 vs Round 2: 600 txs x 5 = 3000 certs (same as Round 2)
+    #   Round 9 vs Round 4: 300 txs x 5 = 1500 revocations (same as Round 4)
+    #
+    # Expected improvements:
+    #   - 80% fewer orderer round-trips (5x reduction)
+    #   - Higher effective throughput (TPS x 5 certs/second)
+    #   - Lower MVCC conflict rate (5x fewer concurrent writes)
+    #   - Atomic batch semantics (security improvement)
+    # ========================================================================
+
+    # --- Round 7: BatchIssueCertificates (20 TPS x 5 = 100 certs/s effective) ---
+    - label: BatchIssueCertificates
+      description: >
+        Phase 3 batch operation. Issues 5 certificates per transaction.
+        Effective throughput: 20 TPS x 5 = 100 certificates/second.
+        Compare with Round 1 (IssueCertificate) for performance gain analysis.
+      txNumber: 300
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/batchIssueCertificate.js
+      postIterationWaitTime: 25000
+
+    # --- Round 8: BatchVerifyCertificates (40 TPS x 5 = 200 certs/s effective) ---
+    - label: BatchVerifyCertificates
+      description: >
+        Phase 3 batch verification. Verifies 5 certificates per query (readOnly).
+        Effective throughput: 40 TPS x 5 = 200 verifications/second.
+        Compare with Round 2 (VerifyCertificate) for performance gain analysis.
+      txNumber: 600
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: workload/batchVerifyCertificate.js
+      postIterationWaitTime: 15000
+
+    # --- Round 9: BatchRevokeCertificates (20 TPS x 5 = 100 certs/s effective) ---
+    - label: BatchRevokeCertificates
+      description: >
+        Phase 3 batch revocation. Revokes 5 certificates per transaction.
+        Targets the BCERT_ IDs issued in Round 7.
+        Atomic revocation prevents partial-revoke security vulnerabilities.
+        Compare with Round 4 (RevokeCertificate) for performance gain analysis.
+      txNumber: 300
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/batchRevokeCertificate.js
+      postIterationWaitTime: 25000
+
