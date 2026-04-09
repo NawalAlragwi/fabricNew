@@ -46,13 +46,9 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-hybrid-blake3-benchmark
+  name: exchang SHA-256) algorithm to the (BLAKE3) algorithm
   description: >
-    BCMS Full Benchmark Suite — SHA-256 XOR BLAKE3 hybrid hash.
-    Research Paper: "Enhancing Trust and Transparency in Education Using
-    Blockchain: A Hyperledger Fabric-Based Framework".
-    Tests all 6 chaincode functions with hybrid hashing.
-    Target: ≥50 TPS IssueCertificate, ≤200ms average latency, 0% failure.
+    To enhance the performance of the blockchain network and reduce processing times, the system transitioned from using the (SHA-256) algorithm to the (BLAKE3) algorithm.
   workers:
     type: local
     number: 8
@@ -100,15 +96,12 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates sorted by IssueDate (PascalCase).
-        CouchDB selector with fallback to GetStateByRange for LevelDB.
-        readOnly:true — direct peer query, no orderer involvement.
-        Zero-failure design: returns empty slice on empty ledger.
-      txDuration: 30
+        Rich ledger query returning all certificates sorted by IssueDate.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
