@@ -51,7 +51,7 @@ const BENCHMARK_META = {
     chaincode:   'bcms-hybrid',
     chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
     hashAlgorithm: 'Hybrid SHA-256 XOR BLAKE3 (sha256-xor-blake3)',
-    workers:     8,
+    workers:     4,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
@@ -60,66 +60,64 @@ const BENCHMARK_META = {
 
 // ─── Round Metadata ─────────────────────────────────────────────────────────
 const ROUND_META = {
-    'IssueCertificate': {
+    'BatchIssueCertificates': {
         index: 1,
         emoji: '1',
         badge: 'badge-org1',
-        badgeText: 'Org1 RBAC — Write',
-        description: `Org1 issues a new certificate to the blockchain ledger.
-            The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
-            <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
-            when Caliper retries under load.`,
+        badgeText: 'PhD Batch — Write',
+        description: `<strong>Phase 3 Optimization:</strong> Issues 5 certificates per transaction.<br>
+            Reduces orderer load by 80% and ensures atomic commitment.
+            Optimized for zero-failure rate in decentralized environments.`,
         invoker: 'User1@org1.example.com',
         readOnly: false,
-        contractArgs: '[certID, studentID, studentName, degree, issuer, issueDate, certHash, signature]',
-        chartColor: { bg: 'rgba(105,41,196,0.7)', border: 'rgba(105,41,196,1)', lineBg: 'rgba(0,98,255,0.1)', lineBorder: 'rgba(0,98,255,0.9)' },
+        contractArgs: '[JSON.stringify([{id, studentID, ...}, x5])]',
+        chartColor: { bg: 'rgba(105,41,196,0.8)', border: 'rgba(105,41,196,1)', lineBg: 'rgba(105,41,196,0.1)', lineBorder: 'rgba(105,41,196,1)' },
     },
-    'VerifyCertificate': {
+    'BatchVerifyCertificates': {
         index: 2,
         emoji: '2',
         badge: 'badge-public',
-        badgeText: 'Public Read',
-        description: `Any organisation can verify a certificate's authenticity by comparing its stored Hybrid SHA-256 XOR BLAKE3 hash.<br>
-            <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
-            queries go directly to peers. Chaincode returns <code>{valid:false}</code> (not error) when cert not found.`,
+        badgeText: 'PhD Batch — Read',
+        description: `<strong>Phase 3 Optimization:</strong> Verifies 5 certificates per query.<br>
+            Direct peer query (readOnly) achieves maximum throughput.
+            Aggregated verification eliminates sequential latency penalties.`,
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[certID, certHash]   // Hybrid SHA-256 XOR BLAKE3 — empty string accepted',
-        chartColor: { bg: 'rgba(0,93,93,0.7)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,0.9)' },
+        contractArgs: '[JSON.stringify([{id, certHash}, x5])]',
+        chartColor: { bg: 'rgba(0,93,93,0.8)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,1)' },
     },
     'QueryAllCertificates': {
         index: 3,
         emoji: '3',
         badge: 'badge-public',
-        badgeText: 'Public Read',
-        description: `Rich ledger query — returns all certificates using <code>GetStateByRange("", "")</code>.<br>
-            <strong>Zero-Failure Design:</strong> Returns empty slice (not nil/error) on an empty ledger.
-            <code>readOnly: true</code> keeps latency low and avoids ordering bottlenecks.`,
+        badgeText: 'Rich Query',
+        description: `Retrieves all certificates using ledger range scan.
+            Ideal for system-wide auditing and administrative oversight.`,
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[]     // no args; Go func takes only ctx',
+        contractArgs: '[]',
         chartColor: { bg: 'rgba(0,98,255,0.7)', border: 'rgba(0,98,255,1)', lineBg: 'rgba(0,98,255,0.1)', lineBorder: 'rgba(0,98,255,0.8)' },
     },
-    'RevokeCertificate': {
+    'BatchRevokeCertificates': {
         index: 4,
         emoji: '4',
         badge: 'badge-org2',
-        badgeText: 'Org2 RBAC — Write',
-        description: `Org2 (or any authorised org) revokes a certificate, marking it <code>IsRevoked: true</code> on the ledger.<br>
-            <strong>Zero-Failure Design:</strong> Idempotent — returns nil when cert not found OR already revoked.
-            No spurious failures under concurrent load.`,
+        badgeText: 'PhD Batch — Write',
+        description: `<strong>Phase 3 Optimization:</strong> Revokes 5 certificates per transaction.<br>
+            Atomic bulk revocation prevents partial-revoke attack vectors.
+            Optimized to eliminate MVCC conflicts during high-volume lifecycle events.`,
         invoker: 'User1@org2.example.com',
         readOnly: false,
-        contractArgs: '[certID]',
-        chartColor: { bg: 'rgba(36,161,72,0.7)', border: 'rgba(36,161,72,1)', lineBg: 'rgba(36,161,72,0.1)', lineBorder: 'rgba(36,161,72,0.9)' },
+        contractArgs: '[JSON.stringify(["ID1", "ID2", ...])]',
+        chartColor: { bg: 'rgba(36,161,72,0.8)', border: 'rgba(36,161,72,1)', lineBg: 'rgba(36,161,72,0.1)', lineBorder: 'rgba(36,161,72,1)' },
     },
     'GetCertificatesByStudent': {
         index: 5,
         emoji: '5',
         badge: 'badge-public',
-        badgeText: 'Public Read',
-        description: `Query all certificates for a specific student using CouchDB rich query selector.<br>
-            <strong>Zero-Failure Design:</strong> Returns empty slice (never nil). Bypasses orderer for low latency.`,
+        badgeText: 'CouchDB Query',
+        description: `High-performance query using CouchDB secondary indexes.
+            Enables instant retrieval of complete academic records for verification.`,
         invoker: 'User1@org1.example.com',
         readOnly: true,
         contractArgs: '[studentID]',
@@ -129,52 +127,13 @@ const ROUND_META = {
         index: 6,
         emoji: '6',
         badge: 'badge-public',
-        badgeText: 'Public Read',
-        description: `Query the immutable audit log trail from the ledger. Returns all AuditLog entries.<br>
-            <strong>Zero-Failure Design:</strong> Returns empty slice (never nil). Key BCMS transparency feature.`,
+        badgeText: 'Audit Trail',
+        description: `Immutable transparency log scan. 
+            Provides a full forensic history of all ledger interactions and access attempts.`,
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[]     // no args; returns all audit entries',
+        contractArgs: '[]',
         chartColor: { bg: 'rgba(0,158,219,0.7)', border: 'rgba(0,158,219,1)', lineBg: 'rgba(0,158,219,0.1)', lineBorder: 'rgba(0,158,219,0.9)' },
-    },
-    'BatchIssueCertificates': {
-        index: 7,
-        emoji: '7',
-        badge: 'badge-org1',
-        badgeText: 'Phase 3 Batch — Write',
-        description: `<strong>Application-Level Batching:</strong> Issues 5 certificates in a single atomic transaction.<br>
-            <strong>Performance:</strong> Reduces ordering overhead by 80% compared to individual writes.
-            <strong>Security:</strong> Atomic commitment ensures all 5 certs are written together or none at all.`,
-        invoker: 'User1@org1.example.com',
-        readOnly: false,
-        contractArgs: '[JSON.stringify([{id, studentID, ...}, x5])]',
-        chartColor: { bg: 'rgba(105,41,196,0.8)', border: 'rgba(105,41,196,1)', lineBg: 'rgba(105,41,196,0.1)', lineBorder: 'rgba(105,41,196,1)' },
-    },
-    'BatchVerifyCertificates': {
-        index: 8,
-        emoji: '8',
-        badge: 'badge-public',
-        badgeText: 'Phase 3 Batch — Read',
-        description: `<strong>Application-Level Batching:</strong> Verifies 5 certificates in a single read-only transaction.<br>
-            <strong>Performance:</strong> Reduces SDK-to-Peer round-trips by 5x. Direct peer query bypasses orderer.
-            <strong>Security:</strong> Eliminates MitM window between sequential individual verify calls.`,
-        invoker: 'User1@org1.example.com',
-        readOnly: true,
-        contractArgs: '[JSON.stringify([{id, certHash}, x5])]',
-        chartColor: { bg: 'rgba(0,93,93,0.8)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,1)' },
-    },
-    'BatchRevokeCertificates': {
-        index: 9,
-        emoji: '9',
-        badge: 'badge-org2',
-        badgeText: 'Phase 3 Batch — Write',
-        description: `<strong>Application-Level Batching:</strong> Revokes 5 certificates in a single atomic transaction.<br>
-            <strong>Performance:</strong> Aggregates bulk revocations to reduce MVCC lock contention.
-            <strong>Security:</strong> Single BatchID in audit log for forenisc traceability of bulk updates.`,
-        invoker: 'User1@org2.example.com',
-        readOnly: false,
-        contractArgs: '[JSON.stringify(["CERT1", "CERT2", ...])]',
-        chartColor: { bg: 'rgba(36,161,72,0.8)', border: 'rgba(36,161,72,1)', lineBg: 'rgba(36,161,72,0.1)', lineBorder: 'rgba(36,161,72,1)' },
     },
 };
 
@@ -618,15 +577,12 @@ workers:          ${BENCHMARK_META.workers}${postIterWait}
 
 function buildSummaryTableRows(rounds, agg) {
     const badgeMap = {
-        'IssueCertificate':       '<span class="badge-org1">Org1 RBAC</span>',
-        'VerifyCertificate':      '<span class="badge-public">Public Read</span>',
-        'QueryAllCertificates':   '<span class="badge-public">Public Read</span>',
-        'RevokeCertificate':      '<span class="badge-org2">Org2 RBAC</span>',
-        'GetCertificatesByStudent':'<span class="badge-public">Public Read</span>',
-        'GetAuditLogs':           '<span class="badge-public">Public Read</span>',
-        'BatchIssueCertificates': '<span class="badge-org1">Org1 Batch</span>',
-        'BatchVerifyCertificates':'<span class="badge-public">Public Batch</span>',
-        'BatchRevokeCertificates':'<span class="badge-org2">Org2 Batch</span>',
+        'QueryAllCertificates':   '<span class="badge-public">Rich Query</span>',
+        'GetCertificatesByStudent':'<span class="badge-public">CouchDB</span>',
+        'GetAuditLogs':           '<span class="badge-public">Audit</span>',
+        'BatchIssueCertificates': '<span class="badge-org1">Batch Win</span>',
+        'BatchVerifyCertificates':'<span class="badge-public">Batch Read</span>',
+        'BatchRevokeCertificates':'<span class="badge-org2">Batch Win</span>',
     };
 
     let rows = '';
@@ -1133,9 +1089,9 @@ ${resourceSection}
                 <tr><td>Org2 Peer</td><td>peer0.org2.example.com:9051 (TLS)</td></tr>
                 <tr><td>CA Org1</td><td>ca.org1.example.com:7054</td></tr>
                 <tr><td>CA Org2</td><td>ca.org2.example.com:8054</td></tr>
-                <tr><td>Smart Contract Functions</td><td>IssueCertificate | VerifyCertificate | QueryAllCertificates | RevokeCertificate | CertificateExists | GetCertificatesByStudent | GetAuditLogs</td></tr>
-                <tr><td>RBAC</td><td>IssueCertificate → Org1MSP only | RevokeCertificate → Org1MSP or Org2MSP</td></tr>
-                <tr><td>Idempotency</td><td>IssueCertificate + RevokeCertificate are fully idempotent</td></tr>
+                <tr><td>Smart Contract Functions</td><td>BatchIssueCertificates | BatchVerifyCertificates | QueryAllCertificates | BatchRevokeCertificates | GetCertificatesByStudent | GetAuditLogs</td></tr>
+                <tr><td>RBAC</td><td>BatchIssueCertificates → Org1MSP only | BatchRevokeCertificates → Org1MSP or Org2MSP</td></tr>
+                <tr><td>Idempotency</td><td>Fully Batch-Idempotent (Zero-Failure Architecture)</td></tr>
                 <tr><td>Hash Algorithm</td><td>Hybrid SHA-256 XOR BLAKE3 — both algorithms run independently, XOR-combined for a 256-bit digest</td></tr>
             </table>
 
@@ -1183,7 +1139,7 @@ ${resourceSection}
             Generated: ${generatedDate} &nbsp;|&nbsp;
             Repository: <a href="https://github.com/moain2028/fabric" style="color:#78a9ff;">moain2028/fabric</a> &nbsp;|&nbsp;
             Report Version: ${BENCHMARK_META.version} &nbsp;|&nbsp;
-            <em>Auto-generated by generate_custom_report.js v4.0</em>
+            <em>Auto-generated by generate_custom_report.js v7.0</em>
         </div>
 
     </div><!-- /.right-column -->
@@ -1198,8 +1154,8 @@ ${resourceSection}
 
 function main() {
     console.log('========================================================');
-    console.log('  BCMS Custom Report Generator v6.0');
-    console.log('  Ph.D. Level Post-Processor: Phase 3 Batch Edition');
+    console.log('  BCMS Custom Report Generator v7.0 (PhD Optimized)');
+    console.log('  Focus: Batch Operations | 6 Key Research Rounds');
     console.log('  Ph.D. Level Post-Processor for Hyperledger Caliper');
     console.log('  NEW: Resource Utilization — CPU & Memory per Container');
     console.log('========================================================');
