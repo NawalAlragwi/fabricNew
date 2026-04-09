@@ -51,7 +51,7 @@ const BENCHMARK_META = {
     chaincode:   'bcms-hybrid',
     chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
     hashAlgorithm: 'Hybrid SHA-256 XOR BLAKE3 (sha256-xor-blake3)',
-    workers:     4,
+    workers:     8,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',

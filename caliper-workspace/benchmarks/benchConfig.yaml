@@ -23,7 +23,7 @@ test:
      Focus: High Throughput, Low Latency, and Zero Failure Rate.
   workers:
     type: local
-    number: 4  # Reduced from 8 to 4 to ensure stability on WSL environment
+    number: 8  # Restored to 8 for fair comparison as requested
   rounds:
     # --- Round 1: BatchIssueCertificates (Phase 3 Optimized) ---
     - label: BatchIssueCertificates
