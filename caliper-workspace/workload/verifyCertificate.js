@@ -59,7 +59,8 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
             contractId:        'bcms-hybrid',
             contractFunction:  'VerifyCertificate',
             contractArguments: [certID, certHash],
-            readOnly:          true    // bypass orderer — direct peer query for max TPS
+            readOnly:          true,    // bypass orderer — direct peer query for max TPS
+            timeout:           240
         };
 
         return this.sutAdapter.sendRequests(request);

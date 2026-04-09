@@ -34,6 +34,7 @@ test:
           tps: 50
       workload:
         module: workload/issueCertificate.js
+      postIterationWaitTime: 20000
 
     # --- Round 2: VerifyCertificate (Fixed 100 TPS) ---
     - label: VerifyCertificate
@@ -45,6 +46,7 @@ test:
           tps: 100
       workload:
         module: workload/verifyCertificate.js
+      postIterationWaitTime: 15000
 
     # --- Round 3: QueryAllCertificates (Fixed 50 TPS) ---
     - label: QueryAllCertificates
@@ -56,6 +58,7 @@ test:
           tps: 50
       workload:
         module: workload/queryAllCertificates.js
+      postIterationWaitTime: 15000
 
     # --- Round 4: RevokeCertificate (Fixed 50 TPS) ---
     - label: RevokeCertificate
@@ -67,6 +70,7 @@ test:
           tps: 50
       workload:
         module: workload/revokeCertificate.js
+      postIterationWaitTime: 20000
 
     # --- Round 5: GetCertificatesByStudent (Fixed 75 TPS) ---
     - label: GetCertificatesByStudent
@@ -78,6 +82,7 @@ test:
           tps: 75
       workload:
         module: workload/getCertificatesByStudent.js
+      postIterationWaitTime: 15000
 
     # --- Round 6: GetAuditLogs (Fixed 30 TPS) ---
     - label: GetAuditLogs
@@ -89,3 +94,4 @@ test:
           tps: 30
       workload:
         module: workload/getAuditLogs.js
+      postIterationWaitTime: 10000

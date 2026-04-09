@@ -11,11 +11,16 @@
 #    - Seed data pre-population to ensure GetCertificatesByStudent has data
 # ============================================================================
 
-set -e
+# ── Force aggressive timeouts for Fabric SDK ──────────────────────────────────
+export GRPC_VERBOSITY=NONE
+export NODE_OPTIONS="--max-old-space-size=4096"
+export FABRIC_REQUEST_TIMEOUT=300000
+export CALIPER_FABRIC_TIMEOUT_REQUEST=300000
+export HFC_LOGGING='{"error":"console","warn":"console"}'
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║   BCMS Caliper Benchmark Runner v4.0                         ║"
-echo "║   6 Rounds | 0% Failure Design | SHA-256 RBAC ABAC          ║"
+echo "║   BCMS Caliper Benchmark Runner v5.0                         ║"
+echo "║   6 Rounds | Max Resilience Mode | SDK Timeout=300s         ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 
 # ── Auto-detect paths ──────────────────────────────────────────────────────────
@@ -115,7 +120,7 @@ caliper:
 channels:
   - channelName: mychannel
     contracts:
-      - id: basic
+      - id: bcms-hybrid
 
 organizations:
   - mspid: Org1MSP
@@ -156,8 +161,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 
 channels:
   mychannel:
@@ -202,6 +207,8 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
+      grpc-wait-for-ready-timeout: 300000
+      grpc.keepalive_time_ms: 120000
     tlsCACerts:
       path: $PEER0_ORG1_TLS
   peer0.org2.example.com:
@@ -209,6 +216,8 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org2.example.com
       hostnameOverride: peer0.org2.example.com
+      grpc-wait-for-ready-timeout: 300000
+      grpc.keepalive_time_ms: 120000
     tlsCACerts:
       path: $PEER0_ORG2_TLS
 
@@ -235,8 +244,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 
 channels:
   mychannel:
@@ -281,6 +290,8 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
+      grpc-wait-for-ready-timeout: 300000
+      grpc.keepalive_time_ms: 120000
     tlsCACerts:
       path: $PEER0_ORG1_TLS
   peer0.org2.example.com:
@@ -288,6 +299,8 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org2.example.com
       hostnameOverride: peer0.org2.example.com
+      grpc-wait-for-ready-timeout: 300000
+      grpc.keepalive_time_ms: 120000
     tlsCACerts:
       path: $PEER0_ORG2_TLS
 
@@ -311,8 +324,8 @@ echo "Binding Caliper to Fabric 2.5..."
 npx caliper bind --caliper-bind-sut fabric:2.2 --legacy-peer-deps
 
 # ── Wait for network ───────────────────────────────────────────────────────────
-echo "Waiting 15s for network stabilization..."
-sleep 15
+echo "Waiting 30s for network stabilization..."
+sleep 30
 
 # ── Run Caliper Benchmark ─────────────────────────────────────────────────────
 echo ""

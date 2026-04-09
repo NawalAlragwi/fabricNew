@@ -53,6 +53,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false,   // write transaction — goes through orderer
+            timeout:           240
             // invokerIdentity is set via txOptions in benchConfig.yaml
         };
 

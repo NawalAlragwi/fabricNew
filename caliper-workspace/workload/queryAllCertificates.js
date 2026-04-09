@@ -27,7 +27,8 @@ class QueryAllCertificatesWorkload extends WorkloadModuleBase {
             contractId:        'bcms-hybrid',
             contractFunction:  'QueryAllCertificates',
             contractArguments: [],      // no args — Go func takes only ctx
-            readOnly:          true     // essential: prevents orderer bottleneck
+            readOnly:          true,     // essential: prevents orderer bottleneck
+            timeout:           240
         };
 
         return this.sutAdapter.sendRequests(request);

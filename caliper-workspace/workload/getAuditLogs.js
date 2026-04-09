@@ -29,7 +29,8 @@ class GetAuditLogsWorkload extends WorkloadModuleBase {
             contractId:        'bcms-hybrid',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
-            readOnly:          true   // direct peer query — no orderer overhead
+            readOnly:          true,   // direct peer query — no orderer overhead
+            timeout:           240
         };
 
         return this.sutAdapter.sendRequests(request);

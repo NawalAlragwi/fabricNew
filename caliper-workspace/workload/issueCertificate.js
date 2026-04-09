@@ -62,7 +62,8 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
             contractFunction:  'IssueCertificate',
             // ── CRITICAL FIX: 8 individual string args, NOT a JSON array ──
             contractArguments: [certID, studentID, studentName, degree, issuer, issueDate, certHash, signature],
-            readOnly:          false
+            readOnly:          false,
+            timeout:           240
         };
 
         return this.sutAdapter.sendRequests(request);

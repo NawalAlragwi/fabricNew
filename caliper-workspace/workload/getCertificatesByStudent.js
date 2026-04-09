@@ -42,7 +42,8 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
             contractId:        'bcms-hybrid',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
-            readOnly:          true   // direct peer query — no orderer overhead
+            readOnly:          true,   // direct peer query — no orderer overhead
+            timeout:           240
         };
 
         return this.sutAdapter.sendRequests(request);
