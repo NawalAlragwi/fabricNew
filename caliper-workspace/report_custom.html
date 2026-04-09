@@ -169,7 +169,7 @@
             <span class="badge-blue">All 6 Functions &#x2713;</span>
         </h1>
         <p style="color:#525252; font-size:14px; margin-top:-4px;">
-            Generated: <strong>2026-04-07</strong> &nbsp;|&nbsp;
+            Generated: <strong>2026-04-09</strong> &nbsp;|&nbsp;
             DLT: <strong>Hyperledger Fabric 2.5</strong> &nbsp;|&nbsp;
             Chaincode: <strong>basic (BCMS Certificate System)</strong> &nbsp;|&nbsp;
             Channel: <strong>mychannel</strong>
@@ -177,7 +177,7 @@
 
         <div class="alert-success">
             &#x2705; <strong>Benchmark Complete — Zero Failures Achieved Across All 6 Rounds.</strong>
-            Total Transactions: <strong>9,136</strong> &nbsp;|&nbsp;
+            Total Transactions: <strong>10,632</strong> &nbsp;|&nbsp;
             Total Failures: <strong>0</strong> &nbsp;|&nbsp;
             Peak Throughput: <strong>99.9 TPS</strong>
         </div>
@@ -186,7 +186,7 @@
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">Total Successful Tx</div>
-                <div class="value succ-num">9,136</div>
+                <div class="value succ-num">10,632</div>
                 <div class="unit">transactions</div>
             </div>
             <div class="metric-card green">
@@ -201,7 +201,7 @@
             </div>
             <div class="metric-card teal">
                 <div class="label">Avg Latency</div>
-                <div class="value lat-num">0.23 s</div>
+                <div class="value lat-num">5.32 s</div>
                 <div class="unit">across all rounds</div>
             </div>
         </div>
@@ -222,13 +222,13 @@
             <tr>
                 <td>1</td>
                 <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
-                <td class="succ-num">0</td>
+                <td class="succ-num">1,496</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">0.0</td>
-                <td class="lat-num">0.00</td>
-                <td class="lat-num">0.00</td>
-                <td class="lat-num">0.00</td>
-                <td class="tps-num">0.0</td>
+                <td class="tps-num">50.3</td>
+                <td class="lat-num">3.22</td>
+                <td class="lat-num">0.24</td>
+                <td class="lat-num">1.38</td>
+                <td class="tps-num">47.3</td>
             </tr>
             <tr>
                 <td>2</td>
@@ -236,7 +236,7 @@
                 <td class="succ-num">3,000</td>
                 <td class="fail-zero">0</td>
                 <td class="tps-num">99.9</td>
-                <td class="lat-num">0.33</td>
+                <td class="lat-num">0.09</td>
                 <td class="lat-num">0.01</td>
                 <td class="lat-num">0.01</td>
                 <td class="tps-num">99.9</td>
@@ -246,33 +246,33 @@
                 <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
                 <td class="succ-num">1,496</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">50.2</td>
-                <td class="lat-num">0.15</td>
-                <td class="lat-num">0.01</td>
-                <td class="lat-num">0.03</td>
-                <td class="tps-num">50.2</td>
+                <td class="tps-num">50.1</td>
+                <td class="lat-num">35.39</td>
+                <td class="lat-num">35.00</td>
+                <td class="lat-num">35.02</td>
+                <td class="tps-num">22.9</td>
             </tr>
             <tr>
                 <td>4</td>
                 <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
                 <td class="succ-num">1,496</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">50.2</td>
-                <td class="lat-num">2.45</td>
-                <td class="lat-num">0.23</td>
-                <td class="lat-num">1.30</td>
-                <td class="tps-num">48.1</td>
+                <td class="tps-num">50.0</td>
+                <td class="lat-num">2.41</td>
+                <td class="lat-num">0.24</td>
+                <td class="lat-num">1.33</td>
+                <td class="tps-num">48.2</td>
             </tr>
             <tr>
                 <td>5</td>
                 <td><span class="badge-public">Public Read</span>GetCertificatesByStudent</td>
                 <td class="succ-num">2,248</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">75.1</td>
-                <td class="lat-num">0.07</td>
+                <td class="tps-num">75.2</td>
+                <td class="lat-num">0.09</td>
                 <td class="lat-num">0.01</td>
-                <td class="lat-num">0.01</td>
-                <td class="tps-num">75.1</td>
+                <td class="lat-num">0.02</td>
+                <td class="tps-num">75.2</td>
             </tr>
             <tr>
                 <td>6</td>
@@ -280,21 +280,21 @@
                 <td class="succ-num">896</td>
                 <td class="fail-zero">0</td>
                 <td class="tps-num">30.2</td>
-                <td class="lat-num">0.09</td>
+                <td class="lat-num">0.15</td>
                 <td class="lat-num">0.01</td>
-                <td class="lat-num">0.03</td>
+                <td class="lat-num">0.04</td>
                 <td class="tps-num">30.2</td>
             </tr>
             <tr style="background:#f0f8ff; font-weight:700;">
                 <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="succ-num"><strong>9,136</strong></td>
+                <td class="succ-num"><strong>10,632</strong></td>
                 <td class="fail-zero"><strong>0</strong></td>
                 <td colspan="4" style="color:#525252; font-size:11px;">6 rounds × 30s — 8 workers</td>
-                <td class="tps-num"><strong>avg 50.6</strong></td>
+                <td class="tps-num"><strong>avg 53.9</strong></td>
             </tr>
         </table>
         <p style="font-size:12px; color:#6f6f6f; margin-top:-8px;">
-            &#x2705; <strong>Total Success:</strong> 9,136 &nbsp;|&nbsp;
+            &#x2705; <strong>Total Success:</strong> 10,632 &nbsp;|&nbsp;
             &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
             &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span>
         </p>
@@ -313,7 +313,7 @@
             The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
             <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
             when Caliper retries under load.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 0 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 50 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -323,13 +323,13 @@
                 </tr>
                 <tr>
                     <td>IssueCertificate</td>
-                    <td class="succ-num">0</td>
+                    <td class="succ-num">1,496</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">0.0</td>
-                    <td class="lat-num">0.00</td>
-                    <td class="lat-num">0.00</td>
-                    <td class="lat-num">0.00</td>
-                    <td class="tps-num">0.0</td>
+                    <td class="tps-num">50.3</td>
+                    <td class="lat-num">3.22</td>
+                    <td class="lat-num">0.24</td>
+                    <td class="lat-num">1.38</td>
+                    <td class="tps-num">47.3</td>
                 </tr>
             </table>
             <div class="charting">
@@ -348,7 +348,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [0,0,0,0,0,0,0],
+                        data: [46.68,46.55,47.14,48.71,47.08,48.52,48.71],
                         backgroundColor: "rgba(105,41,196,0.7)",
                         borderColor: "rgba(105,41,196,1)",
                         borderWidth: 1
@@ -361,7 +361,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0,0,0,0,0,0,0],
+                        data: [1.38,1.42,1.49,1.44,1.39,1.35,1.31],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.9)",
                         borderWidth: 2,
@@ -378,7 +378,7 @@ contractFunction: 'IssueCertificate'
 contractArguments: [certID, studentID, studentName, degree, issuer, issueDate, certHash, signature]
 readOnly:         false
 invokerIdentity:  User1@org1.example.com
-rateControl:      fixed-rate @ 0 TPS
+rateControl:      fixed-rate @ 50 TPS
 txDuration:       30 s
 workers:          8
                 </pre>
@@ -408,7 +408,7 @@ workers:          8
                     <td class="succ-num">3,000</td>
                     <td class="fail-zero">0</td>
                     <td class="tps-num">99.9</td>
-                    <td class="lat-num">0.33</td>
+                    <td class="lat-num">0.09</td>
                     <td class="lat-num">0.01</td>
                     <td class="lat-num">0.01</td>
                     <td class="tps-num">99.9</td>
@@ -430,7 +430,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [101,98.26,101.9,98.21,101.97,101.32,99.15],
+                        data: [101.58,102.64,101.59,100.5,99.39,99.67,99.35],
                         backgroundColor: "rgba(0,93,93,0.7)",
                         borderColor: "rgba(0,93,93,1)",
                         borderWidth: 1
@@ -489,11 +489,11 @@ workers:          8
                     <td>QueryAllCertificates</td>
                     <td class="succ-num">1,496</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">50.2</td>
-                    <td class="lat-num">0.15</td>
-                    <td class="lat-num">0.01</td>
-                    <td class="lat-num">0.03</td>
-                    <td class="tps-num">50.2</td>
+                    <td class="tps-num">50.1</td>
+                    <td class="lat-num">35.39</td>
+                    <td class="lat-num">35.00</td>
+                    <td class="lat-num">35.02</td>
+                    <td class="tps-num">22.9</td>
                 </tr>
             </table>
             <div class="charting">
@@ -512,7 +512,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [48.75,48.83,49.99,51.55,50.48,51.17,51.32],
+                        data: [23.32,23.29,22.54,22.73,23.58,23.52,23.35],
                         backgroundColor: "rgba(0,98,255,0.7)",
                         borderColor: "rgba(0,98,255,1)",
                         borderWidth: 1
@@ -525,7 +525,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.03,0.03,0.03,0.03,0.03,0.03,0.03],
+                        data: [37.99,36.14,37.35,31.39,32.44,30.19,37.38],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.8)",
                         borderWidth: 2,
@@ -571,11 +571,11 @@ workers:          8
                     <td>RevokeCertificate</td>
                     <td class="succ-num">1,496</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">50.2</td>
-                    <td class="lat-num">2.45</td>
-                    <td class="lat-num">0.23</td>
-                    <td class="lat-num">1.30</td>
-                    <td class="tps-num">48.1</td>
+                    <td class="tps-num">50.0</td>
+                    <td class="lat-num">2.41</td>
+                    <td class="lat-num">0.24</td>
+                    <td class="lat-num">1.33</td>
+                    <td class="tps-num">48.2</td>
                 </tr>
             </table>
             <div class="charting">
@@ -594,7 +594,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [48.78,48.32,48.66,48.77,48.17,47.43,47.18],
+                        data: [47.97,48.18,47.59,49.14,47.92,48.28,48.09],
                         backgroundColor: "rgba(36,161,72,0.7)",
                         borderColor: "rgba(36,161,72,1)",
                         borderWidth: 1
@@ -607,7 +607,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [1.34,1.45,1.11,1.19,1.46,1.28,1.17],
+                        data: [1.22,1.18,1.3,1.26,1.5,1.22,1.4],
                         backgroundColor: "rgba(36,161,72,0.1)",
                         borderColor: "rgba(36,161,72,0.9)",
                         borderWidth: 2,
@@ -653,11 +653,11 @@ postIterationWaitTime: 3000 ms
                     <td>GetCertificatesByStudent</td>
                     <td class="succ-num">2,248</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">75.1</td>
-                    <td class="lat-num">0.07</td>
+                    <td class="tps-num">75.2</td>
+                    <td class="lat-num">0.09</td>
                     <td class="lat-num">0.01</td>
-                    <td class="lat-num">0.01</td>
-                    <td class="tps-num">75.1</td>
+                    <td class="lat-num">0.02</td>
+                    <td class="tps-num">75.2</td>
                 </tr>
             </table>
             <div class="charting">
@@ -676,7 +676,7 @@ postIterationWaitTime: 3000 ms
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [74.52,75.53,74.41,76.69,75.3,75.79,77.29],
+                        data: [75.53,75.2,74.47,75.77,75.12,73.83,77.22],
                         backgroundColor: "rgba(255,109,0,0.7)",
                         borderColor: "rgba(255,109,0,1)",
                         borderWidth: 1
@@ -689,7 +689,7 @@ postIterationWaitTime: 3000 ms
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.01,0.01,0.01,0.01,0.01,0.01,0.01],
+                        data: [0.02,0.02,0.02,0.02,0.02,0.02,0.02],
                         backgroundColor: "rgba(255,109,0,0.1)",
                         borderColor: "rgba(255,109,0,0.9)",
                         borderWidth: 2,
@@ -735,9 +735,9 @@ workers:          8
                     <td class="succ-num">896</td>
                     <td class="fail-zero">0</td>
                     <td class="tps-num">30.2</td>
-                    <td class="lat-num">0.09</td>
+                    <td class="lat-num">0.15</td>
                     <td class="lat-num">0.01</td>
-                    <td class="lat-num">0.03</td>
+                    <td class="lat-num">0.04</td>
                     <td class="tps-num">30.2</td>
                 </tr>
             </table>
@@ -757,7 +757,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [30.48,30.21,30.27,29.67,29.42,29.87,29.91],
+                        data: [29.56,30.37,29.56,30.47,29.96,29.59,30.99],
                         backgroundColor: "rgba(0,158,219,0.7)",
                         borderColor: "rgba(0,158,219,1)",
                         borderWidth: 1
@@ -770,7 +770,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.03,0.03,0.03,0.03,0.03,0.03,0.03],
+                        data: [0.04,0.04,0.04,0.03,0.05,0.03,0.04],
                         backgroundColor: "rgba(0,158,219,0.1)",
                         borderColor: "rgba(0,158,219,0.9)",
                         borderWidth: 2,
@@ -821,11 +821,11 @@ workers:          8
                 <div style="display:flex; gap:16px; margin-top:4px;">
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#525252;">37.6<span style="font-size:12px; font-weight:400;">%</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#525252;">44.5<span style="font-size:12px; font-weight:400;">%</span></div>
                     </div>
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">159<span style="font-size:12px; font-weight:400;"> MB</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#393939;">167<span style="font-size:12px; font-weight:400;"> MB</span></div>
                     </div>
                 </div>
             </div>
@@ -835,11 +835,11 @@ workers:          8
                 <div style="display:flex; gap:16px; margin-top:4px;">
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#525252;">30.1<span style="font-size:12px; font-weight:400;">%</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#525252;">27.4<span style="font-size:12px; font-weight:400;">%</span></div>
                     </div>
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">83<span style="font-size:12px; font-weight:400;"> MB</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#393939;">87<span style="font-size:12px; font-weight:400;"> MB</span></div>
                     </div>
                 </div>
             </div>
@@ -849,25 +849,25 @@ workers:          8
                 <div style="display:flex; gap:16px; margin-top:4px;">
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#525252;">3.1<span style="font-size:12px; font-weight:400;">%</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#525252;">14.3<span style="font-size:12px; font-weight:400;">%</span></div>
                     </div>
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">183<span style="font-size:12px; font-weight:400;"> MB</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#393939;">191<span style="font-size:12px; font-weight:400;"> MB</span></div>
                     </div>
                 </div>
             </div>
             <div class="res-card" style="border-top-color:#525252">
-                <div class="label">&#x2F;couchdb1</div>
-                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">&#x2F;couchdb1</div>
+                <div class="label">&#x2F;orderer.example.com</div>
+                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">&#x2F;orderer.example.com</div>
                 <div style="display:flex; gap:16px; margin-top:4px;">
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#525252;">0.6<span style="font-size:12px; font-weight:400;">%</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#525252;">12.4<span style="font-size:12px; font-weight:400;">%</span></div>
                     </div>
                     <div>
                         <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">82<span style="font-size:12px; font-weight:400;"> MB</span></div>
+                        <div style="font-size:22px; font-weight:700; color:#393939;">57<span style="font-size:12px; font-weight:400;"> MB</span></div>
                     </div>
                 </div>
             </div>
@@ -890,10 +890,10 @@ workers:          8
                         new Chart(cpuCtx, {
                             type: 'horizontalBar',
                             data: {
-                                labels: ["&#x2F;p0.org2","&#x2F;p0.org1","&#x2F;orderer","&#x2F;couchdb0","&#x2F;couchdb1","&#x2F;ca_org1","&#x2F;ca_orderer","&#x2F;ca_org2"],
+                                labels: ["&#x2F;p0.org2","&#x2F;p0.org1","&#x2F;orderer","&#x2F;couchdb1","&#x2F;couchdb0","&#x2F;ca_orderer","&#x2F;ca_org2","&#x2F;ca_org1"],
                                 datasets: [{
                                     label: 'Avg CPU (%)',
-                                    data: ["3.09","37.63","0.10","30.08","0.62","0.29","0.00","0.36"],
+                                    data: ["14.32","44.49","12.45","8.83","27.39","0.00","0.00","0.57"],
                                     backgroundColor: ["#525252cc","#525252cc","#525252cc","#525252cc","#525252cc","#525252cc","#525252cc","#525252cc"],
                                     borderColor: ["#525252","#525252","#525252","#525252","#525252","#525252","#525252","#525252"],
                                     borderWidth: 1
@@ -910,10 +910,10 @@ workers:          8
                         new Chart(memCtx, {
                             type: 'horizontalBar',
                             data: {
-                                labels: ["&#x2F;p0.org2","&#x2F;p0.org1","&#x2F;orderer","&#x2F;couchdb0","&#x2F;couchdb1","&#x2F;ca_org1","&#x2F;ca_orderer","&#x2F;ca_org2"],
+                                labels: ["&#x2F;p0.org2","&#x2F;p0.org1","&#x2F;orderer","&#x2F;couchdb1","&#x2F;couchdb0","&#x2F;ca_orderer","&#x2F;ca_org2","&#x2F;ca_org1"],
                                 datasets: [{
                                     label: 'Avg Memory (MB)',
-                                    data: ["183.0","159.0","24.6","82.6","81.9","15.2","18.2","17.5"],
+                                    data: ["191.0","167.0","57.3","82.6","87.3","15.6","14.4","14.7"],
                                     backgroundColor: 'rgba(57,57,57,0.7)',
                                     borderColor: 'rgba(57,57,57,1)',
                                     borderWidth: 1
@@ -946,17 +946,17 @@ workers:          8
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:3.1%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:14.3%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">3.09%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">14.32%</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:17.9%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:18.7%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">183.0 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">191.0 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -969,17 +969,17 @@ workers:          8
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:37.6%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:44.5%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">37.63%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">44.49%</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:15.5%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:16.3%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">159.0 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">167.0 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -992,17 +992,17 @@ workers:          8
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:0.1%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:12.4%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">0.10%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">12.45%</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:2.4%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:5.6%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">24.6 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">57.3 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -1010,14 +1010,14 @@ workers:          8
                 </td>
             </tr>
             <tr>
-                <td><strong>&#x2F;couchdb0</strong></td>
-                <td style="color:#525252;">&#x2F;couchdb0</td>
+                <td><strong>&#x2F;couchdb1</strong></td>
+                <td style="color:#525252;">&#x2F;couchdb1</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:30.1%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:8.8%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">30.08%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">8.83%</span>
                     </div>
                 </td>
                 <td>
@@ -1033,45 +1033,22 @@ workers:          8
                 </td>
             </tr>
             <tr>
-                <td><strong>&#x2F;couchdb1</strong></td>
-                <td style="color:#525252;">&#x2F;couchdb1</td>
+                <td><strong>&#x2F;couchdb0</strong></td>
+                <td style="color:#525252;">&#x2F;couchdb0</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:0.6%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:27.4%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">0.62%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">27.39%</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:8.0%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:8.5%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">81.9 MB</span>
-                    </div>
-                </td>
-                <td style="color:#24a148; font-size:11px; font-weight:600;">
-                    Live Data
-                </td>
-            </tr>
-            <tr>
-                <td><strong>&#x2F;ca_org1</strong></td>
-                <td style="color:#525252;">&#x2F;ca_org1</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:0.3%; background:#525252; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">0.29%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:1.5%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">15.2 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">87.3 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -1092,9 +1069,9 @@ workers:          8
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:1.8%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:1.5%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">18.2 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">15.6 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -1107,17 +1084,40 @@ workers:          8
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:0.4%; background:#525252; height:100%; border-radius:3px;"></div>
+                            <div style="width:0.0%; background:#525252; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#525252; min-width:45px;">0.36%</span>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">0.00%</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:1.7%; background:#393939; height:100%; border-radius:3px;"></div>
+                            <div style="width:1.4%; background:#393939; height:100%; border-radius:3px;"></div>
                         </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">17.5 MB</span>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">14.4 MB</span>
+                    </div>
+                </td>
+                <td style="color:#24a148; font-size:11px; font-weight:600;">
+                    Live Data
+                </td>
+            </tr>
+            <tr>
+                <td><strong>&#x2F;ca_org1</strong></td>
+                <td style="color:#525252;">&#x2F;ca_org1</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
+                            <div style="width:0.6%; background:#525252; height:100%; border-radius:3px;"></div>
+                        </div>
+                        <span style="font-weight:700; color:#525252; min-width:45px;">0.57%</span>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
+                            <div style="width:1.4%; background:#393939; height:100%; border-radius:3px;"></div>
+                        </div>
+                        <span style="font-weight:700; color:#393939; min-width:55px;">14.7 MB</span>
                     </div>
                 </td>
                 <td style="color:#24a148; font-size:11px; font-weight:600;">
@@ -1213,7 +1213,7 @@ workers:          8
         <div class="footer">
             <strong>Hyperledger Caliper</strong> — Performance Benchmark Report &nbsp;|&nbsp;
             Project: BCMS (Blockchain Certificate Management System) &nbsp;|&nbsp;
-            Generated: 2026-04-07 &nbsp;|&nbsp;
+            Generated: 2026-04-09 &nbsp;|&nbsp;
             Repository: <a href="https://github.com/moain2028/fabric" style="color:#78a9ff;">moain2028/fabric</a> &nbsp;|&nbsp;
             Report Version: v4.0 &nbsp;|&nbsp;
             <em>Auto-generated by generate_custom_report.js v4.0</em>
