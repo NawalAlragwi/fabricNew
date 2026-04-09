@@ -324,12 +324,12 @@ sleep 30
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║  Launching Caliper Benchmark — 6 Research Rounds             ║"
-echo "║  Round 1: BatchIssueCertificates    @ 20 TPS (100 effective) ║"
-echo "║  Round 2: BatchVerifyCertificates   @ 40 TPS (200 effective) ║"
-echo "║  Round 3: QueryAllCertificates      @ 20 TPS                 ║"
-echo "║  Round 4: BatchRevokeCertificates   @ 15 TPS (75  effective) ║"
-echo "║  Round 5: GetCertificatesByStudent  @ 30 TPS                 ║"
-echo "║  Round 6: GetAuditLogs              @ 15 TPS                 ║"
+echo "║  Round 1: BatchIssueCertificates    @ 50  TPS (250 effective)║"
+echo "║  Round 2: BatchVerifyCertificates   @ 100 TPS (500 effective)║"
+echo "║  Round 3: QueryAllCertificates      @ 50  TPS                ║"
+echo "║  Round 4: BatchRevokeCertificates   @ 50  TPS (250 effective)║"
+echo "║  Round 5: GetCertificatesByStudent  @ 75  TPS                ║"
+echo "║  Round 6: GetAuditLogs              @ 30  TPS                ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 
 npx caliper launch manager \

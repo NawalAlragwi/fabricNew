@@ -1,7 +1,7 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Batch-First Benchmark Configuration (PhD Resilience Edition)
-#  Target: 6 Optimized Rounds using Application-Level Batching
+#  Research Consistency Configuration (Fair Baseline Comparison)
+#  Target: Identical Transaction Load as SHA-256 and Mirage-New branches.
 # ============================================================================
 
 monitors:
@@ -17,82 +17,82 @@ monitors:
           - couchdb1
 
 test:
-  name: bcms-batch-optimized-benchmark
+  name: bcms-fair-comparison-batch-benchmark
   description: >
-     Evaluation of BCMS Batching Performance for PhD Thesis.
-     Focus: High Throughput, Low Latency, and Zero Failure Rate.
+     Comparison of Batching performance against baseline models.
+     Load (TPS/txNumber) is kept identical to ensure scientific consistency.
   workers:
     type: local
-    number: 8  # Restored to 8 for fair comparison as requested
+    number: 8
   rounds:
-    # --- Round 1: BatchIssueCertificates (Phase 3 Optimized) ---
+    # --- Round 1: BatchIssueCertificates (Standard Load: 50 TPS) ---
     - label: BatchIssueCertificates
-      description: Issues 5 certificates per transaction using Hybrid Hash.
-      txNumber: 400
+      description: Issues 5 certificates per tx. Effective: 250 cert/s.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20  # Effective throughput: 100 certificates/second
+          tps: 50
       workload:
         module: workload/batchIssueCertificate.js
-      postIterationWaitTime: 30000  # Longer cooldown to allow CouchDB indexing to catch up
+      postIterationWaitTime: 20000
 
-    # --- Round 2: BatchVerifyCertificates (Read-Only Optimized) ---
+    # --- Round 2: BatchVerifyCertificates (Standard Load: 100 TPS) ---
     - label: BatchVerifyCertificates
-      description: Verifies 5 certificates per query. Bypasses orderer for speed.
-      txNumber: 800
+      description: Verifies 5 certificates per query. Effective: 500 verif/s.
+      txNumber: 3000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 40  # Effective throughput: 200 verifications/second
+          tps: 100
       workload:
         module: workload/batchVerifyCertificate.js
-      postIterationWaitTime: 20000
+      postIterationWaitTime: 15000
 
-    # --- Round 3: QueryAllCertificates (Rich Query) ---
+    # --- Round 3: QueryAllCertificates (Standard Load: 50 TPS) ---
     - label: QueryAllCertificates
-      description: Retrieve all certificates using GetStateByRange.
-      txNumber: 400
+      description: Rich ledger query returning all certificates.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
-      postIterationWaitTime: 20000
+      postIterationWaitTime: 15000
 
-    # --- Round 4: BatchRevokeCertificates (Phase 3 Optimized) ---
+    # --- Round 4: BatchRevokeCertificates (Standard Load: 50 TPS) ---
     - label: BatchRevokeCertificates
-      description: Bulk revocation of 5 certificates per transaction.
-      txNumber: 400
+      description: Bulk revocation of 5 certificates per tx. Effective: 250 revoke/s.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 15  # Lower TPS for revocation to prevent MVCC conflicts with indexes
+          tps: 50
       workload:
         module: workload/batchRevokeCertificate.js
-      postIterationWaitTime: 30000
+      postIterationWaitTime: 20000
 
-    # --- Round 5: GetCertificatesByStudent (CouchDB Query) ---
+    # --- Round 5: GetCertificatesByStudent (Standard Load: 75 TPS) ---
     - label: GetCertificatesByStudent
-      description: Query certificates by studentID using CouchDB rich query.
-      txNumber: 600
+      description: Query certificates for a specific student using CouchDB index.
+      txNumber: 2250
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 75
+      workload:
+        module: workload/getCertificatesByStudent.js
+      postIterationWaitTime: 15000
+
+    # --- Round 6: GetAuditLogs (Standard Load: 30 TPS) ---
+    - label: GetAuditLogs
+      description: Retrieve paginated audit logs via range scan.
+      txNumber: 900
       rateControl:
         type: fixed-rate
         opts:
           tps: 30
       workload:
-        module: workload/getCertificatesByStudent.js
-      postIterationWaitTime: 20000
-
-    # --- Round 6: GetAuditLogs (Transparency Feature) ---
-    - label: GetAuditLogs
-      description: Retrieve immutable audit trail.
-      txNumber: 300
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 15
-      workload:
         module: workload/getAuditLogs.js
-      postIterationWaitTime: 15000
+      postIterationWaitTime: 10000
