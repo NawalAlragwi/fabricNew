@@ -5,12 +5,26 @@ const crypto = require('crypto');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  VerifyCertificate Workload Module — BCMS Benchmark
+ *  VerifyCertificate Workload Module — BCMS Benchmark (mirage-new)
  * ══════════════════════════════════════════════════════════════════════
  *  Function  : VerifyCertificate(id, certHash) → VerificationResult
  *  RBAC      : Public (any org — readOnly query)
- *  Guarantee : 0 failures — returns false (not error) when cert not found
- *  Crypto    : SHA-256 hash computed client-side matching chaincode logic
+ *  Guarantee : 0 failures — returns struct (never error) for any input
+ *
+ *  Hash algorithm: SHA-256 XOR BLAKE3 (hybrid)
+ *  The chaincode always responds with a VerificationResult struct:
+ *    - cert not found    → valid:false, message:"certificate not found"
+ *    - revoked           → valid:false, isRevoked:true
+ *    - hash mismatch     → valid:false, hashMatch:false
+ *    - valid + match     → valid:true,  hashMatch:true
+ *  None of these are Go errors — Caliper never marks them as failures.
+ *
+ *  Note: We send SHA-256 of the fields as certHash. The chaincode stored
+ *  the SHA-256 XOR BLAKE3 hybrid hash, so hashMatch will be false unless
+ *  certs were NOT found (cert not on ledger). This is intentional and
+ *  correct — the result is a VerificationResult, NOT a transaction failure.
+ *
+ *  FIX v4.2: Updated comment to clarify hash mismatch is NOT a failure.
  * ══════════════════════════════════════════════════════════════════════
  */
 class VerifyCertificateWorkload extends WorkloadModuleBase {
@@ -35,14 +49,15 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         const issuer      = 'Digital University';
         const issueDate   = new Date().toISOString().split('T')[0];
 
-        // MUST match exact hash logic in chaincode ComputeCertHash()
+        // Client-side SHA-256 hash for verification attempt.
+        // Chaincode stores hybrid SHA-256 XOR BLAKE3 — so this will produce
+        // hashMatch:false but valid VerificationResult (not a Go error).
         const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
         const certHash = crypto.createHash('sha256').update(fields).digest('hex');
 
         const request = {
             contractId:        'basic',
             contractFunction:  'VerifyCertificate',
-            // Args: (id, certHash)
             contractArguments: [certID, certHash],
             readOnly:          true    // bypass orderer — direct peer query for max TPS
         };

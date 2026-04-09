@@ -4,7 +4,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- * GetAuditLogs Workload Module — BCMS Benchmark v4.2
+ *  GetAuditLogs Workload Module — BCMS Benchmark (mirage branch)
  * ══════════════════════════════════════════════════════════════════════
  *  Function  : GetAuditLogs() → []*AuditLog
  *  RBAC      : Public read (any org can query audit trail)
@@ -12,8 +12,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *  Zero-failure guarantee:
  *    - chaincode NEVER returns a Go error — always returns empty slice
  *    - readOnly:true bypasses orderer for maximum throughput
- *    - FIX: previous chaincode returned error on CouchDB failure;
- *      new implementation catches all errors and returns [] instead.
+ *    - Uses range scan on AUDIT_ prefix (faster than CouchDB rich query)
  * ══════════════════════════════════════════════════════════════════════
  */
 class GetAuditLogsWorkload extends WorkloadModuleBase {
@@ -27,7 +26,7 @@ class GetAuditLogsWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
             readOnly:          true   // direct peer query — no orderer overhead
@@ -36,9 +35,7 @@ class GetAuditLogsWorkload extends WorkloadModuleBase {
         return this.sutAdapter.sendRequests(request);
     }
 
-    async cleanupWorkloadModule() {
-        // لا يوجد عمليات تنظيف مطلوبة لعمليات القراءة
-    }
+    async cleanupWorkloadModule() {}
 }
 
 module.exports = { createWorkloadModule: () => new GetAuditLogsWorkload() };

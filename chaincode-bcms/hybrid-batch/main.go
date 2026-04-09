@@ -1,12 +1,12 @@
 // ============================================================================
 //  BCMS — Blockchain Certificate Management System
-//  Chaincode Entry Point — Hybrid-Batch Mode (mirage branch)
+//  Chaincode Entry Point — Hybrid Mode (mirage branch)
 //
 //  Research Paper: "Enhancing Trust and Transparency in Education Using
 //                   Blockchain: A Hyperledger Fabric-Based Framework"
 //
-//  Chaincode: hybrid-batch (no-batch for mirage branch)
-//  Hash:      SHA-256 (deterministic, cross-platform consistent)
+//  Chaincode: bcms-hybrid
+//  Hash:      Hybrid SHA-256 XOR BLAKE3 (both algorithms, XOR-combined)
 // ============================================================================
 
 package main

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "BCMS Hash Algorithm Benchmark: SHA-256 vs BLAKE3",
-    "timestamp": "2026-04-04T22:42:34.388800",
+    "timestamp": "2026-04-08T22:13:34.960063",
     "platform": "linux",
     "python_version": "3.12.1 (main, Nov 27 2025, 10:47:52) [GCC 13.3.0]",
     "blake3_native": true
@@ -10,16 +10,16 @@
     "sha256": {
       "algorithm": "SHA-256",
       "iterations": 50000,
-      "throughput_hashes_per_sec": 82587.31,
+      "throughput_hashes_per_sec": 70697.72,
       "latency_us": {
-        "mean": 5.262,
-        "median": 4.469,
-        "stddev": 47.124,
-        "min": 2.184,
-        "max": 3878.518,
-        "p50": 4.469,
-        "p95": 5.43,
-        "p99": 10.881
+        "mean": 6.294,
+        "median": 2.324,
+        "stddev": 121.349,
+        "min": 2.234,
+        "max": 15500.922,
+        "p50": 2.324,
+        "p95": 5.541,
+        "p99": 12.193
       },
       "memory_bytes": 1645185,
       "memory_kb": 1606.63
@@ -27,24 +27,24 @@
     "blake3": {
       "algorithm": "BLAKE3",
       "iterations": 50000,
-      "throughput_hashes_per_sec": 141585.67,
+      "throughput_hashes_per_sec": 96032.46,
       "latency_us": {
-        "mean": 3.581,
-        "median": 3.296,
-        "stddev": 3.37,
-        "min": 3.115,
-        "max": 694.276,
-        "p50": 3.296,
-        "p95": 5.961,
-        "p99": 7.413
+        "mean": 5.174,
+        "median": 3.346,
+        "stddev": 25.62,
+        "min": 3.135,
+        "max": 4356.504,
+        "p50": 3.347,
+        "p95": 7.223,
+        "p99": 10.74
       },
       "memory_bytes": 1646866,
       "memory_kb": 1608.27
     }
   },
   "comparison": {
-    "throughput_speedup_x": 1.7144,
-    "latency_improvement_x": 1.4694,
+    "throughput_speedup_x": 1.3584,
+    "latency_improvement_x": 1.2165,
     "winner": "BLAKE3",
     "recommendation": "BLAKE3 recommended for high-throughput certificate issuance"
   },
@@ -55,13 +55,13 @@
       "sha256": {
         "avg_latency_ms": 118.01,
         "throughput_tps": 8.5,
-        "hash_contribution_ms": 0.0053,
+        "hash_contribution_ms": 0.0063,
         "success_rate": "100%"
       },
       "blake3": {
         "avg_latency_ms": 118.01,
         "throughput_tps": 8.5,
-        "hash_contribution_ms": 0.0036,
+        "hash_contribution_ms": 0.0052,
         "success_rate": "100%"
       }
     },
@@ -69,13 +69,13 @@
       "sha256": {
         "avg_latency_ms": 82.61,
         "throughput_tps": 12.1,
-        "hash_contribution_ms": 0.0053,
+        "hash_contribution_ms": 0.0063,
         "success_rate": "100%"
       },
       "blake3": {
-        "avg_latency_ms": 82.6,
+        "avg_latency_ms": 82.61,
         "throughput_tps": 12.1,
-        "hash_contribution_ms": 0.0036,
+        "hash_contribution_ms": 0.0052,
         "success_rate": "100%"
       }
     }

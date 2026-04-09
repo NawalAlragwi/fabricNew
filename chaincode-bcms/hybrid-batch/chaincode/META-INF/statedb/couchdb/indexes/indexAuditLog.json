@@ -1,6 +1,6 @@
 {
     "index": {
-        "fields": ["docType", "timestamp"]
+        "fields": ["docType", "Timestamp"]
     },
     "ddoc": "indexAuditLogValue",
     "name": "indexAuditLog",

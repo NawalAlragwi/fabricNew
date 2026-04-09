@@ -1,13 +1,14 @@
 'use strict';
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+const crypto = require('crypto');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  IssueCertificate Workload Module — BCMS Benchmark (mirage branch)
+ *  IssueCertificate Workload Module — BCMS Benchmark (mirage-new branch)
  * ══════════════════════════════════════════════════════════════════════
- *  Chaincode function signature (MUST MATCH smartcontract.go):
- *    IssueCertificate(id, studentId, studentName, degree, issuer,
+ *  Chaincode function signature (MUST MATCH smartcontract_hybrid.go):
+ *    IssueCertificate(id, studentID, studentName, degree, issuer,
  *                     issueDate, certHash, signature) error
  *
  *  ROOT CAUSE FIX: Previous version sent JSON_ARRAY as argument, but
@@ -16,11 +17,15 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *  on RevokeCertificate (nothing to revoke) and GetCertificatesByStudent
  *  (no certs on ledger to query).
  *
- *  Hash formula (matches chaincode ComputeCertHash):
- *    SHA256(studentId + "|" + studentName + "|" + degree + "|" + issuer + "|" + issueDate)
+ *  Hash formula (client-side SHA-256; server stores hybrid SHA-256 XOR BLAKE3):
+ *    SHA256(studentID + "|" + studentName + "|" + degree + "|" + issuer + "|" + issueDate)
+ *  Note: Server-side chaincode always recomputes the authoritative hybrid hash.
+ *  The client-side hash is accepted but overwritten server-side with hybrid hash.
  *
  *  ID pattern: CERT_{workerIndex}_{txIndex}  (used by revokeCertificate.js)
  *  StudentID:  STU_{workerIndex}_{txIndex}   (used by getCertificatesByStudent.js)
+ *
+ *  FIX v4.2: Added missing `const crypto = require('crypto')` import.
  * ══════════════════════════════════════════════════════════════════════
  */
 class IssueCertificateWorkload extends WorkloadModuleBase {
@@ -45,10 +50,11 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const issuer      = 'Digital University';
         const issueDate   = new Date().toISOString().split('T')[0];
 
-        // Client-side SHA-256 hash — matches ComputeCertHash in chaincode:
-        //   SHA256(studentId|studentName|degree|issuer|issueDate)
-        const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        // Client-side SHA-256 hash — chaincode server will overwrite with hybrid hash:
+        //   ComputeHybridHash: SHA256(data) XOR BLAKE3(data)
+        // Client sends SHA256 only; server replaces with sha256-xor-blake3.
+        const fields    = [studentID, studentName, degree, issuer, issueDate].join('|');
+        const certHash  = crypto.createHash('sha256').update(fields).digest('hex');
         const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {

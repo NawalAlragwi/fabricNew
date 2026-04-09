@@ -54,6 +54,14 @@ services:
       - 7050:7050
       - 7053:7053
       - 9443:9443
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '1.0'
+          memory: 1024M
     networks:
       - test
 
@@ -94,6 +102,14 @@ services:
     ports:
       - 7051:7051
       - 9444:9444
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '1.0'
+          memory: 1024M
     networks:
       - test
 
@@ -134,5 +150,13 @@ services:
     ports:
       - 9051:9051
       - 9445:9445
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '1.0'
+          memory: 1024M
     networks:
       - test
