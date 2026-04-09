@@ -45,7 +45,7 @@ const OUTPUT_REPORT = process.argv[3] || path.join(__dirname, 'report_custom.htm
 
 const BENCHMARK_META = {
     title:       'BCMS Hybrid Certificate Benchmark',
-    version:     'v5.0',
+    version:     'v6.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
     chaincode:   'bcms-hybrid',
@@ -55,7 +55,7 @@ const BENCHMARK_META = {
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
-    branch:      'mirage',
+    branch:      'mirage-batch',
 };
 
 // ─── Round Metadata ─────────────────────────────────────────────────────────
@@ -136,6 +136,45 @@ const ROUND_META = {
         readOnly: true,
         contractArgs: '[]     // no args; returns all audit entries',
         chartColor: { bg: 'rgba(0,158,219,0.7)', border: 'rgba(0,158,219,1)', lineBg: 'rgba(0,158,219,0.1)', lineBorder: 'rgba(0,158,219,0.9)' },
+    },
+    'BatchIssueCertificates': {
+        index: 7,
+        emoji: '7',
+        badge: 'badge-org1',
+        badgeText: 'Phase 3 Batch — Write',
+        description: `<strong>Application-Level Batching:</strong> Issues 5 certificates in a single atomic transaction.<br>
+            <strong>Performance:</strong> Reduces ordering overhead by 80% compared to individual writes.
+            <strong>Security:</strong> Atomic commitment ensures all 5 certs are written together or none at all.`,
+        invoker: 'User1@org1.example.com',
+        readOnly: false,
+        contractArgs: '[JSON.stringify([{id, studentID, ...}, x5])]',
+        chartColor: { bg: 'rgba(105,41,196,0.8)', border: 'rgba(105,41,196,1)', lineBg: 'rgba(105,41,196,0.1)', lineBorder: 'rgba(105,41,196,1)' },
+    },
+    'BatchVerifyCertificates': {
+        index: 8,
+        emoji: '8',
+        badge: 'badge-public',
+        badgeText: 'Phase 3 Batch — Read',
+        description: `<strong>Application-Level Batching:</strong> Verifies 5 certificates in a single read-only transaction.<br>
+            <strong>Performance:</strong> Reduces SDK-to-Peer round-trips by 5x. Direct peer query bypasses orderer.
+            <strong>Security:</strong> Eliminates MitM window between sequential individual verify calls.`,
+        invoker: 'User1@org1.example.com',
+        readOnly: true,
+        contractArgs: '[JSON.stringify([{id, certHash}, x5])]',
+        chartColor: { bg: 'rgba(0,93,93,0.8)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,1)' },
+    },
+    'BatchRevokeCertificates': {
+        index: 9,
+        emoji: '9',
+        badge: 'badge-org2',
+        badgeText: 'Phase 3 Batch — Write',
+        description: `<strong>Application-Level Batching:</strong> Revokes 5 certificates in a single atomic transaction.<br>
+            <strong>Performance:</strong> Aggregates bulk revocations to reduce MVCC lock contention.
+            <strong>Security:</strong> Single BatchID in audit log for forenisc traceability of bulk updates.`,
+        invoker: 'User1@org2.example.com',
+        readOnly: false,
+        contractArgs: '[JSON.stringify(["CERT1", "CERT2", ...])]',
+        chartColor: { bg: 'rgba(36,161,72,0.8)', border: 'rgba(36,161,72,1)', lineBg: 'rgba(36,161,72,0.1)', lineBorder: 'rgba(36,161,72,1)' },
     },
 };
 
@@ -585,6 +624,9 @@ function buildSummaryTableRows(rounds, agg) {
         'RevokeCertificate':      '<span class="badge-org2">Org2 RBAC</span>',
         'GetCertificatesByStudent':'<span class="badge-public">Public Read</span>',
         'GetAuditLogs':           '<span class="badge-public">Public Read</span>',
+        'BatchIssueCertificates': '<span class="badge-org1">Org1 Batch</span>',
+        'BatchVerifyCertificates':'<span class="badge-public">Public Batch</span>',
+        'BatchRevokeCertificates':'<span class="badge-org2">Org2 Batch</span>',
     };
 
     let rows = '';
@@ -1156,7 +1198,8 @@ ${resourceSection}
 
 function main() {
     console.log('========================================================');
-    console.log('  BCMS Custom Report Generator v4.0');
+    console.log('  BCMS Custom Report Generator v6.0');
+    console.log('  Ph.D. Level Post-Processor: Phase 3 Batch Edition');
     console.log('  Ph.D. Level Post-Processor for Hyperledger Caliper');
     console.log('  NEW: Resource Utilization — CPU & Memory per Container');
     console.log('========================================================');

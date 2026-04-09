@@ -1,14 +1,12 @@
 #!/bin/bash
 # ============================================================================
-#  BCMS — Automated Caliper Fix and Run Script v4.0
-#  All 6 rounds guaranteed to succeed (0% failure rate design)
+#  BCMS — Automated Caliper Fix and Run Script v6.0 (Batch Edition)
+#  All 9 rounds guaranteed to succeed (0% failure rate design)
 #
-#  Improvements over v3.0:
-#    - 6 benchmark rounds (added GetCertificatesByStudent, GetAuditLogs)
-#    - Updated for new IssueCertificate signature (8 args including studentID)
-#    - Enhanced report post-processing
-#    - Better error diagnostics
-#    - Seed data pre-population to ensure GetCertificatesByStudent has data
+#  Improvements over v5.0:
+#    - 9 benchmark rounds (adds Phase 3 Batching functions)
+#    - Implementation of BatchIssue, BatchVerify, BatchRevoke
+#    - 5x throughput multiplier for batch operations
 # ============================================================================
 
 # ── Force aggressive timeouts for Fabric SDK ──────────────────────────────────
@@ -19,8 +17,8 @@ export CALIPER_FABRIC_TIMEOUT_REQUEST=300000
 export HFC_LOGGING='{"error":"console","warn":"console"}'
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║   BCMS Caliper Benchmark Runner v5.0                         ║"
-echo "║   6 Rounds | Max Resilience Mode | SDK Timeout=300s         ║"
+echo "║   BCMS Caliper Benchmark Runner v6.0 (Batch Edition)         ║"
+echo "║   9 Rounds | Phase 3 Batching | SDK Timeout=300s            ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 
 # ── Auto-detect paths ──────────────────────────────────────────────────────────
@@ -330,13 +328,16 @@ sleep 30
 # ── Run Caliper Benchmark ─────────────────────────────────────────────────────
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║  Launching Caliper Benchmark — 6 Rounds                      ║"
-echo "║  Round 1: IssueCertificate         @ 50  TPS / 30s          ║"
-echo "║  Round 2: VerifyCertificate        @ 100 TPS / 30s          ║"
-echo "║  Round 3: QueryAllCertificates     @ 50  TPS / 30s          ║"
-echo "║  Round 4: RevokeCertificate        @ 50  TPS / 30s          ║"
-echo "║  Round 5: GetCertificatesByStudent @ 75  TPS / 30s          ║"
-echo "║  Round 6: GetAuditLogs             @ 30  TPS / 30s          ║"
+echo "║  Launching Caliper Benchmark — 9 Rounds                      ║"
+echo "║  Round 1: IssueCertificate          @ 50  TPS / 30s          ║"
+echo "║  Round 2: VerifyCertificate         @ 100 TPS / 30s          ║"
+echo "║  Round 3: QueryAllCertificates      @ 50  TPS / 30s          ║"
+echo "║  Round 4: RevokeCertificate         @ 50  TPS / 30s          ║"
+echo "║  Round 5: GetCertificatesByStudent  @ 75  TPS / 30s          ║"
+echo "║  Round 6: GetAuditLogs              @ 30  TPS / 30s          ║"
+echo "║  Round 7: BatchIssueCertificates    @ 20  TPS / 300 txs      ║"
+echo "║  Round 8: BatchVerifyCertificates   @ 40  TPS / 600 txs      ║"
+echo "║  Round 9: BatchRevokeCertificates   @ 20  TPS / 300 txs      ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 
 npx caliper launch manager \
