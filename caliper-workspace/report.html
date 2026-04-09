@@ -1,493 +1,371 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script>
+    function plotChart(divId, chartData) {
+        // Convert from stringified html, to valid JSON
+        const chartDetails = JSON.parse(chartData.replace(/&quot;/g,'"'));
+        new Chart(document.getElementById(divId), {
+            type: chartDetails.type,
+            data: {
+                labels: chartDetails.labels,
+                datasets: chartDetails.datasets
+            },
+            options: {
+                legend: { display: chartDetails.legend },
+                title: {
+                    display: true,
+                    text: chartDetails.title
+                }
+            }
+        });
+    }
+</script>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hyperledger Caliper Report — BCMS Hybrid-Batch</title>
-<style>
-  :root {
-    --blue: #1e40af;
-    --blue-light: #3b82f6;
-    --green: #16a34a;
-    --red: #dc2626;
-    --yellow: #d97706;
-    --gray: #6b7280;
-    --bg: #f9fafb;
-    --card: #ffffff;
-    --border: #e5e7eb;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #111827; line-height: 1.5; }
-
-  /* Header */
-  .header { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%); color: white; padding: 40px 24px 32px; }
-  .header-inner { max-width: 1100px; margin: 0 auto; }
-  .caliper-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-  .caliper-logo svg { width: 40px; height: 40px; }
-  .caliper-logo-text { font-size: 1.1rem; font-weight: 600; opacity: 0.9; letter-spacing: 0.5px; }
-  h1 { font-size: 1.9rem; font-weight: 700; margin-bottom: 8px; }
-  .header-subtitle { opacity: 0.85; font-size: 0.95rem; max-width: 800px; }
-  .header-meta { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 20px; font-size: 0.85rem; opacity: 0.8; }
-  .header-meta span { display: flex; align-items: center; gap: 6px; }
-
-  /* Main */
-  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-
-  /* Summary cards */
-  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
-  .card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 20px; }
-  .card-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 6px; }
-  .card-value { font-size: 2rem; font-weight: 700; }
-  .card-value.green { color: var(--green); }
-  .card-value.blue { color: var(--blue); }
-  .card-value.red { color: var(--red); }
-  .card-sub { font-size: 0.78rem; color: var(--gray); margin-top: 4px; }
-
-  /* Section */
-  section { margin-bottom: 36px; }
-  .section-title { font-size: 1.15rem; font-weight: 700; color: #1e3a8a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-  /* Table */
-  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  thead { background: #1e3a8a; color: white; }
-  thead th { padding: 11px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
-  tbody tr { border-bottom: 1px solid var(--border); }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody td { padding: 11px 14px; }
-  td.label-col { font-weight: 600; color: #1e3a8a; }
-  td.right { text-align: right; }
-  td.center { text-align: center; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
-  .badge-green { background: #dcfce7; color: #15803d; }
-  .badge-blue  { background: #dbeafe; color: #1e40af; }
-  .badge-red   { background: #fee2e2; color: #b91c1c; }
-  .badge-write { background: #fef3c7; color: #92400e; }
-
-  /* Latency chart (CSS bars) */
-  .lat-chart { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 20px; }
-  .lat-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .lat-row:last-child { margin-bottom: 0; }
-  .lat-label { width: 220px; font-size: 0.82rem; font-weight: 600; color: #374151; flex-shrink: 0; }
-  .lat-bar-wrap { flex: 1; background: #e5e7eb; border-radius: 4px; height: 20px; position: relative; }
-  .lat-bar { height: 100%; border-radius: 4px; }
-  .lat-val { width: 80px; text-align: right; font-size: 0.82rem; color: #374151; flex-shrink: 0; }
-
-  /* TPS chart */
-  .tps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  .tps-card { background: var(--card); border-radius: 8px; border: 1px solid var(--border); padding: 16px; text-align: center; }
-  .tps-card-label { font-size: 0.78rem; color: var(--gray); margin-bottom: 4px; }
-  .tps-card-value { font-size: 1.6rem; font-weight: 700; color: #1e40af; }
-  .tps-card-target { font-size: 0.75rem; color: #9ca3af; }
-
-  /* Hash algo info */
-  .algo-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 20px; }
-  .algo-box h3 { font-size: 1rem; font-weight: 700; color: #1e3a8a; margin-bottom: 10px; }
-  .algo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .algo-item { font-size: 0.87rem; }
-  .algo-item dt { font-weight: 600; color: #374151; }
-  .algo-item dd { color: #6b7280; margin-top: 2px; }
-
-  /* Footer */
-  footer { border-top: 1px solid var(--border); padding: 20px 24px; text-align: center; font-size: 0.8rem; color: var(--gray); }
-</style>
+    <title>Hyperledger Caliper Report</title>
+    <meta charset="UTF-8"/>
+    <style type="text/css">
+        .left-column {
+            position: fixed;
+            width:20%;
+        }
+        .left-column ul {
+            display: block;
+            padding: 0;
+            list-style: none;
+            border-bottom: 1px solid #d9d9d9;
+            font-size: 14px;
+        }
+        .left-column h2{
+            font-size: 24px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column h3{
+            font-size: 18px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column li{
+            margin-left: 10px;
+            margin-bottom: 5px;
+            color: #5e6b73;
+        }
+        .right-column {
+            margin-left: 22%;
+            width:60%;
+        }
+        .right-column table {
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .right-column h2{
+            font-weight: 400;
+        }
+        .right-column h3{
+            font-weight: 400;
+        }
+        .right-column h4 {
+            font-weight: 400;
+            margin-block-end: 0;
+        }
+        .right-column th {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #f2f2f2;
+        }
+        .right-column td {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+            font-weight: 400;
+        }
+        .tag {
+            margin-bottom: 10px;
+            padding: 5px 10px;
+        }
+        pre {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f2f2f2;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            -khtml-border-radius: 5px;
+            overflow:auto;
+            max-height:300px;
+            font-size:12px;
+        }
+        .charting {
+            display:flex;
+            flex-direction:row;
+            flex-wrap: wrap;
+            page-break-inside: auto;
+        }
+        .chart {
+            display:flex;
+            flex:1;
+            max-width: 50%;
+        }
+    </style>
 </head>
-<body>
-
-<div class="header">
-  <div class="header-inner">
-    <div class="caliper-logo">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="40" height="40" rx="8" fill="rgba(255,255,255,0.2)"/>
-        <path d="M8 20C8 13.373 13.373 8 20 8s12 5.373 12 12-5.373 12-12 12S8 26.627 8 20z" stroke="white" stroke-width="2"/>
-        <path d="M14 20h12M20 14v12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="20" cy="20" r="3" fill="white"/>
-      </svg>
-      <span class="caliper-logo-text">Hyperledger Caliper v0.6.0</span>
-    </div>
-    <h1>BCMS Hybrid-Batch Benchmark — SHA-256 XOR BLAKE3</h1>
-    <div class="header-subtitle">Research Paper: "Enhancing Trust and Transparency in Education Using Blockchain: A Hyperledger Fabric-Based Framework"</div>
-    <div class="header-meta">
-      <span>📅 Generated: Apr 9, 2026, 11:31:10 AM</span>
-      <span>🔗 Channel: mychannel</span>
-      <span>📦 Contract: basic</span>
-      <span>👷 Workers: 8</span>
-      <span>🔐 Hash: sha256-xor-blake3</span>
-    </div>
-  </div>
-</div>
-
-<div class="main">
-
-  <!-- Summary Cards -->
-  <div class="summary-grid">
-    <div class="card">
-      <div class="card-label">Total Transactions</div>
-      <div class="card-value blue">16,627</div>
-      <div class="card-sub">across 6 rounds</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Successful</div>
-      <div class="card-value green">16,627</div>
-      <div class="card-sub">100.0% success rate</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Failed</div>
-      <div class="card-value green">0</div>
-      <div class="card-sub">0.00% failure rate</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Peak Write TPS</div>
-      <div class="card-value blue">99.9</div>
-      <div class="card-sub">RevokeCertificate</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Peak Read TPS</div>
-      <div class="card-value blue">199.8</div>
-      <div class="card-sub">VerifyCertificate</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Min Avg Latency</div>
-      <div class="card-value green">9ms</div>
-      <div class="card-sub">GetAuditLogs</div>
-    </div>
-  </div>
-
-  <!-- Hash Algorithm Info -->
-  <section>
-    <div class="section-title">⚡ Hash Algorithm — SHA-256 XOR BLAKE3</div>
-    <div class="algo-box">
-      <h3>Hybrid Hash: SHA-256 ⊕ BLAKE3 (256-bit)</h3>
-      <div class="algo-grid">
-        <dl class="algo-item">
-          <dt>Formula</dt>
-          <dd><code>H = hex(SHA256(data) XOR BLAKE3(data))</code></dd>
-        </dl>
-        <dl class="algo-item">
-          <dt>Security Property</dt>
-          <dd>Attacker must break BOTH algorithms simultaneously</dd>
-        </dl>
-        <dl class="algo-item">
-          <dt>Performance</dt>
-          <dd>BLAKE3 SIMD parallelism — 3–10× faster than SHA-256; sync.Pool reduces allocation cost</dd>
-        </dl>
-        <dl class="algo-item">
-          <dt>Data Input</dt>
-          <dd><code>studentID|studentName|degree|issuer|issueDate</code></dd>
-        </dl>
-        <dl class="algo-item">
-          <dt>CouchDB Indexes</dt>
-          <dd>indexCertificates [docType, IssueDate], indexStudentId [docType, StudentID, IssueDate], indexAuditLog [docType, Timestamp]</dd>
-        </dl>
-        <dl class="algo-item">
-          <dt>Audit Log Pagination</dt>
-          <dd>MaxAuditLogs=100 per query; AUDIT_ range scan (no CouchDB query needed)</dd>
-        </dl>
-      </div>
-    </div>
-  </section>
-
-  <!-- Results Table -->
-  <section>
-    <div class="section-title">📊 Benchmark Results — All 6 Rounds</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Type</th>
-            <th class="right">Sent TPS</th>
-            <th class="right">Throughput</th>
-            <th class="right">Succ</th>
-            <th class="right">Fail</th>
-            <th class="right">Fail%</th>
-            <th class="right">Avg Lat (s)</th>
-            <th class="right">Min (s)</th>
-            <th class="right">Max (s)</th>
-            <th class="right">p50 (s)</th>
-            <th class="right">p95 (s)</th>
-            <th class="right">p99 (s)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="label-col">IssueCertificate</td>
-            <td class="center"><span class="badge badge-write">Write</span></td>
-            <td class="right">50.0</td>
-            <td class="right">49.9</td>
-            <td class="right" style="color:var(--green);font-weight:600">1,497</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">1.612</td>
-            <td class="right">0.389</td>
-            <td class="right">4.127</td>
-            <td class="right">1.431</td>
-            <td class="right">3.218</td>
-            <td class="right">3.891</td>
-          </tr>
-          <tr>
-            <td class="label-col">VerifyCertificate</td>
-            <td class="center"><span class="badge badge-blue">ReadOnly</span></td>
-            <td class="right">200.0</td>
-            <td class="right">199.8</td>
-            <td class="right" style="color:var(--green);font-weight:600">5,994</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">0.012</td>
-            <td class="right">0.003</td>
-            <td class="right">0.089</td>
-            <td class="right">0.009</td>
-            <td class="right">0.032</td>
-            <td class="right">0.067</td>
-          </tr>
-          <tr>
-            <td class="label-col">QueryAllCertificates</td>
-            <td class="center"><span class="badge badge-blue">ReadOnly</span></td>
-            <td class="right">100.0</td>
-            <td class="right">99.9</td>
-            <td class="right" style="color:var(--green);font-weight:600">2,997</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">0.024</td>
-            <td class="right">0.008</td>
-            <td class="right">0.213</td>
-            <td class="right">0.019</td>
-            <td class="right">0.071</td>
-            <td class="right">0.142</td>
-          </tr>
-          <tr>
-            <td class="label-col">RevokeCertificate</td>
-            <td class="center"><span class="badge badge-write">Write</span></td>
-            <td class="right">100.0</td>
-            <td class="right">99.8</td>
-            <td class="right" style="color:var(--green);font-weight:600">2,994</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">1.458</td>
-            <td class="right">0.312</td>
-            <td class="right">3.891</td>
-            <td class="right">1.287</td>
-            <td class="right">2.876</td>
-            <td class="right">3.542</td>
-          </tr>
-          <tr>
-            <td class="label-col">GetCertificatesByStudent</td>
-            <td class="center"><span class="badge badge-blue">ReadOnly</span></td>
-            <td class="right">75.0</td>
-            <td class="right">74.9</td>
-            <td class="right" style="color:var(--green);font-weight:600">2,247</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">0.015</td>
-            <td class="right">0.004</td>
-            <td class="right">0.118</td>
-            <td class="right">0.011</td>
-            <td class="right">0.041</td>
-            <td class="right">0.087</td>
-          </tr>
-          <tr>
-            <td class="label-col">GetAuditLogs</td>
-            <td class="center"><span class="badge badge-blue">ReadOnly</span></td>
-            <td class="right">30.0</td>
-            <td class="right">29.9</td>
-            <td class="right" style="color:var(--green);font-weight:600">898</td>
-            <td class="right" style="color:var(--green);font-weight:600">0</td>
-            <td class="right"><span class="badge badge-green">0.00%</span></td>
-            <td class="right">0.009</td>
-            <td class="right">0.002</td>
-            <td class="right">0.067</td>
-            <td class="right">0.007</td>
-            <td class="right">0.023</td>
-            <td class="right">0.051</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Throughput Grid -->
-  <section>
-    <div class="section-title">🚀 Throughput per Round (TPS)</div>
-    <div class="tps-grid">
-      <div class="tps-card">
-        <div class="tps-card-label">IssueCertificate</div>
-        <div class="tps-card-value">49.9</div>
-        <div class="tps-card-target">Target: 50 TPS</div>
-      </div>
-      <div class="tps-card">
-        <div class="tps-card-label">VerifyCertificate</div>
-        <div class="tps-card-value">199.8</div>
-        <div class="tps-card-target">Target: 200 TPS</div>
-      </div>
-      <div class="tps-card">
-        <div class="tps-card-label">QueryAllCertificates</div>
-        <div class="tps-card-value">99.9</div>
-        <div class="tps-card-target">Target: 100 TPS</div>
-      </div>
-      <div class="tps-card">
-        <div class="tps-card-label">RevokeCertificate</div>
-        <div class="tps-card-value">99.8</div>
-        <div class="tps-card-target">Target: 100 TPS</div>
-      </div>
-      <div class="tps-card">
-        <div class="tps-card-label">GetCertificatesByStudent</div>
-        <div class="tps-card-value">74.9</div>
-        <div class="tps-card-target">Target: 75 TPS</div>
-      </div>
-      <div class="tps-card">
-        <div class="tps-card-label">GetAuditLogs</div>
-        <div class="tps-card-value">29.9</div>
-        <div class="tps-card-target">Target: 30 TPS</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Latency Chart -->
-  <section>
-    <div class="section-title">⏱ Average Latency Comparison</div>
-    <div class="lat-chart">
-      <div class="lat-row">
-        <div class="lat-label">IssueCertificate</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:97.7%;background:#3b82f6"></div>
+<body style="font-family: IBM Plex Sans; font-weight: 200;">
+    <main>
+        <div class="left-column">
+            <img src="https://hyperledger.github.io/caliper/assets/img/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
+            <ul>
+                <h3>&nbspBasic information</h3>
+                <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-fair-comparison-benchmark</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Evaluation of Hybrid Hash (SHA-256 XOR BLAKE3) Performance.
+</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">6</span></li>
+                <li><a href="#benchmarkInfo">Details</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspBenchmark results</h3>
+                <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#IssueCertificate">IssueCertificate</a></li>
+                    <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
+                    <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
+                    <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
+                    <li><a href="#GetCertificatesByStudent">GetCertificatesByStudent</a></li>
+                    <li><a href="#GetAuditLogs">GetAuditLogs</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspSystem under test</h3>
+                <li><a href="#sutdetails">Details</a></li>
+            </ul>
         </div>
-        <div class="lat-val">1.612s</div>
-      </div>
-      <div class="lat-row">
-        <div class="lat-label">VerifyCertificate</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:0.7%;background:#22c55e"></div>
-        </div>
-        <div class="lat-val">12ms</div>
-      </div>
-      <div class="lat-row">
-        <div class="lat-label">QueryAllCertificates</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:1.5%;background:#22c55e"></div>
-        </div>
-        <div class="lat-val">24ms</div>
-      </div>
-      <div class="lat-row">
-        <div class="lat-label">RevokeCertificate</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:88.4%;background:#3b82f6"></div>
-        </div>
-        <div class="lat-val">1.458s</div>
-      </div>
-      <div class="lat-row">
-        <div class="lat-label">GetCertificatesByStudent</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:0.9%;background:#22c55e"></div>
-        </div>
-        <div class="lat-val">15ms</div>
-      </div>
-      <div class="lat-row">
-        <div class="lat-label">GetAuditLogs</div>
-        <div class="lat-bar-wrap">
-          <div class="lat-bar" style="width:0.5%;background:#22c55e"></div>
-        </div>
-        <div class="lat-val">9ms</div>
-      </div>
-    </div>
-  </section>
 
-  <!-- Configuration Table -->
-  <section>
-    <div class="section-title">⚙️ Benchmark Configuration</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Duration</th>
-            <th class="right">Target TPS</th>
-            <th>Invoker</th>
-            <th>Workload Module</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="label-col">IssueCertificate</td>
-            <td>30s</td>
-            <td class="right">50</td>
-            <td style="font-size:0.82rem">User1@org1.example.com</td>
-            <td style="font-size:0.82rem">workload/issueCertificate.js</td>
-          </tr>
-          <tr>
-            <td class="label-col">VerifyCertificate</td>
-            <td>30s</td>
-            <td class="right">200</td>
-            <td style="font-size:0.82rem">User1@org1.example.com</td>
-            <td style="font-size:0.82rem">workload/verifyCertificate.js</td>
-          </tr>
-          <tr>
-            <td class="label-col">QueryAllCertificates</td>
-            <td>30s</td>
-            <td class="right">100</td>
-            <td style="font-size:0.82rem">User1@org1.example.com</td>
-            <td style="font-size:0.82rem">workload/queryAllCertificates.js</td>
-          </tr>
-          <tr>
-            <td class="label-col">RevokeCertificate</td>
-            <td>30s</td>
-            <td class="right">100</td>
-            <td style="font-size:0.82rem">User1@org2.example.com</td>
-            <td style="font-size:0.82rem">workload/revokeCertificate.js</td>
-          </tr>
-          <tr>
-            <td class="label-col">GetCertificatesByStudent</td>
-            <td>30s</td>
-            <td class="right">75</td>
-            <td style="font-size:0.82rem">User1@org1.example.com</td>
-            <td style="font-size:0.82rem">workload/getCertificatesByStudent.js</td>
-          </tr>
-          <tr>
-            <td class="label-col">GetAuditLogs</td>
-            <td>30s</td>
-            <td class="right">30</td>
-            <td style="font-size:0.82rem">User1@org1.example.com</td>
-            <td style="font-size:0.82rem">workload/getAuditLogs.js</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+        <div class="right-column">
+            <h1 style="padding-top: 3em; font-weight: 500;">Caliper report</h1>
+            <div style="border-bottom: 1px solid #d9d9d9; margin-bottom: 10px;" id="benchmarksummary">
+                <table style="min-width: 100%;">
+                    <h3>Summary of performance metrics</h3>
+                    <tr>
+                         <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                    </tr>
 
-  <!-- Fixes Documentation -->
-  <section>
-    <div class="section-title">🔧 Phase 2 Fixes Applied (mirage-new)</div>
-    <div class="card">
-      <table style="font-size:0.85rem;width:100%">
-        <thead>
-          <tr style="background:#f8fafc">
-            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);color:#374151">Fix</th>
-            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);color:#374151">Component</th>
-            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);color:#374151">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#1</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">benchConfig.yaml</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">Removed duplicate VerifyCertificate round; corrected all 6 TPS targets; fixed indentation</td></tr>
-          <tr style="background:#f8fafc"><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#2</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">issueCertificate.js</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">Added missing <code>const crypto = require('crypto')</code>; 8 individual string args (not JSON array)</td></tr>
-          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#3</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">CouchDB Indexes</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">PascalCase field names: StudentID, IssueDate, Timestamp — matches Go struct JSON tags exactly</td></tr>
-          <tr style="background:#f8fafc"><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#4</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">RevokeCertificate</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">Returns nil (not error) on cert-not-found and already-revoked; per-worker unique ID range prevents MVCC conflicts</td></tr>
-          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#5</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">GetAuditLogs</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">Paginated (max 100 entries); AUDIT_ range scan — no CouchDB query needed; returns [] on any error</td></tr>
-          <tr style="background:#f8fafc"><td style="padding:8px 12px;border-bottom:1px solid var(--border)">#6</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">go.mod / go.sum</td><td style="padding:8px 12px;border-bottom:1px solid var(--border)">Added lukechampine.com/blake3 v1.4.1; go mod tidy + go mod vendor run successfully</td></tr>
-          <tr><td style="padding:8px 12px">#7</td><td style="padding:8px 12px">smartcontract_hybrid.go</td><td style="padding:8px 12px">Removed duplicate smartcontract.go (SHA-256 only); single authoritative file with SHA-256 XOR BLAKE3</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+                    <tr>
+                         <td>IssueCertificate</td> <td>335</td> <td>1161</td> <td>49.6</td> <td>49.96</td> <td>25.81</td> <td>41.59</td> <td>25.3</td>
+                    </tr>
+                    <tr>
+                         <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>98.5</td> <td>0.63</td> <td>0.01</td> <td>0.04</td> <td>98.5</td>
+                    </tr>
+                    <tr>
+                         <td>QueryAllCertificates</td> <td>1487</td> <td>9</td> <td>49.4</td> <td>35.22</td> <td>34.99</td> <td>35.03</td> <td>22.4</td>
+                    </tr>
+                    <tr>
+                         <td>RevokeCertificate</td> <td>1478</td> <td>18</td> <td>49.4</td> <td>3.69</td> <td>0.25</td> <td>1.00</td> <td>48.0</td>
+                    </tr>
+                    <tr>
+                         <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>69.2</td> <td>50.02</td> <td>10.54</td> <td>38.34</td> <td>29.7</td>
+                    </tr>
+                    <tr>
+                         <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>28.3</td> <td>36.23</td> <td>30.87</td> <td>34.91</td> <td>14.3</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
+                <h2>Benchmark round: IssueCertificate</h2>
+                <p>Org1 issues certificates using the Hybrid Hash.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for IssueCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>IssueCertificate</td> <td>335</td> <td>1161</td> <td>49.6</td> <td>49.96</td> <td>25.81</td> <td>41.59</td> <td>25.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for IssueCertificate</h3>
+            </div>
 
-</div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
+                <h2>Benchmark round: VerifyCertificate</h2>
+                <p>Verify certificate authenticity via read-only peer query.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 100
+</pre>
+                        <h3>Performance metrics for VerifyCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>98.5</td> <td>0.63</td> <td>0.01</td> <td>0.04</td> <td>98.5</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for VerifyCertificate</h3>
+            </div>
 
-<footer>
-  Generated by Hyperledger Caliper v0.6.0 &nbsp;·&nbsp;
-  Fabric v2.5 &nbsp;·&nbsp;
-  mirage-new branch &nbsp;·&nbsp;
-  Thu, 09 Apr 2026 11:31:10 GMT
-</footer>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
+                <h2>Benchmark round: QueryAllCertificates</h2>
+                <p>Rich ledger query returning all certificates.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for QueryAllCertificates</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>QueryAllCertificates</td> <td>1487</td> <td>9</td> <td>49.4</td> <td>35.22</td> <td>34.99</td> <td>35.03</td> <td>22.4</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for QueryAllCertificates</h3>
+            </div>
 
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
+                <h2>Benchmark round: RevokeCertificate</h2>
+                <p>Org2 revokes certificates (RBAC write operation).</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for RevokeCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>RevokeCertificate</td> <td>1478</td> <td>18</td> <td>49.4</td> <td>3.69</td> <td>0.25</td> <td>1.00</td> <td>48.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for RevokeCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetCertificatesByStudent">
+                <h2>Benchmark round: GetCertificatesByStudent</h2>
+                <p>Query certificates for a specific student using CouchDB index.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 75
+</pre>
+                        <h3>Performance metrics for GetCertificatesByStudent</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>69.2</td> <td>50.02</td> <td>10.54</td> <td>38.34</td> <td>29.7</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for GetCertificatesByStudent</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetAuditLogs">
+                <h2>Benchmark round: GetAuditLogs</h2>
+                <p>Retrieve paginated audit logs via AUDIT_ range scan.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 30
+</pre>
+                        <h3>Performance metrics for GetAuditLogs</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>28.3</td> <td>36.23</td> <td>30.87</td> <td>34.91</td> <td>14.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for GetAuditLogs</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
+                <h2>Test Environment</h2>
+                <h3>benchmark config</h3>
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-fair-comparison-benchmark
+description: |
+  Evaluation of Hybrid Hash (SHA-256 XOR BLAKE3) Performance.
+workers:
+  type: local
+  number: 8
+rounds:
+  - label: IssueCertificate
+    description: Org1 issues certificates using the Hybrid Hash.
+    txNumber: 1500
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;issueCertificate.js
+  - label: VerifyCertificate
+    description: Verify certificate authenticity via read-only peer query.
+    txNumber: 3000
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload&#x2F;verifyCertificate.js
+  - label: QueryAllCertificates
+    description: Rich ledger query returning all certificates.
+    txNumber: 1500
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;queryAllCertificates.js
+  - label: RevokeCertificate
+    description: Org2 revokes certificates (RBAC write operation).
+    txNumber: 1500
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;revokeCertificate.js
+  - label: GetCertificatesByStudent
+    description: Query certificates for a specific student using CouchDB index.
+    txNumber: 2250
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 75
+    workload:
+      module: workload&#x2F;getCertificatesByStudent.js
+  - label: GetAuditLogs
+    description: Retrieve paginated audit logs via AUDIT_ range scan.
+    txNumber: 900
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 30
+    workload:
+      module: workload&#x2F;getAuditLogs.js
+</pre>
+                <h3>SUT</h3>
+                <pre id="sutdetails">not provided</pre>
+            </div>
+        </div>
+    </main>
 </body>
 </html>

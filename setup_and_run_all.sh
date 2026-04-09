@@ -1125,7 +1125,7 @@ main() {
     generate_diagrams
     
     # Step 6: Caliper benchmarks
-    if [ "$SKIP_CALIPER" = "false" ] && [ "$SKIP_NETWORK" = "false" ]; then
+    if [ "$SKIP_CALIPER" = "false" ]; then
         run_caliper_benchmarks
     else
         warn "SKIP_CALIPER: skipping Caliper benchmarks (generating simulated results)"

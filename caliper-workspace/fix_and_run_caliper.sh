@@ -308,7 +308,7 @@ echo "Installing Caliper dependencies..."
 npm install --silent 2>/dev/null || npm install
 
 echo "Binding Caliper to Fabric 2.5..."
-npx caliper bind --caliper-bind-sut fabric:2.5 --caliper-bind-args=-g
+npx caliper bind --caliper-bind-sut fabric:2.2 --legacy-peer-deps
 
 # ── Wait for network ───────────────────────────────────────────────────────────
 echo "Waiting 15s for network stabilization..."
@@ -327,11 +327,11 @@ echo "║  Round 6: GetAuditLogs             @ 30  TPS / 30s          ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 
 npx caliper launch manager \
-    --caliper-workspace ./ \
+    --caliper-workspace . \
+    --caliper-bind-sut fabric:2.2 \
     --caliper-networkconfig networks/networkConfig.yaml \
     --caliper-benchconfig benchmarks/benchConfig.yaml \
-    --caliper-flow-only-test \
-    --caliper-fabric-gateway-enabled
+    --caliper-flow-only-test
 
 # ── Verify and Post-process Report ────────────────────────────────────────────
 if [ -f "report.html" ]; then

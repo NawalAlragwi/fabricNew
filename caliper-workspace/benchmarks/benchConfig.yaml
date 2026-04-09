@@ -1,102 +1,54 @@
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Hyperledger Caliper Benchmark Configuration v4.2
-#  Research Paper: "Enhancing Trust and Transparency in Education Using
-#                   Blockchain: A Hyperledger Fabric-Based Framework"
-#
-#  Hash Algorithm: SHA-256 XOR BLAKE3 (hybrid-batch chaincode)
-#
-#  Rounds:
-#    1. IssueCertificate           (Org1 RBAC Write)     @ 50  TPS / 30s
-#    2. VerifyCertificate          (Public ReadOnly)      @ 200 TPS / 30s
-#    3. QueryAllCertificates       (Public ReadOnly)      @ 100 TPS / 30s
-#    4. RevokeCertificate          (Org2 RBAC Write)      @ 100 TPS / 30s
-#    5. GetCertificatesByStudent   (Public ReadOnly)      @ 75  TPS / 30s
-#    6. GetAuditLogs               (Public ReadOnly)      @ 30  TPS / 30s
-#
-#  All rounds designed for 0 failures:
-#    - Write rounds: idempotent chaincode (duplicate = nil, not error)
-#    - Read rounds:  readOnly=true bypasses orderer, returns empty not error
-#
-#  v4.2 Fixes:
-#    - Removed duplicate VerifyCertificate round block
-#    - Corrected TPS values to match benchmark targets
-#    - All 6 rounds properly separated at top-level
-#    - CouchDB index field names aligned with PascalCase JSON tags
-#    - RevokeCertificate: per-worker unique ID range (CERT_{workerIdx}_{txIdx})
-#    - GetAuditLogs: paginated (MaxAuditLogs=100) to prevent memory exhaustion
+#  Standardized Benchmark Configuration (Fair Comparison Edition)
+#  Target: Identical to SHA-256 Baseline for PhD Research
 # ============================================================================
 
-# ============================================================================
-# RESOURCE MONITORS — Docker Container CPU & Memory Monitoring
-# ============================================================================
 monitors:
   resource:
     - module: docker
       options:
         interval: 1
         containers:
-          - orderer.example.com
           - peer0.org1.example.com
           - peer0.org2.example.com
+          - orderer.example.com
           - couchdb0
           - couchdb1
-          - ca_org1
-          - ca_org2
-          - ca_orderer
 
 test:
-  name: exchang SHA-256) algorithm to the (BLAKE3) algorithm
+  name: bcms-fair-comparison-benchmark
   description: >
-    To enhance the performance of the blockchain network and reduce processing times, the system transitioned from using the (SHA-256) algorithm to the (BLAKE3) algorithm.
+     Evaluation of Hybrid Hash (SHA-256 XOR BLAKE3) Performance.
   workers:
     type: local
     number: 8
-
   rounds:
-    # ──────────────────────────────────────────────────────────────────
-    # Round 1: IssueCertificate — Org1 RBAC Write
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 1: IssueCertificate (Fixed 50 TPS) ---
     - label: IssueCertificate
-      description: >
-        Org1 issues a single certificate per transaction (SHA-256 XOR BLAKE3 hash).
-        RBAC: Org1MSP only. Idempotent: duplicate ID returns nil (0 fail).
-        certHash computed client-side: SHA256(studentId|name|degree|issuer|date).
-        Server-side hybrid hash is always authoritative for VerifyCertificate.
-      txDuration: 30
+      description: Org1 issues certificates using the Hybrid Hash.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
           tps: 50
       workload:
         module: workload/issueCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Public ReadOnly
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 2: VerifyCertificate (Fixed 100 TPS) ---
     - label: VerifyCertificate
-      description: >
-        Verify certificate authenticity by comparing SHA-256 XOR BLAKE3 hash.
-        readOnly:true bypasses orderer. Returns struct (never error).
-        Zero-failure design: returns false (not error) when cert not found.
-      txDuration: 30
+      description: Verify certificate authenticity via read-only peer query.
+      txNumber: 3000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 100
       workload:
         module: workload/verifyCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — CouchDB Rich Query
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 3: QueryAllCertificates (Fixed 50 TPS) ---
     - label: QueryAllCertificates
-      description: >
-        Rich ledger query returning all certificates sorted by IssueDate.
+      description: Rich ledger query returning all certificates.
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -104,63 +56,36 @@ test:
           tps: 50
       workload:
         module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Org2 MSP Write
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 4: RevokeCertificate (Fixed 50 TPS) ---
     - label: RevokeCertificate
-      description: >
-        Org2 revokes certificates — RBAC: OR(Org1MSP.peer, Org2MSP.peer).
-        Marks IsRevoked=true, records RevokedBy and RevokedAt metadata.
-        Zero-failure: idempotent — nil when cert not found or already revoked.
-        MVCC: each of 8 workers targets unique CERT_{workerIdx}_{txIdx} range.
-      txDuration: 30
+      description: Org2 revokes certificates (RBAC write operation).
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
-      txOptions:
-        invokerIdentity: User1@org2.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Student-Indexed Query
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 5: GetCertificatesByStudent (Fixed 75 TPS) ---
     - label: GetCertificatesByStudent
-      description: >
-        Query all certificates for a specific student using CouchDB rich query.
-        CouchDB index: indexStudentId on [docType, StudentID, IssueDate] (PascalCase).
-        Selector: {"docType":"certificate","StudentID":"<id>"}.
-        Public read — any organization can query.
-        Zero-failure design: returns empty slice (never nil).
-      txDuration: 30
+      description: Query certificates for a specific student using CouchDB index.
+      txNumber: 2250
       rateControl:
         type: fixed-rate
         opts:
           tps: 75
       workload:
         module: workload/getCertificatesByStudent.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    # ──────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Paginated Audit Trail Query
-    # ──────────────────────────────────────────────────────────────────
+    # --- Round 6: GetAuditLogs (Fixed 30 TPS) ---
     - label: GetAuditLogs
-      description: >
-        Retrieve paginated audit logs (max 100 entries) via AUDIT_ range scan.
-        Uses GetStateByRange (not CouchDB rich query) — works on LevelDB too.
-        readOnly:true — direct peer query for maximum throughput.
-        Zero-failure: returns empty slice on any error (never Go error).
-      txDuration: 30
+      description: Retrieve paginated audit logs via AUDIT_ range scan.
+      txNumber: 900
       rateControl:
         type: fixed-rate
         opts:
           tps: 30
       workload:
         module: workload/getAuditLogs.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com

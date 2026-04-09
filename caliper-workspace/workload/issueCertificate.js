@@ -58,7 +58,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'IssueCertificate',
             // ── CRITICAL FIX: 8 individual string args, NOT a JSON array ──
             contractArguments: [certID, studentID, studentName, degree, issuer, issueDate, certHash, signature],

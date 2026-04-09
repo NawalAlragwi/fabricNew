@@ -56,7 +56,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         const certHash = crypto.createHash('sha256').update(fields).digest('hex');
 
         const request = {
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',
             contractFunction:  'VerifyCertificate',
             contractArguments: [certID, certHash],
             readOnly:          true    // bypass orderer — direct peer query for max TPS
