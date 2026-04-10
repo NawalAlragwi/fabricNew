@@ -1,0 +1,255 @@
+# ============================================================================
+#  BCMS — Blockchain Certificate Management System
+#  Hyperledger Caliper Benchmark — Hyper-Pach Edition (v1.0)
+#  Branch: hyper-pach
+#
+#  ── Overview ─────────────────────────────────────────────────────────────────
+#
+#  This configuration benchmarks the NEW BatchIssueCertificates function
+#  (added in the hyper-pach branch) alongside all existing chaincode operations.
+#
+#  BatchIssueCertificates differences from IssueCertificateBatch:
+#    - Partial-failure semantics: one bad cert does NOT abort the whole batch
+#    - Returns BatchResult JSON (processed/succeeded/failed/failedIds)
+#    - Uses CertificateBatchRequest struct (no certHash in input — on-chain SHA-256)
+#    - Optimized for batchSize=5 at tps=20 → ~100 certs/s effective
+#
+#  ── Round Overview ───────────────────────────────────────────────────────────
+#  Round 1: BatchIssueCertificates   — write, 20 TPS × batchSize 5 = 100 certs/s
+#  Round 2: IssueCertificate         — write, 20 TPS × batchSize 1 = 20 certs/s
+#  Round 3: VerifyCertificate        — read,  1000 TPS
+#  Round 4: QueryAllCertificates     — read,  1000 TPS
+#  Round 5: RevokeCertificate        — write, 1000 TPS
+#  Round 6: GetCertificatesByStudent — read,  1000 TPS
+#  Round 7: GetAuditLogs             — read,  1000 TPS
+#  Round 8: BatchRevoke              — write, 1000 TPS (using batchRevokeCertificate.js)
+#
+#  ── Runtime Requirements ─────────────────────────────────────────────────────
+#  NODE_OPTIONS="--max-old-space-size=8192"   (prevent OOM under high TPS)
+#  Chaincode: bcms-hybrid (chaincode-bcms/hybrid-batch)
+#  Network:   networks/networkConfig.yaml
+#
+#  ── Orderer Tuning (configtx.yaml) ──────────────────────────────────────────
+#  BatchTimeout:      500ms
+#  MaxMessageCount:   1000
+#  AbsoluteMaxBytes:  99 MB
+#  PreferredMaxBytes: 2 MB
+#
+#  ── Docker / Peer Settings ───────────────────────────────────────────────────
+#  GOMAXPROCS=0  (use all CPU cores)
+#  CORE_CHAINCODE_EXECUTETIMEOUT=300s
+#  No CPU limits (cpus:, cpu_quota: removed)
+# ============================================================================
+
+# ── Resource Monitors ────────────────────────────────────────────────────────
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
+
+# ── Test Suite ───────────────────────────────────────────────────────────────
+test:
+  name: bcms-hyper-pach-benchmark-v1
+  description: >
+    BCMS Hyper-Pach Benchmark Suite — 8 rounds.
+    Round 1 tests the new BatchIssueCertificates function (partial-failure semantics).
+    Round 2 tests single-cert IssueCertificate for comparison.
+    Rounds 3-8 test read/write operations at 1000 TPS.
+    NODE_OPTIONS=--max-old-space-size=8192 prevents OOM under high load.
+    Target: 0% failure rate on all rounds.
+  workers:
+    type: local
+    number: 5
+
+  rounds:
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 1: BatchIssueCertificates — Hyper-Pach New Function
+    #
+    # Tests the NEW BatchIssueCertificates(batchId, certsJSON) function.
+    # Partial-failure semantics: one bad cert does NOT abort the whole batch.
+    # Returns BatchResult JSON with processed/succeeded/failed/failedIds.
+    #
+    # fixed-rate 20 TPS × batchSize 5 = ~100 certificates/second effective.
+    # SHA-256 hash computed ON-CHAIN (deterministic across all peers).
+    # BLAKE3 stored as advisory metadata (not validated on-chain).
+    # MVCC-safe: each cert gets unique key HPACH_{worker}_{txIndex}_{i}.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: BatchIssueCertificates
+      description: >
+        Hyper-Pach batch certificate issuance with partial-failure semantics.
+        NEW function: BatchIssueCertificates(batchId, certsJSON).
+        fixed-rate 20 TPS, batchSize=5 → ~100 effective certs/s.
+        SHA-256 computed on-chain. BLAKE3 advisory metadata.
+        Returns BatchResult JSON. Zero MVCC conflicts.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/batchIssueCertificate.js
+        arguments:
+          batchSize: 5
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 2: IssueCertificate — Single-Cert Baseline Comparison
+    #
+    # Run the existing IssueCertificate function alongside BatchIssueCertificates
+    # so we can compare throughput: single cert vs batched.
+    # fixed-rate 20 TPS, batchSize=1 → 20 certs/s (baseline for comparison).
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: IssueCertificate
+      description: >
+        Single-cert issuance baseline for comparison with BatchIssueCertificates.
+        fixed-rate 20 TPS, batchSize=1 → 20 certs/s.
+        Used to measure the 5× throughput gain from batching.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 3: VerifyCertificate — Read-Only, 1000 TPS
+    #
+    # Targets HPACH_* certs from BatchIssueCertificates round.
+    # readOnly=true → bypasses orderer for maximum peer throughput.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: VerifyCertificate
+      description: >
+        Verify certificate existence (readOnly peer query).
+        Targets hyper-pach HPACH_* certs. Fixed-rate 1000 TPS.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/batchVerifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 4: QueryAllCertificates — Full Ledger Scan, 1000 TPS
+    #
+    # GetStateByRange("","") scans all certificates on the ledger.
+    # readOnly=true — direct peer query.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: QueryAllCertificates
+      description: >
+        Scan and return all certificate records from the ledger.
+        Fixed-rate 1000 TPS. Filters by docType=="certificate".
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 5: RevokeCertificate — Org2 RBAC Write, 1000 TPS
+    #
+    # Revokes hyper-pach HPACH_* certs. Idempotent when cert not found.
+    # Uses batchRevokeCertificate.js which targets HPACH_* cert IDs.
+    # Caller must be Org2MSP (RBAC in chaincode).
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: RevokeCertificate
+      description: >
+        Revoke hyper-pach certificates. Idempotent.
+        Fixed-rate 1000 TPS. Targets HPACH_* certs from round 1.
+        Requires Org2MSP (RBAC enforced in chaincode).
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/batchRevokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 6: GetCertificatesByStudent — Per-Student Query, 1000 TPS
+    #
+    # readOnly=true — direct peer query.
+    # studentID pattern matches HPACH_* certs.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: GetCertificatesByStudent
+      description: >
+        Query all certificates for a specific student.
+        Fixed-rate 1000 TPS. studentID aligned with hyper-pach HSTU_* keys.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/getCertificatesByStudent.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 7: GetAuditLogs — Audit Trail Query, 1000 TPS
+    #
+    # Scans "AUDIT_" … "AUDIT_~" key range.
+    # readOnly=true — direct peer query.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: GetAuditLogs
+      description: >
+        Query the immutable audit trail. Fixed-rate 1000 TPS.
+        Efficient range scan on AUDIT_ key prefix.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/getAuditLogs.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Round 8: BatchRevoke — Batch Revocation Stress Test, 1000 TPS
+    #
+    # Tests RevokeCertificate under high concurrency.
+    # Uses batchRevokeCertificate.js which targets HPACH_* certs.
+    # Idempotent: certs already revoked in round 5 are skipped.
+    # This round validates that the system handles concurrent revocations
+    # gracefully without MVCC conflicts.
+    # ──────────────────────────────────────────────────────────────────────────
+    - label: BatchRevoke
+      description: >
+        Batch revocation stress test. Idempotent.
+        Fixed-rate 1000 TPS. Targets HPACH_* certs already partially revoked.
+        Validates no MVCC conflicts under concurrent revocation load.
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1000
+      workload:
+        module: workload/batchRevokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org2.example.com

@@ -481,6 +481,7 @@ echo "   benchConfig-S1-SHA256.yaml      S1: SHA-256 only,  workers=5, linear 10
 echo "   benchConfig-S2-BLAKE3.yaml      S2: BLAKE3 only,   workers=5, linear 100→1000 TPS"
 echo "   benchConfig-S3-Hybrid.yaml      S3: Hybrid,        workers=5, linear 100→1000 TPS"
 echo "   benchConfig-S4-HybridBatch.yaml S4: Hybrid-Batch,  workers=15, linear 200→1500 TPS"
+echo "   benchConfig-hyper-pach.yaml     HP: Hyper-Pach,    8 rounds, BatchIssueCertificates tps=20 batchSize=5"
 
 # FIX #6: Added --caliper-fabric-gateway-enabled for Fabric 2.5 compat
 # NODE_OPTIONS already exported above (--max-old-space-size=8192)

@@ -166,6 +166,31 @@ type IssueBatchRequest struct {
 	Signature   string `json:"signature"`
 }
 
+// CertificateBatchRequest — represents a single certificate in a BatchIssueCertificates call.
+// This is used by the new hyper-pach BatchIssueCertificates function that supports
+// partial failures (unlike IssueCertificateBatch which is all-or-nothing).
+type CertificateBatchRequest struct {
+	ID          string `json:"id"`
+	StudentID   string `json:"studentId"`
+	StudentName string `json:"studentName"`
+	Degree      string `json:"degree"`
+	Issuer      string `json:"issuer"`
+	IssueDate   string `json:"issueDate"`
+	Signature   string `json:"signature"`
+	Blake3Hash  string `json:"blake3Hash,omitempty"` // advisory off-chain hash
+}
+
+// BatchResult — structured response returned by BatchIssueCertificates.
+// Reports granular success/failure per certificate so the caller can
+// retry only the failed entries without re-submitting successful ones.
+type BatchResult struct {
+	Processed int      `json:"processed"` // total certs received
+	Succeeded int      `json:"succeeded"` // certs committed successfully
+	Failed    int      `json:"failed"`    // certs that could not be stored
+	FailedIDs []string `json:"failedIds"` // IDs of failed certificates
+	BatchID   string   `json:"batchId"`   // the effective batch identifier
+}
+
 // SmartContract — the main Hyperledger Fabric contract.
 type SmartContract struct {
 	contractapi.Contract
@@ -850,6 +875,140 @@ func (s *SmartContract) rangeAuditLogs(
 		logs = []*AuditLog{}
 	}
 	return logs, nil
+}
+
+// BatchIssueCertificates — hyper-pach optimised batch issuance.
+//
+// Unlike IssueCertificateBatch (which aborts the entire batch on the first error),
+// BatchIssueCertificates supports partial failures: every certificate in the batch
+// is processed independently, and the result includes granular success/failure info
+// so the caller can retry only the failed entries.
+//
+// Design decisions:
+//   - RBAC: Org1MSP only (same as IssueCertificate).
+//   - Idempotency: certificates that already exist are counted as succeeded (skip + count).
+//   - Hash: SHA-256 is computed on-chain when certHash is absent; BLAKE3 is stored as
+//     advisory metadata only (not validated on-chain) to ensure determinism across peers.
+//   - MVCC safety: each cert occupies its own key — no shared mutable state.
+//   - BatchID: auto-generated from TxID prefix if not supplied by the caller.
+//   - Returns: JSON-marshalled BatchResult (processed / succeeded / failed / failedIds).
+//
+// Caliper workload: batchIssueCertificate.js  batchSize=5  tps=20 → ~100 certs/s
+func (s *SmartContract) BatchIssueCertificates(
+	ctx contractapi.TransactionContextInterface,
+	batchId string,
+	certsJSON string,
+) (string, error) {
+	// ── RBAC ─────────────────────────────────────────────────────────────
+	msp, err := getMSP(ctx)
+	if err != nil {
+		return "", fmt.Errorf("BatchIssueCertificates: getMSP: %v", err)
+	}
+	if msp != "Org1MSP" {
+		return "", fmt.Errorf("BatchIssueCertificates: access denied — Org1MSP required, caller=%s", msp)
+	}
+
+	// ── Parse input ──────────────────────────────────────────────────────
+	var reqs []CertificateBatchRequest
+	if err := json.Unmarshal([]byte(certsJSON), &reqs); err != nil {
+		return "", fmt.Errorf("BatchIssueCertificates: invalid JSON: %v", err)
+	}
+	if len(reqs) == 0 {
+		return "", fmt.Errorf("BatchIssueCertificates: empty batch")
+	}
+	if len(reqs) > MaxBatchSize {
+		return "", fmt.Errorf("BatchIssueCertificates: batch too large (%d > %d)", len(reqs), MaxBatchSize)
+	}
+
+	// ── Auto-generate batchId if not supplied ────────────────────────────
+	txID := ctx.GetStub().GetTxID()
+	if batchId == "" {
+		batchId = fmt.Sprintf("HPACH_%s", txID[:12])
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	result := BatchResult{
+		Processed: len(reqs),
+		BatchID:   batchId,
+		FailedIDs: []string{},
+	}
+
+	// ── Process each certificate independently (partial-failure semantics) ──
+	for _, req := range reqs {
+		if req.ID == "" {
+			// Malformed entry — skip and count as failure
+			result.Failed++
+			continue
+		}
+
+		// Idempotency: already committed → treat as success
+		existing, err := ctx.GetStub().GetState(req.ID)
+		if err != nil {
+			result.Failed++
+			result.FailedIDs = append(result.FailedIDs, req.ID)
+			continue
+		}
+		if existing != nil {
+			result.Succeeded++ // already on ledger — idempotent skip
+			continue
+		}
+
+		// Compute SHA-256 on-chain (deterministic across all peers)
+		certHash := ComputeHybridHash(req.StudentID, req.StudentName, req.Degree, req.Issuer, req.IssueDate)
+
+		cert := Certificate{
+			DocType:     DocTypeCertificate,
+			ID:          req.ID,
+			StudentID:   req.StudentID,
+			StudentName: req.StudentName,
+			Degree:      req.Degree,
+			Issuer:      req.Issuer,
+			IssueDate:   req.IssueDate,
+			CertHash:    certHash,
+			Blake3Hash:  req.Blake3Hash, // advisory metadata — not validated
+			Signature:   req.Signature,
+			BatchID:     batchId,
+			IsRevoked:   false,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			TxID:        txID,
+		}
+
+		certJSON, err := json.Marshal(cert)
+		if err != nil {
+			result.Failed++
+			result.FailedIDs = append(result.FailedIDs, req.ID)
+			continue
+		}
+		if err := ctx.GetStub().PutState(req.ID, certJSON); err != nil {
+			result.Failed++
+			result.FailedIDs = append(result.FailedIDs, req.ID)
+			continue
+		}
+		result.Succeeded++
+	}
+
+	// ── Write batch metadata (unique key — no MVCC conflict possible) ─────
+	batchRecord := BatchRecord{
+		DocType:      DocTypeBatchRecord,
+		BatchID:      batchId,
+		CertIDs:      nil, // omit full list to keep record small for hyper-pach
+		CommitTime:   now,
+		CommitterMSP: msp,
+		TxID:         txID,
+		Count:        result.Succeeded,
+	}
+	brJSON, _ := json.Marshal(batchRecord)
+	_ = ctx.GetStub().PutState(KeyPrefixBatch+batchId, brJSON)
+
+	auditLog(ctx, "BatchIssueCertificates", "", batchId, "SUCCESS", "")
+
+	// ── Return structured result ──────────────────────────────────────────
+	resJSON, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("BatchIssueCertificates: marshal result: %v", err)
+	}
+	return string(resJSON), nil
 }
 
 // CertificateExists returns true if a certificate with the given ID exists.
