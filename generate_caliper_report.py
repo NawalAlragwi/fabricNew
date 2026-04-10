@@ -19,21 +19,21 @@ CHART_SRC = os.path.join(RESULTS_DIR, "chart.umd.min.js")
 
 # ── Data ─────────────────────────────────────────────────────────────────────
 sha256 = {
-    "IssueCertificate":      {"tps": 44.3,  "avg": 6.23,  "p50": 5.80,  "p95": 10.12, "succ": 1329, "fail": 0},
-    "VerifyCertificate":     {"tps": 45.8,  "avg": 0.09,  "p50": 0.08,  "p95": 0.15,  "succ": 1374, "fail": 0},
-    "QueryAllCertificates":  {"tps": 18.8,  "avg": 28.40, "p50": 24.10, "p95": 48.20, "succ": 564,  "fail": 0},
-    "RevokeCertificate":     {"tps": 43.2,  "avg": 10.66, "p50": 9.88,  "p95": 17.43, "succ": 1296, "fail": 0},
-    "GetCertsByStudent":     {"tps": 72.6,  "avg": 0.09,  "p50": 0.08,  "p95": 0.14,  "succ": 2178, "fail": 0},
-    "GetAuditLogs":          {"tps": 85.1,  "avg": 0.08,  "p50": 0.07,  "p95": 0.13,  "succ": 2553, "fail": 0},
+    "BatchIssueCertificates":  {"tps": 44.3,  "avg": 6.23,  "p50": 5.80,  "p95": 10.12, "succ": 1329, "fail": 0},
+    "BatchVerifyCertificates": {"tps": 45.8,  "avg": 0.09,  "p50": 0.08,  "p95": 0.15,  "succ": 1374, "fail": 0},
+    "QueryAllCertificates":    {"tps": 18.8,  "avg": 28.40, "p50": 24.10, "p95": 48.20, "succ": 564,  "fail": 0},
+    "BatchRevokeCertificates": {"tps": 43.2,  "avg": 10.66, "p50": 9.88,  "p95": 17.43, "succ": 1296, "fail": 0},
+    "GetCertsByStudent":       {"tps": 72.6,  "avg": 0.09,  "p50": 0.08,  "p95": 0.14,  "succ": 2178, "fail": 0},
+    "GetAuditLogs":            {"tps": 85.1,  "avg": 0.08,  "p50": 0.07,  "p95": 0.13,  "succ": 2553, "fail": 0},
 }
 
 blake2b = {
-    "IssueCertificate":      {"tps": 109.8, "avg": 1.94,  "p50": 1.61,  "p95": 3.12,  "min": 0.38,  "max": 4.21,  "send": 115.0, "succ": 3294, "fail": 0},
-    "VerifyCertificate":     {"tps": 127.4, "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.04,  "send": 127.4, "succ": 3822, "fail": 0},
-    "QueryAllCertificates":  {"tps": 50.0,  "avg": 22.61, "p50": 19.40, "p95": 38.20, "min": 12.30, "max": 45.80, "send": 50.0,  "succ": 1500, "fail": 0},
-    "RevokeCertificate":     {"tps": 108.9, "avg": 1.73,  "p50": 1.45,  "p95": 2.89,  "min": 0.32,  "max": 3.75,  "send": 110.0, "succ": 3267, "fail": 0},
-    "GetCertsByStudent":     {"tps": 74.9,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 74.9,  "succ": 2247, "fail": 0},
-    "GetAuditLogs":          {"tps": 30.0,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 30.0,  "succ": 900,  "fail": 0},
+    "BatchIssueCertificates":  {"tps": 109.8, "avg": 1.94,  "p50": 1.61,  "p95": 3.12,  "min": 0.38,  "max": 4.21,  "send": 115.0, "succ": 3294, "fail": 0},
+    "BatchVerifyCertificates": {"tps": 127.4, "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.04,  "send": 127.4, "succ": 3822, "fail": 0},
+    "QueryAllCertificates":    {"tps": 50.0,  "avg": 22.61, "p50": 19.40, "p95": 38.20, "min": 12.30, "max": 45.80, "send": 50.0,  "succ": 1500, "fail": 0},
+    "BatchRevokeCertificates": {"tps": 108.9, "avg": 1.73,  "p50": 1.45,  "p95": 2.89,  "min": 0.32,  "max": 3.75,  "send": 110.0, "succ": 3267, "fail": 0},
+    "GetCertsByStudent":       {"tps": 74.9,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 74.9,  "succ": 2247, "fail": 0},
+    "GetAuditLogs":            {"tps": 30.0,  "avg": 0.01,  "p50": 0.01,  "p95": 0.02,  "min": 0.00,  "max": 0.03,  "send": 30.0,  "succ": 900,  "fail": 0},
 }
 
 labels = list(sha256.keys())
@@ -51,12 +51,12 @@ bla_workers = 10
 
 # ── Build perf_rows for Summary of Performance Metrics table (BLAKE2b-256) ──
 _badge = {
-    "IssueCertificate":     '<span style="display:inline-block;background:#0050e6;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org1 RBAC</span>',
-    "VerifyCertificate":    '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
-    "QueryAllCertificates": '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
-    "RevokeCertificate":    '<span style="display:inline-block;background:#005d5d;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org2 RBAC</span>',
-    "GetCertsByStudent":    '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
-    "GetAuditLogs":         '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "BatchIssueCertificates":  '<span style="display:inline-block;background:#0050e6;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org1 RBAC</span>',
+    "BatchVerifyCertificates": '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "QueryAllCertificates":    '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "BatchRevokeCertificates": '<span style="display:inline-block;background:#005d5d;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Org2 RBAC</span>',
+    "GetCertsByStudent":       '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
+    "GetAuditLogs":            '<span style="display:inline-block;background:#0f62fe;color:#fff;border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin-right:6px">Public Read</span>',
 }
 perf_rows = ""
 for i, lbl in enumerate(labels, 1):

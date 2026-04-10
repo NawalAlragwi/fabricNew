@@ -34,9 +34,9 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
         this.txIndex++;
         const workerIdx = this.workerIndex || 0;
 
-        // STU_{workerIndex}_{txIndex} — same pattern as IssueCertificate
+        // BCERT_{workerIndex}_{batchIndex}_{i} — same pattern as BatchIssueCertificate
         // so this query returns actual certificates from the ledger.
-        const studentID = `STU_${workerIdx}_${this.txIndex}`;
+        const studentID = `BSTU_${workerIdx}_${this.txIndex}_1`;
 
         const request = {
             contractId:        'bcms-hybrid',

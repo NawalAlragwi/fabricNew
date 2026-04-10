@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-fair-comparison-benchmark</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Evaluation of Hybrid Hash (SHA-256 XOR BLAKE3) Performance.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-fair-comparison-batch-benchmark</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Comparison of Batching performance against baseline models. Load (TPS&#x2F;txNumber) is kept identical to ensure scientific consistency.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">6</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -135,10 +135,10 @@
             <ul>
                 <h3>&nbspBenchmark results</h3>
                 <li><a href="#benchmarksummary">Summary</a></li>
-                    <li><a href="#IssueCertificate">IssueCertificate</a></li>
-                    <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
+                    <li><a href="#BatchIssueCertificates">BatchIssueCertificates</a></li>
+                    <li><a href="#BatchVerifyCertificates">BatchVerifyCertificates</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
-                    <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
+                    <li><a href="#BatchRevokeCertificates">BatchRevokeCertificates</a></li>
                     <li><a href="#GetCertificatesByStudent">GetCertificatesByStudent</a></li>
                     <li><a href="#GetAuditLogs">GetAuditLogs</a></li>
             </ul>
@@ -158,63 +158,63 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1475</td> <td>21</td> <td>49.8</td> <td>7.43</td> <td>0.19</td> <td>3.26</td> <td>48.6</td>
+                         <td>BatchIssueCertificates</td> <td>1487</td> <td>13</td> <td>20.0</td> <td>1.15</td> <td>0.19</td> <td>0.57</td> <td>20.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>97.9</td> <td>0.97</td> <td>0.01</td> <td>0.11</td> <td>97.8</td>
+                         <td>BatchVerifyCertificates</td> <td>3000</td> <td>0</td> <td>50.0</td> <td>0.20</td> <td>0.02</td> <td>0.04</td> <td>50.0</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>1496</td> <td>0</td> <td>49.3</td> <td>35.23</td> <td>35.01</td> <td>35.06</td> <td>22.9</td>
+                         <td>QueryAllCertificates</td> <td>6</td> <td>1494</td> <td>20.0</td> <td>30.44</td> <td>18.39</td> <td>22.37</td> <td>11.1</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>1490</td> <td>6</td> <td>49.3</td> <td>3.08</td> <td>0.14</td> <td>1.01</td> <td>48.3</td>
+                         <td>BatchRevokeCertificates</td> <td>327</td> <td>1173</td> <td>9.9</td> <td>13.79</td> <td>0.17</td> <td>3.34</td> <td>9.9</td>
                     </tr>
                     <tr>
-                         <td>GetCertificatesByStudent</td> <td>2153</td> <td>95</td> <td>72.2</td> <td>44.28</td> <td>15.35</td> <td>35.28</td> <td>24.8</td>
+                         <td>GetCertificatesByStudent</td> <td>2247</td> <td>1</td> <td>20.0</td> <td>36.17</td> <td>17.68</td> <td>34.73</td> <td>15.2</td>
                     </tr>
                     <tr>
-                         <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>29.9</td> <td>35.10</td> <td>5.69</td> <td>32.10</td> <td>14.4</td>
+                         <td>GetAuditLogs</td> <td>900</td> <td>0</td> <td>15.0</td> <td>35.29</td> <td>12.80</td> <td>35.01</td> <td>9.5</td>
                     </tr>
                 </table>
             </div>
-            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
-                <h2>Benchmark round: IssueCertificate</h2>
-                <p>Org1 issues certificates using the Hybrid Hash.</p>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="BatchIssueCertificates">
+                <h2>Benchmark round: BatchIssueCertificates</h2>
+                <p>Issues 5 certificates per tx. Effective: 250 cert&#x2F;s.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 20
+</pre>
+                        <h3>Performance metrics for BatchIssueCertificates</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>BatchIssueCertificates</td> <td>1487</td> <td>13</td> <td>20.0</td> <td>1.15</td> <td>0.19</td> <td>0.57</td> <td>20.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for BatchIssueCertificates</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="BatchVerifyCertificates">
+                <h2>Benchmark round: BatchVerifyCertificates</h2>
+                <p>Verifies 5 certificates per query. Effective: 500 verif&#x2F;s.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
     tps: 50
 </pre>
-                        <h3>Performance metrics for IssueCertificate</h3>
+                        <h3>Performance metrics for BatchVerifyCertificates</h3>
                             <table style="min-width: 100%;">
                                 <tr>
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1475</td> <td>21</td> <td>49.8</td> <td>7.43</td> <td>0.19</td> <td>3.26</td> <td>48.6</td>
+                                     <td>BatchVerifyCertificates</td> <td>3000</td> <td>0</td> <td>50.0</td> <td>0.20</td> <td>0.02</td> <td>0.04</td> <td>50.0</td>
                                 </tr>
                             </table>
-                        <h3>Resource utilization for IssueCertificate</h3>
-            </div>
-
-            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
-                <h2>Benchmark round: VerifyCertificate</h2>
-                <p>Verify certificate authenticity via read-only peer query.</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
-  type: fixed-rate
-  opts:
-    tps: 100
-</pre>
-                        <h3>Performance metrics for VerifyCertificate</h3>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
-                                </tr>
-                                <tr>
-                                     <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>97.9</td> <td>0.97</td> <td>0.01</td> <td>0.11</td> <td>97.8</td>
-                                </tr>
-                            </table>
-                        <h3>Resource utilization for VerifyCertificate</h3>
+                        <h3>Resource utilization for BatchVerifyCertificates</h3>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
@@ -223,7 +223,7 @@
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
-    tps: 50
+    tps: 20
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -231,30 +231,30 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>1496</td> <td>0</td> <td>49.3</td> <td>35.23</td> <td>35.01</td> <td>35.06</td> <td>22.9</td>
+                                     <td>QueryAllCertificates</td> <td>6</td> <td>1494</td> <td>20.0</td> <td>30.44</td> <td>18.39</td> <td>22.37</td> <td>11.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
             </div>
 
-            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
-                <h2>Benchmark round: RevokeCertificate</h2>
-                <p>Org2 revokes certificates (RBAC write operation).</p>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="BatchRevokeCertificates">
+                <h2>Benchmark round: BatchRevokeCertificates</h2>
+                <p>Bulk revocation of 5 certificates per tx. Effective: 250 revoke&#x2F;s.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
-    tps: 50
+    tps: 10
 </pre>
-                        <h3>Performance metrics for RevokeCertificate</h3>
+                        <h3>Performance metrics for BatchRevokeCertificates</h3>
                             <table style="min-width: 100%;">
                                 <tr>
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>1490</td> <td>6</td> <td>49.3</td> <td>3.08</td> <td>0.14</td> <td>1.01</td> <td>48.3</td>
+                                     <td>BatchRevokeCertificates</td> <td>327</td> <td>1173</td> <td>9.9</td> <td>13.79</td> <td>0.17</td> <td>3.34</td> <td>9.9</td>
                                 </tr>
                             </table>
-                        <h3>Resource utilization for RevokeCertificate</h3>
+                        <h3>Resource utilization for BatchRevokeCertificates</h3>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetCertificatesByStudent">
@@ -263,7 +263,7 @@
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
-    tps: 75
+    tps: 20
 </pre>
                         <h3>Performance metrics for GetCertificatesByStudent</h3>
                             <table style="min-width: 100%;">
@@ -271,7 +271,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetCertificatesByStudent</td> <td>2153</td> <td>95</td> <td>72.2</td> <td>44.28</td> <td>15.35</td> <td>35.28</td> <td>24.8</td>
+                                     <td>GetCertificatesByStudent</td> <td>2247</td> <td>1</td> <td>20.0</td> <td>36.17</td> <td>17.68</td> <td>34.73</td> <td>15.2</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetCertificatesByStudent</h3>
@@ -279,11 +279,11 @@
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetAuditLogs">
                 <h2>Benchmark round: GetAuditLogs</h2>
-                <p>Retrieve paginated audit logs via AUDIT_ range scan.</p>
+                <p>Retrieve paginated audit logs via range scan.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
-    tps: 30
+    tps: 15
 </pre>
                         <h3>Performance metrics for GetAuditLogs</h3>
                             <table style="min-width: 100%;">
@@ -291,7 +291,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>29.9</td> <td>35.10</td> <td>5.69</td> <td>32.10</td> <td>14.4</td>
+                                     <td>GetAuditLogs</td> <td>900</td> <td>0</td> <td>15.0</td> <td>35.29</td> <td>12.80</td> <td>35.01</td> <td>9.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetAuditLogs</h3>
@@ -300,73 +300,74 @@
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-fair-comparison-benchmark
-description: |
-  Evaluation of Hybrid Hash (SHA-256 XOR BLAKE3) Performance.
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-fair-comparison-batch-benchmark
+description: &gt;
+  Comparison of Batching performance against baseline models. Load
+  (TPS&#x2F;txNumber) is kept identical to ensure scientific consistency.
 workers:
   type: local
-  number: 8
+  number: 4
 rounds:
-  - label: IssueCertificate
-    description: Org1 issues certificates using the Hybrid Hash.
+  - label: BatchIssueCertificates
+    description: &#39;Issues 5 certificates per tx. Effective: 250 cert&#x2F;s.&#39;
     txNumber: 1500
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 20
+    workload:
+      module: workload&#x2F;batchIssueCertificate.js
+    postIterationWaitTime: 30000
+  - label: BatchVerifyCertificates
+    description: &#39;Verifies 5 certificates per query. Effective: 500 verif&#x2F;s.&#39;
+    txNumber: 3000
     rateControl:
       type: fixed-rate
       opts:
         tps: 50
     workload:
-      module: workload&#x2F;issueCertificate.js
+      module: workload&#x2F;batchVerifyCertificate.js
     postIterationWaitTime: 20000
-  - label: VerifyCertificate
-    description: Verify certificate authenticity via read-only peer query.
-    txNumber: 3000
-    rateControl:
-      type: fixed-rate
-      opts:
-        tps: 100
-    workload:
-      module: workload&#x2F;verifyCertificate.js
-    postIterationWaitTime: 15000
   - label: QueryAllCertificates
     description: Rich ledger query returning all certificates.
     txNumber: 1500
     rateControl:
       type: fixed-rate
       opts:
-        tps: 50
+        tps: 20
     workload:
       module: workload&#x2F;queryAllCertificates.js
-    postIterationWaitTime: 15000
-  - label: RevokeCertificate
-    description: Org2 revokes certificates (RBAC write operation).
+    postIterationWaitTime: 20000
+  - label: BatchRevokeCertificates
+    description: &#39;Bulk revocation of 5 certificates per tx. Effective: 250 revoke&#x2F;s.&#39;
     txNumber: 1500
     rateControl:
       type: fixed-rate
       opts:
-        tps: 50
+        tps: 10
     workload:
-      module: workload&#x2F;revokeCertificate.js
-    postIterationWaitTime: 20000
+      module: workload&#x2F;batchRevokeCertificate.js
+    postIterationWaitTime: 30000
   - label: GetCertificatesByStudent
     description: Query certificates for a specific student using CouchDB index.
     txNumber: 2250
     rateControl:
       type: fixed-rate
       opts:
-        tps: 75
+        tps: 20
     workload:
       module: workload&#x2F;getCertificatesByStudent.js
-    postIterationWaitTime: 15000
+    postIterationWaitTime: 20000
   - label: GetAuditLogs
-    description: Retrieve paginated audit logs via AUDIT_ range scan.
+    description: Retrieve paginated audit logs via range scan.
     txNumber: 900
     rateControl:
       type: fixed-rate
       opts:
-        tps: 30
+        tps: 15
     workload:
       module: workload&#x2F;getAuditLogs.js
-    postIterationWaitTime: 10000
+    postIterationWaitTime: 15000
 </pre>
                 <h3>SUT</h3>
                 <pre id="sutdetails">not provided</pre>

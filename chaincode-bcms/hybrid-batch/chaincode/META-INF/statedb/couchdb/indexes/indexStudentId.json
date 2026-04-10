@@ -1,7 +1,8 @@
 {
   "index": {
-    "fields": ["docType", "studentID"]
+    "fields": ["docType", "studentID", "issueDate"]
   },
-  "name": "indexStudentID",
+  "ddoc": "indexStudentIdValue",
+  "name": "indexStudentId",
   "type": "json"
 }

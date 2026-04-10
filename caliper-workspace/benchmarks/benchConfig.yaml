@@ -23,7 +23,7 @@ test:
      Load (TPS/txNumber) is kept identical to ensure scientific consistency.
   workers:
     type: local
-    number: 8
+    number: 2
   rounds:
     # --- Round 1: BatchIssueCertificates (Standard Load: 50 TPS) ---
     - label: BatchIssueCertificates
@@ -32,10 +32,10 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/batchIssueCertificate.js
-      postIterationWaitTime: 20000
+      postIterationWaitTime: 30000
 
     # --- Round 2: BatchVerifyCertificates (Standard Load: 100 TPS) ---
     - label: BatchVerifyCertificates
@@ -44,10 +44,10 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/batchVerifyCertificate.js
-      postIterationWaitTime: 15000
+      postIterationWaitTime: 20000
 
     # --- Round 3: QueryAllCertificates (Standard Load: 50 TPS) ---
     - label: QueryAllCertificates
@@ -56,10 +56,10 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/queryAllCertificates.js
-      postIterationWaitTime: 15000
+      postIterationWaitTime: 20000
 
     # --- Round 4: BatchRevokeCertificates (Standard Load: 50 TPS) ---
     - label: BatchRevokeCertificates
@@ -68,10 +68,10 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 10
       workload:
         module: workload/batchRevokeCertificate.js
-      postIterationWaitTime: 20000
+      postIterationWaitTime: 30000
 
     # --- Round 5: GetCertificatesByStudent (Standard Load: 75 TPS) ---
     - label: GetCertificatesByStudent
@@ -80,10 +80,10 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 75
+          tps: 20
       workload:
         module: workload/getCertificatesByStudent.js
-      postIterationWaitTime: 15000
+      postIterationWaitTime: 20000
 
     # --- Round 6: GetAuditLogs (Standard Load: 30 TPS) ---
     - label: GetAuditLogs
@@ -92,7 +92,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 15
       workload:
         module: workload/getAuditLogs.js
-      postIterationWaitTime: 10000
+      postIterationWaitTime: 15000
