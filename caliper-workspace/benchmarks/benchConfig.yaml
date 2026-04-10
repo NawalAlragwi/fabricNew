@@ -27,7 +27,7 @@ test:
   rounds:
     # --- Round 1: BatchIssueCertificates (Standard Load: 50 TPS) ---
     - label: BatchIssueCertificates
-      description: Issues 5 certificates per tx. Effective: 250 cert/s.
+      description: "Issues 5 certificates per tx. Effective: 250 cert/s."
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -39,7 +39,7 @@ test:
 
     # --- Round 2: BatchVerifyCertificates (Standard Load: 100 TPS) ---
     - label: BatchVerifyCertificates
-      description: Verifies 5 certificates per query. Effective: 500 verif/s.
+      description: "Verifies 5 certificates per query. Effective: 500 verif/s."
       txNumber: 3000
       rateControl:
         type: fixed-rate
@@ -63,7 +63,7 @@ test:
 
     # --- Round 4: BatchRevokeCertificates (Standard Load: 50 TPS) ---
     - label: BatchRevokeCertificates
-      description: Bulk revocation of 5 certificates per tx. Effective: 250 revoke/s.
+      description: "Bulk revocation of 5 certificates per tx. Effective: 250 revoke/s."
       txNumber: 1500
       rateControl:
         type: fixed-rate
