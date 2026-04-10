@@ -988,58 +988,7 @@ func (s *SmartContract) BatchVerifyCertificates(
 	return results, nil
 }
 
-// ─── Internal Helper Functions ───────────────────────────────────────────────
 
-// ComputeHybridHash generates a 256-bit digest using SHA-256 XOR BLAKE3.
-func ComputeHybridHash(studentID, name, degree, issuer, date string) string {
-	fields := fmt.Sprintf("%s|%s|%s|%s|%s", studentID, name, degree, issuer, date)
-
-	// SHA-256 (NIST Standard)
-	h256 := sha256.Sum256([]byte(fields))
-
-	// BLAKE3 (High Speed / PhD Research)
-	hasher := hasherPool.Get().(*blake3.Hasher)
-	defer hasherPool.Put(hasher)
-	hasher.Reset()
-	hasher.Write([]byte(fields))
-	hB3 := hasher.Sum(nil)
-
-	// XOR Combination
-	combined := make([]byte, 32)
-	for i := 0; i < 32; i++ {
-		combined[i] = h256[i] ^ hB3[i]
-	}
-
-	return hex.EncodeToString(combined)
-}
-
-// writeAuditLog records an immutable entry for traceability.
-func writeAuditLog(ctx contractapi.TransactionContextInterface, funcName, certID, msg string) error {
-	txID := ctx.GetStub().GetTxID()
-	mspID, _ := getCallerMSP(ctx)
-
-	log := AuditLog{
-		DocType:   DocTypeAuditLog,
-		TxID:      txID,
-		Function:  funcName,
-		CertID:    certID,
-		CallerMSP: mspID,
-		Message:   msg,
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
-	}
-
-	logJSON, _ := json.Marshal(log)
-	return ctx.GetStub().PutState(KeyPrefixAudit+txID, logJSON)
-}
-
-// getCallerMSP extracts the organization ID from the client identity.
-func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
-	mspID, err := ctx.GetClientIdentity().GetMSPID()
-	if err != nil {
-		return "", fmt.Errorf("failed to get MSPID: %v", err)
-	}
-	return mspID, nil
-}
 
 // ─── Main Function (Required for Fabric 2.x Executable) ──────────────────────
 
