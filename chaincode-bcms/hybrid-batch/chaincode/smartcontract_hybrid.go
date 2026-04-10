@@ -30,7 +30,7 @@
 //    - indexAuditLog:     fields=[docType, Timestamp]
 // ============================================================================
 
-package chaincode
+package main
 
 import (
 	"crypto/sha256"
@@ -984,4 +984,18 @@ func (s *SmartContract) BatchVerifyCertificates(
 		results = []*VerificationResult{}
 	}
 	return results, nil
+}
+
+// ─── Main Function (Required for Fabric 2.x Executable) ──────────────────────
+
+func main() {
+	cc, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		fmt.Printf("Error creating BCMS chaincode: %s", err)
+		return
+	}
+
+	if err := cc.Start(); err != nil {
+		fmt.Printf("Error starting BCMS chaincode: %s", err)
+	}
 }
