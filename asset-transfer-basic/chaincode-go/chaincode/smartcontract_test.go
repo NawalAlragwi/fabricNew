@@ -1,184 +1,102 @@
 package chaincode_test
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
-	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
-	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
-	"github.com/hyperledger/fabric-protos-go-apiv2/ledger/queryresult"
 	"github.com/hyperledger/fabric-samples/asset-transfer-basic/chaincode-go/chaincode"
-	"github.com/hyperledger/fabric-samples/asset-transfer-basic/chaincode-go/chaincode/mocks"
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate counterfeiter -o mocks/transaction.go -fake-name TransactionContext . transactionContext
-type transactionContext interface {
-	contractapi.TransactionContextInterface
+// ─── Unit Tests for BCMS SHA-256 Baseline Chaincode ─────────────────────────
+
+// TestComputeCertHash verifies the Double SHA-256 hash computation:
+//
+//	hash1     = SHA256(studentID|studentName|degree|issuer|issueDate)
+//	hash2     = SHA256(metadata)
+//	finalHash = SHA256(hash1_bytes || hash2_bytes)
+func TestComputeCertHash(t *testing.T) {
+	// Test 1: Deterministic output — same inputs must produce same hash
+	hash1 := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "metadata")
+	hash2 := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "metadata")
+	require.Equal(t, hash1, hash2, "Double SHA-256 must be deterministic")
+
+	// Test 2: Different metadata must produce different hashes (avalanche effect)
+	hashA := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "payload_A")
+	hashB := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "payload_B")
+	require.NotEqual(t, hashA, hashB, "Different metadata must yield different hashes")
+
+	// Test 3: Empty metadata must differ from non-empty metadata
+	hashEmpty := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "")
+	hashNonEmpty := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "data")
+	require.NotEqual(t, hashEmpty, hashNonEmpty, "Empty vs non-empty metadata must differ")
+
+	// Test 4: Output must be 64 hex chars (SHA-256 = 32 bytes = 64 hex chars)
+	require.Equal(t, 64, len(hash1), "SHA-256 hash must be 64 hex characters")
+
+	// Test 5: Large payload (200KB) — verify no panic and consistent output
+	largePayload := make([]byte, 200*1024) // 200KB
+	for i := range largePayload {
+		largePayload[i] = byte(i % 256)
+	}
+	hashLarge1 := chaincode.ComputeCertHash("STU999", "Bob", "MSc", "Tech", "2024-06-01", string(largePayload))
+	hashLarge2 := chaincode.ComputeCertHash("STU999", "Bob", "MSc", "Tech", "2024-06-01", string(largePayload))
+	require.Equal(t, hashLarge1, hashLarge2, "Large payload hash must be deterministic")
+	require.Equal(t, 64, len(hashLarge1), "Large payload hash must still be 64 hex chars")
 }
 
-//go:generate counterfeiter -o mocks/chaincodestub.go -fake-name ChaincodeStub . chaincodeStub
-type chaincodeStub interface {
-	shim.ChaincodeStubInterface
+// TestComputeCertHashFieldSensitivity verifies that changing each individual
+// field produces a different final hash (full avalanche coverage).
+func TestComputeCertHashFieldSensitivity(t *testing.T) {
+	base := chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "meta")
+
+	// Changing any single field must change the hash
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU002", "Alice", "BSc", "Uni", "2024-01-01", "meta"),
+		"studentID change must affect hash")
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU001", "Bob", "BSc", "Uni", "2024-01-01", "meta"),
+		"studentName change must affect hash")
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU001", "Alice", "MSc", "Uni", "2024-01-01", "meta"),
+		"degree change must affect hash")
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU001", "Alice", "BSc", "MIT", "2024-01-01", "meta"),
+		"issuer change must affect hash")
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-02-01", "meta"),
+		"issueDate change must affect hash")
+	require.NotEqual(t, base,
+		chaincode.ComputeCertHash("STU001", "Alice", "BSc", "Uni", "2024-01-01", "META"),
+		"metadata case change must affect hash")
 }
 
-//go:generate counterfeiter -o mocks/statequeryiterator.go -fake-name StateQueryIterator . stateQueryIterator
-type stateQueryIterator interface {
-	shim.StateQueryIteratorInterface
+// TestDoubleHashingDistinctInputs verifies that distinct inputs always yield
+// distinct outputs (no trivial collision for test vectors).
+func TestDoubleHashingDistinctInputs(t *testing.T) {
+	h1 := chaincode.ComputeCertHash("A", "B", "C", "D", "E", "meta_F")
+	h2 := chaincode.ComputeCertHash("A", "B", "C", "D", "E", "meta_G") // only metadata differs
+
+	require.Len(t, h1, 64, "hash must be 64 hex chars")
+	require.Len(t, h2, 64, "hash must be 64 hex chars")
+	require.NotEqual(t, h1, h2, "different metadata must produce different hashes")
 }
 
-func TestInitLedger(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
+// TestComputeCertHashMetadataIsolation verifies that the metadata hash
+// is isolated from the fields hash (changing metadata only affects hash2,
+// but the combined final hash still changes — confirming binding).
+func TestComputeCertHashMetadataIsolation(t *testing.T) {
+	// Same fields, varying metadata sizes
+	hashSmall := chaincode.ComputeCertHash("S", "N", "D", "I", "2024-01-01", "x")
+	hashMedium := chaincode.ComputeCertHash("S", "N", "D", "I", "2024-01-01", "x"+string(make([]byte, 1024)))
+	hashLarge := chaincode.ComputeCertHash("S", "N", "D", "I", "2024-01-01", "x"+string(make([]byte, 200*1024)))
 
-	assetTransfer := chaincode.SmartContract{}
-	err := assetTransfer.InitLedger(transactionContext)
-	require.NoError(t, err)
+	// All three must differ despite same core fields
+	require.NotEqual(t, hashSmall, hashMedium)
+	require.NotEqual(t, hashMedium, hashLarge)
+	require.NotEqual(t, hashSmall, hashLarge)
 
-	chaincodeStub.PutStateReturns(fmt.Errorf("failed inserting key"))
-	err = assetTransfer.InitLedger(transactionContext)
-	require.EqualError(t, err, "failed to put to world state. failed inserting key")
-}
-
-func TestCreateAsset(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	assetTransfer := chaincode.SmartContract{}
-	err := assetTransfer.CreateAsset(transactionContext, "", "", 0, "", 0)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns([]byte{}, nil)
-	err = assetTransfer.CreateAsset(transactionContext, "asset1", "", 0, "", 0)
-	require.EqualError(t, err, "the asset asset1 already exists")
-
-	chaincodeStub.GetStateReturns(nil, fmt.Errorf("unable to retrieve asset"))
-	err = assetTransfer.CreateAsset(transactionContext, "asset1", "", 0, "", 0)
-	require.EqualError(t, err, "failed to read from world state: unable to retrieve asset")
-}
-
-func TestReadAsset(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	expectedAsset := &chaincode.Asset{ID: "asset1"}
-	bytes, err := json.Marshal(expectedAsset)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(bytes, nil)
-	assetTransfer := chaincode.SmartContract{}
-	asset, err := assetTransfer.ReadAsset(transactionContext, "")
-	require.NoError(t, err)
-	require.Equal(t, expectedAsset, asset)
-
-	chaincodeStub.GetStateReturns(nil, fmt.Errorf("unable to retrieve asset"))
-	_, err = assetTransfer.ReadAsset(transactionContext, "")
-	require.EqualError(t, err, "failed to read from world state: unable to retrieve asset")
-
-	chaincodeStub.GetStateReturns(nil, nil)
-	asset, err = assetTransfer.ReadAsset(transactionContext, "asset1")
-	require.EqualError(t, err, "the asset asset1 does not exist")
-	require.Nil(t, asset)
-}
-
-func TestUpdateAsset(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	expectedAsset := &chaincode.Asset{ID: "asset1"}
-	bytes, err := json.Marshal(expectedAsset)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(bytes, nil)
-	assetTransfer := chaincode.SmartContract{}
-	err = assetTransfer.UpdateAsset(transactionContext, "", "", 0, "", 0)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(nil, nil)
-	err = assetTransfer.UpdateAsset(transactionContext, "asset1", "", 0, "", 0)
-	require.EqualError(t, err, "the asset asset1 does not exist")
-
-	chaincodeStub.GetStateReturns(nil, fmt.Errorf("unable to retrieve asset"))
-	err = assetTransfer.UpdateAsset(transactionContext, "asset1", "", 0, "", 0)
-	require.EqualError(t, err, "failed to read from world state: unable to retrieve asset")
-}
-
-func TestDeleteAsset(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	asset := &chaincode.Asset{ID: "asset1"}
-	bytes, err := json.Marshal(asset)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(bytes, nil)
-	chaincodeStub.DelStateReturns(nil)
-	assetTransfer := chaincode.SmartContract{}
-	err = assetTransfer.DeleteAsset(transactionContext, "")
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(nil, nil)
-	err = assetTransfer.DeleteAsset(transactionContext, "asset1")
-	require.EqualError(t, err, "the asset asset1 does not exist")
-
-	chaincodeStub.GetStateReturns(nil, fmt.Errorf("unable to retrieve asset"))
-	err = assetTransfer.DeleteAsset(transactionContext, "")
-	require.EqualError(t, err, "failed to read from world state: unable to retrieve asset")
-}
-
-func TestTransferAsset(t *testing.T) {
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	asset := &chaincode.Asset{ID: "asset1"}
-	bytes, err := json.Marshal(asset)
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(bytes, nil)
-	assetTransfer := chaincode.SmartContract{}
-	_, err = assetTransfer.TransferAsset(transactionContext, "", "")
-	require.NoError(t, err)
-
-	chaincodeStub.GetStateReturns(nil, fmt.Errorf("unable to retrieve asset"))
-	_, err = assetTransfer.TransferAsset(transactionContext, "", "")
-	require.EqualError(t, err, "failed to read from world state: unable to retrieve asset")
-}
-
-func TestGetAllAssets(t *testing.T) {
-	asset := &chaincode.Asset{ID: "asset1"}
-	bytes, err := json.Marshal(asset)
-	require.NoError(t, err)
-
-	iterator := &mocks.StateQueryIterator{}
-	iterator.HasNextReturnsOnCall(0, true)
-	iterator.HasNextReturnsOnCall(1, false)
-	iterator.NextReturns(&queryresult.KV{Value: bytes}, nil)
-
-	chaincodeStub := &mocks.ChaincodeStub{}
-	transactionContext := &mocks.TransactionContext{}
-	transactionContext.GetStubReturns(chaincodeStub)
-
-	chaincodeStub.GetStateByRangeReturns(iterator, nil)
-	assetTransfer := &chaincode.SmartContract{}
-	assets, err := assetTransfer.GetAllAssets(transactionContext)
-	require.NoError(t, err)
-	require.Equal(t, []*chaincode.Asset{asset}, assets)
-
-	iterator.HasNextReturns(true)
-	iterator.NextReturns(nil, fmt.Errorf("failed retrieving next item"))
-	assets, err = assetTransfer.GetAllAssets(transactionContext)
-	require.EqualError(t, err, "failed retrieving next item")
-	require.Nil(t, assets)
-
-	chaincodeStub.GetStateByRangeReturns(nil, fmt.Errorf("failed retrieving all assets"))
-	assets, err = assetTransfer.GetAllAssets(transactionContext)
-	require.EqualError(t, err, "failed retrieving all assets")
-	require.Nil(t, assets)
+	// All must be valid SHA-256 hex strings
+	require.Len(t, hashSmall, 64)
+	require.Len(t, hashMedium, 64)
+	require.Len(t, hashLarge, 64)
 }

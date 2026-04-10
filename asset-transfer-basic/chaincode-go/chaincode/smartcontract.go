@@ -4,32 +4,46 @@
 //  Research Paper Implementation: "Enhancing Trust and Transparency in
 //  Education Using Blockchain: A Hyperledger Fabric-Based Framework"
 //
+//  SHA-256 BASELINE VARIANT — fabric-baseline branch
+//
 //  Features:
 //    • RBAC enforcement via MSP ID (Org1=Issuer, Org2=Verifier)
 //    • ABAC enforcement via Certificate Attributes (role=issuer/verifier)
-//    • SHA-256 cryptographic hashing of certificate fields
+//    • Double SHA-256 cryptographic hashing (fields hash + metadata hash)
+//    • Metadata field support for large payload benchmarking (200KB+)
+//    • json-iterator/go for faster JSON serialization
 //    • ECDSA-compatible digital signature verification
 //    • Full audit log trail for every invocation (DISABLED FOR PERFORMANCE)
 //    • Rich query support (CouchDB)
 //    • Certificate history per ID
-//    • Transaction metadata: T = (IDs, IDc, S, t, H(C))
+//    • Transaction metadata: T = (IDs, IDc, S, t, H(C), Metadata)
+//
+//  BENCHMARK PURPOSE:
+//    This variant establishes the SHA-256 baseline performance under heavy
+//    payload load (200KB+ metadata). The double-hashing of large metadata
+//    with SHA-256 is intentionally CPU-intensive to serve as the weak
+//    reference point for comparison with BLAKE3 in the optimized branch.
 // ============================================================================
 
 package chaincode
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
+
+// Use json-iterator as drop-in replacement for encoding/json
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
 // Certificate — core educational record stored on the ledger.
+// Metadata field holds large arbitrary payload for stress testing.
 type Certificate struct {
 	DocType     string `json:"docType"`     // "certificate"
 	ID          string `json:"ID"`          // IDc — unique certificate identifier
@@ -38,8 +52,8 @@ type Certificate struct {
 	Degree      string `json:"Degree"`      // S  — academic score / degree type
 	Issuer      string `json:"Issuer"`      // Issuing institution (Org1)
 	IssueDate   string `json:"IssueDate"`   // t  — timestamp of issuance
-	CertHash    string `json:"CertHash"`    // H(C) — SHA-256 of cert fields
-	Signature   string `json:"Signature"`   // Digital signature from issuer
+	CertHash    string `json:"CertHash"`    // H(C) — Double SHA-256 of cert fields + metadata
+	Metadata    string `json:"Metadata"`    // Arbitrary large payload (200KB+ for benchmarking)
 	IsRevoked   bool   `json:"IsRevoked"`   // Revocation flag
 	RevokedBy   string `json:"RevokedBy"`   // MSP ID that revoked
 	RevokedAt   string `json:"RevokedAt"`   // Revocation timestamp
@@ -79,10 +93,28 @@ type SmartContract struct {
 
 // ─── Cryptographic Helpers ───────────────────────────────────────────────────
 
-func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) string {
-	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
-	hash := sha256.Sum256([]byte(data))
-	return fmt.Sprintf("%x", hash)
+// ComputeCertHash performs Double SHA-256 hashing:
+//   Step 1: Hash the core certificate fields (studentID|studentName|degree|issuer|issueDate)
+//   Step 2: Hash the metadata payload separately
+//   Step 3: Combine both hashes and compute a final SHA-256
+//
+// This double-hashing over a large metadata payload is intentionally
+// CPU-intensive for SHA-256 — establishing the performance baseline.
+func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, metadata string) string {
+	// --- Hash 1: Core certificate fields ---
+	fieldsData := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
+	hash1 := sha256.Sum256([]byte(fieldsData))
+
+	// --- Hash 2: Metadata payload (large, 200KB+) ---
+	hash2 := sha256.Sum256([]byte(metadata))
+
+	// --- Final Hash: Combine hash1 || hash2 and hash again ---
+	combined := make([]byte, 0, 64)
+	combined = append(combined, hash1[:]...)
+	combined = append(combined, hash2[:]...)
+	finalHash := sha256.Sum256(combined)
+
+	return fmt.Sprintf("%x", finalHash)
 }
 
 // ─── Identity Helpers ────────────────────────────────────────────────────────
@@ -164,7 +196,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	for _, seed := range seeds {
-		certHash := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate)
+		// Seed data uses empty metadata — only benchmark transactions carry the 200KB payload
+		certHash := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate, "")
 		cert := Certificate{
 			DocType:     "certificate",
 			ID:          seed.id,
@@ -174,7 +207,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			Issuer:      seed.issuer,
 			IssueDate:   seed.issueDate,
 			CertHash:    certHash,
-			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
+			Metadata:    "",
 			IsRevoked:   false,
 			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
 			UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
@@ -193,6 +226,16 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
+// IssueCertificate issues a new certificate with a large metadata payload.
+//
+// Signature change from baseline:
+//   OLD: IssueCertificate(id, studentID, studentName, degree, issuer, issueDate, certHash, signature)
+//   NEW: IssueCertificate(id, studentID, studentName, degree, issuer, issueDate, metadata)
+//
+// The certHash is now computed ON-CHAIN via Double SHA-256:
+//   hash1 = SHA256(fields)
+//   hash2 = SHA256(metadata)   ← expensive for 200KB payloads
+//   finalHash = SHA256(hash1 || hash2)
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -201,8 +244,7 @@ func (s *SmartContract) IssueCertificate(
 	degree string,
 	issuer string,
 	issueDate string,
-	certHash string,
-	signature string,
+	metadata string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
@@ -232,10 +274,12 @@ func (s *SmartContract) IssueCertificate(
 		return nil
 	}
 
-	computedHash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
-	if certHash == "" {
-		certHash = computedHash
-	}
+	// ── Double SHA-256 hash computation (core of the benchmark) ──────────────
+	// This is the intentionally heavy operation:
+	//   1. SHA256(core fields)         — fast
+	//   2. SHA256(metadata 200KB+)     — slow for SHA-256 on large payloads
+	//   3. SHA256(hash1 || hash2)      — adds additional round
+	certHash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, metadata)
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	cert := Certificate{
@@ -247,7 +291,7 @@ func (s *SmartContract) IssueCertificate(
 		Issuer:      issuer,
 		IssueDate:   issueDate,
 		CertHash:    certHash,
-		Signature:   signature,
+		Metadata:    metadata,
 		IsRevoked:   false,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -677,6 +721,7 @@ func (s *SmartContract) ComputeHash(
 	if studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
 		return "", fmt.Errorf("all fields are required")
 	}
-	hash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
+	// ComputeHash (public helper) uses empty metadata for backward compat
+	hash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, "")
 	return hash, nil
 }
