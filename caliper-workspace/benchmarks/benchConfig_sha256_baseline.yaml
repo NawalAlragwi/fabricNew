@@ -1,0 +1,64 @@
+# ============================================================================
+#  BCMS — SHA-256 BASELINE Benchmark Configuration
+#  Branch: fabric-baseline
+#  Algorithm: Double SHA-256 (hash1=fields + hash2=metadata + finalHash=combined)
+#  Payload: 200KB+ random metadata per transaction
+#
+#  PURPOSE: Establish the SHA-256 performance baseline under heavy load.
+#  This configuration intentionally stresses SHA-256 with large payloads
+#  to create the "weak reference point" for BLAKE3 comparison.
+#
+#  SINGLE ROUND: IssueCertificate only
+#  (Other rounds excluded — this is a SHA-256 stress test, not full suite)
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - /orderer.example.com
+          - /peer0.org1.example.com
+          - /couchdb0
+          - /peer0.org2.example.com
+          - /couchdb1
+          - /ca_org1
+          - /ca_org2
+          - /ca_orderer
+
+test:
+  name: bcms-sha256-baseline-v1
+  description: >
+    SHA-256 Baseline Benchmark — BCMS fabric-baseline branch.
+    IssueCertificate with Double SHA-256 and 200KB+ metadata payload.
+    This establishes the performance baseline for BLAKE3 comparison.
+    Target: measure TPS, latency, and CPU cost under large payload SHA-256.
+  workers:
+    type: local
+    number: 8
+
+  rounds:
+    # ──────────────────────────────────────────────────────────────────
+    # SHA-256 Baseline: IssueCertificate
+    #   - 30 TPS × 30s = 900 transactions
+    #   - Lower TPS than original (50) to account for 200KB payload overhead
+    #   - Each tx: Double SHA-256 on 200KB+ metadata (CPU-intensive)
+    #   - Expected: high latency, lower throughput vs BLAKE3 branch
+    # ──────────────────────────────────────────────────────────────────
+    - label: IssueCertificate-SHA256-Baseline
+      description: >
+        Issue certificates with Double SHA-256 hashing of 200KB+ metadata.
+        hash1 = SHA256(studentID|studentName|degree|issuer|issueDate)
+        hash2 = SHA256(metadata_200KB_payload)
+        finalHash = SHA256(hash1_bytes || hash2_bytes)
+        This is the intentionally CPU-heavy baseline for SHA-256.
+      txNumber: 1500
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com

@@ -169,7 +169,7 @@ rm -rf node_modules package-lock.json
 npm install
 
 echo "Binding Caliper to Fabric SDK v2.5..."
-npx caliper bind --caliper-bind-sut fabric:2.5 --caliper-bind-args=-g
+npx caliper bind --caliper-bind-sut fabric:2.5
 
 # ── STEP 5: Dynamic Credential Detection ──────────────────────────────────────
 echo ""
@@ -484,11 +484,11 @@ test:
         hash2 = SHA256(metadata_200KB_payload)
         finalHash = SHA256(hash1_bytes || hash2_bytes)
         This is the intentionally CPU-heavy baseline for SHA-256.
-      txNumber: 900
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 50
       workload:
         module: workload/issueCertificate.js
       txOptions:
@@ -506,7 +506,7 @@ echo ""
 echo "Configuration:"
 echo "   Algorithm  : Double SHA-256"
 echo "   Payload    : 200KB+ random metadata per transaction"
-echo "   Round      : IssueCertificate @ 30 TPS / 900 transactions"
+echo "   Round      : IssueCertificate @ 30 TPS / 1500 transactions"
 echo "   Workers    : 8"
 echo "   Purpose    : Establish weak baseline for BLAKE3 comparison"
 echo ""

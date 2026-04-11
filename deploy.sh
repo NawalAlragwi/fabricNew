@@ -250,7 +250,7 @@ if [ -d "$CALIPER_DIR" ]; then
     npm install --silent 2>/dev/null || npm install
 
     log_info "Binding Caliper to Fabric v2.5..."
-    npx caliper bind --caliper-bind-sut fabric:2.5 --caliper-bind-args=-g 2>&1 | tail -5
+    npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tail -5
 
     log_info "✓ Caliper benchmark setup complete"
     log_info "  Run with: cd caliper-workspace && ./fix_and_run_caliper.sh"

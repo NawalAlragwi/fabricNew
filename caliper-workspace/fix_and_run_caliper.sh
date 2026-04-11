@@ -308,7 +308,7 @@ echo "Installing Caliper dependencies..."
 npm install --silent 2>/dev/null || npm install
 
 echo "Binding Caliper to Fabric 2.5..."
-npx caliper bind --caliper-bind-sut fabric:2.5 --caliper-bind-args=-g
+npx caliper bind --caliper-bind-sut fabric:2.5
 
 # ── Wait for network ───────────────────────────────────────────────────────────
 echo "Waiting 15s for network stabilization..."
