@@ -4,12 +4,12 @@
 //  Research Paper Implementation: "Enhancing Trust and Transparency in
 //  Education Using Blockchain: A Hyperledger Fabric-Based Framework"
 //
-//  SHA-256 BASELINE VARIANT — fabric-baseline branch
+//  BLAKE3 OPTIMIZED VARIANT — fabric-blake3 branch
 //
 //  Features:
 //    • RBAC enforcement via MSP ID (Org1=Issuer, Org2=Verifier)
 //    • ABAC enforcement via Certificate Attributes (role=issuer/verifier)
-//    • Double SHA-256 cryptographic hashing (fields hash + metadata hash)
+//    • BLAKE3 cryptographic hashing (higher throughput than SHA-256)
 //    • Metadata field support for large payload benchmarking (200KB+)
 //    • json-iterator/go for faster JSON serialization
 //    • ECDSA-compatible digital signature verification
@@ -19,20 +19,19 @@
 //    • Transaction metadata: T = (IDs, IDc, S, t, H(C), Metadata)
 //
 //  BENCHMARK PURPOSE:
-//    This variant establishes the SHA-256 baseline performance under heavy
-//    payload load (200KB+ metadata). The double-hashing of large metadata
-//    with SHA-256 is intentionally CPU-intensive to serve as the weak
-//    reference point for comparison with BLAKE3 in the optimized branch.
+//    This variant implements BLAKE3 hashing to demonstrate performance
+//    improvements over the SHA-256 baseline, especially under heavy
+//    payload load (200KB+ metadata).
 // ============================================================================
 
 package chaincode
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/zeebo/blake3"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -52,7 +51,7 @@ type Certificate struct {
 	Degree      string `json:"Degree"`      // S  — academic score / degree type
 	Issuer      string `json:"Issuer"`      // Issuing institution (Org1)
 	IssueDate   string `json:"IssueDate"`   // t  — timestamp of issuance
-	CertHash    string `json:"CertHash"`    // H(C) — Double SHA-256 of cert fields + metadata
+	CertHash    string `json:"CertHash"`    // H(C) — BLAKE3 hash of cert fields + metadata
 	Metadata    string `json:"Metadata"`    // Arbitrary large payload (200KB+ for benchmarking)
 	IsRevoked   bool   `json:"IsRevoked"`   // Revocation flag
 	RevokedBy   string `json:"RevokedBy"`   // MSP ID that revoked
@@ -93,26 +92,26 @@ type SmartContract struct {
 
 // ─── Cryptographic Helpers ───────────────────────────────────────────────────
 
-// ComputeCertHash performs Double SHA-256 hashing:
+// ComputeCertHash performs BLAKE3 hashing:
 //   Step 1: Hash the core certificate fields (studentID|studentName|degree|issuer|issueDate)
 //   Step 2: Hash the metadata payload separately
-//   Step 3: Combine both hashes and compute a final SHA-256
+//   Step 3: Combine both hashes and compute a final BLAKE3 hash
 //
-// This double-hashing over a large metadata payload is intentionally
-// CPU-intensive for SHA-256 — establishing the performance baseline.
+// This migration to BLAKE3 is expected to provide significantly higher
+// throughput compared to the SHA-256 baseline on large metadata payloads.
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, metadata string) string {
 	// --- Hash 1: Core certificate fields ---
 	fieldsData := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
-	hash1 := sha256.Sum256([]byte(fieldsData))
+	hash1 := blake3.Sum256([]byte(fieldsData))
 
 	// --- Hash 2: Metadata payload (large, 200KB+) ---
-	hash2 := sha256.Sum256([]byte(metadata))
+	hash2 := blake3.Sum256([]byte(metadata))
 
 	// --- Final Hash: Combine hash1 || hash2 and hash again ---
 	combined := make([]byte, 0, 64)
 	combined = append(combined, hash1[:]...)
 	combined = append(combined, hash2[:]...)
-	finalHash := sha256.Sum256(combined)
+	finalHash := blake3.Sum256(combined)
 
 	return fmt.Sprintf("%x", finalHash)
 }
@@ -228,14 +227,10 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 // IssueCertificate issues a new certificate with a large metadata payload.
 //
-// Signature change from baseline:
-//   OLD: IssueCertificate(id, studentID, studentName, degree, issuer, issueDate, certHash, signature)
-//   NEW: IssueCertificate(id, studentID, studentName, degree, issuer, issueDate, metadata)
-//
-// The certHash is now computed ON-CHAIN via Double SHA-256:
+// The certHash is now computed ON-CHAIN via BLAKE3:
 //   hash1 = SHA256(fields)
-//   hash2 = SHA256(metadata)   ← expensive for 200KB payloads
-//   finalHash = SHA256(hash1 || hash2)
+//   hash2 = SHA256(metadata)
+//   finalHash = BLAKE3(hash1 || hash2)
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -274,11 +269,8 @@ func (s *SmartContract) IssueCertificate(
 		return nil
 	}
 
-	// ── Double SHA-256 hash computation (core of the benchmark) ──────────────
-	// This is the intentionally heavy operation:
-	//   1. SHA256(core fields)         — fast
-	//   2. SHA256(metadata 200KB+)     — slow for SHA-256 on large payloads
-	//   3. SHA256(hash1 || hash2)      — adds additional round
+	// ── BLAKE3 hash computation (core of the optimization) ──────────────────
+	// This is the optimized operation:
 	certHash := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, metadata)
 
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -316,6 +308,7 @@ func (s *SmartContract) VerifyCertificate(
 	id string,
 	certHash string,
 ) (*VerificationResult, error) {
+	// VerifyCertificate compares the provided BLAKE3 hash
 	ts := time.Now().UTC().Format(time.RFC3339)
 
 	role := getCallerRole(ctx)

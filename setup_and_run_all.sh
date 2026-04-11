@@ -2,18 +2,18 @@
 set -e
 
 # ============================================================
-# setup_and_run_all.sh — SHA-256 BASELINE: Full End-to-End
+# setup_and_run_all.sh — BLAKE3 OPTIMIZED: Full End-to-End
 #                        Fabric Network + Caliper Benchmark
 #
-# VARIANT: fabric-baseline (SHA-256 Double-Hash + 200KB Metadata)
+# VARIANT: fabric-blake3 (BLAKE3 Hashing + 200KB Metadata)
 #
 # PURPOSE:
-#   Establishes the SHA-256 performance baseline for BCMS.
+#   Demonstrates BLAKE3 performance improvements for BCMS.
 #   This script runs the IssueCertificate benchmark with a
-#   200KB+ metadata payload, applying Double SHA-256 on-chain:
-#     hash1 = SHA256(core cert fields)
-#     hash2 = SHA256(metadata 200KB+)   ← CPU-intensive
-#     finalHash = SHA256(hash1 || hash2)
+#   200KB+ metadata payload, applying BLAKE3 on-chain:
+#     hash1 = BLAKE3(core cert fields)
+#     hash2 = BLAKE3(metadata 200KB+)   ← Optimized
+#     finalHash = BLAKE3(hash1 || hash2)
 #
 #   The intentional performance bottleneck provides the "weak
 #   baseline" reference point — enabling BLAKE3 (fabric-blake3
@@ -21,10 +21,10 @@ set -e
 #
 # CHANGES FROM ORIGINAL:
 #   1. Full environment teardown BEFORE start (Docker clean)
-#   2. Deploys updated SHA-256 chaincode (Double-Hash + Metadata)
-#   3. IssueCertificate only — SHA-256 stress test round
-#   4. Benchmark config tuned for SHA-256 baseline (lower TPS)
-#   5. Report generation with SHA-256 baseline label
+#   2. Deploys optimized BLAKE3 chaincode (200KB+ Metadata)
+#   3. IssueCertificate only — BLAKE3 performance test round
+#   4. Benchmark config tuned for BLAKE3 (higher TPS target)
+#   5. Report generation with BLAKE3 optimization label
 #
 # FIXES RETAINED:
 #   [FIX-1] Always delete old report.html before benchmark
@@ -49,10 +49,10 @@ NC='\033[0m'
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   BCMS — SHA-256 BASELINE BENCHMARK                         ║${NC}"
+echo -e "${BLUE}║   BCMS — BLAKE3 OPTIMIZED BENCHMARK                         ║${NC}"
 echo -e "${BLUE}║   Hyperledger Fabric v2.5 + Caliper                         ║${NC}"
-echo -e "${BLUE}║   Double SHA-256 | 200KB+ Metadata Payload                  ║${NC}"
-echo -e "${BLUE}║   Branch: fabric-baseline                                   ║${NC}"
+echo -e "${BLUE}║   BLAKE3 | 200KB+ Metadata Payload                          ║${NC}"
+echo -e "${BLUE}║   Branch: fabric-blake3                                     ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -67,7 +67,7 @@ fi
 # ── STEP 0: Full Environment Teardown ─────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${YELLOW}  STEP 0: Full Environment Teardown (SHA-256 Clean Start)     ${NC}"
+echo -e "${YELLOW}  STEP 0: Full Environment Teardown (BLAKE3 Clean Start)      ${NC}"
 echo -e "${YELLOW}══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "Removing all running Docker containers..."
@@ -98,7 +98,7 @@ rm -rf caliper-workspace/networks/networkConfig.yaml
 rm -rf caliper-workspace/networks/connection-org1.yaml
 rm -rf caliper-workspace/networks/connection-org2.yaml
 
-echo -e "${GREEN}✓ Environment teardown complete — clean slate for SHA-256 baseline${NC}"
+echo -e "${GREEN}✓ Environment teardown complete — clean slate for BLAKE3 optimization${NC}"
 
 # ── STEP 1: Fabric Binaries ────────────────────────────────────────────────────
 echo ""
@@ -134,13 +134,13 @@ echo -e "${GREEN}✓ Network started successfully${NC}"
 # ── STEP 3: Deploy SHA-256 Chaincode ──────────────────────────────────────────
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  STEP 3: Deploying SHA-256 Baseline Chaincode                 ${NC}"
+echo -e "${GREEN}  STEP 3: Deploying BLAKE3 Optimized Chaincode                 ${NC}"
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "Chaincode: asset-transfer-basic/chaincode-go"
 echo "Functions:"
 echo "   IssueCertificate(id, studentID, studentName, degree, issuer, issueDate, metadata)"
-echo "   → Double SHA-256: hash1=SHA256(fields) + hash2=SHA256(metadata) + finalHash=SHA256(h1||h2)"
+echo "   → BLAKE3 Hashing: hash1=B3(fields) + hash2=B3(metadata) + final=B3(h1||h2)"
 echo "   → json-iterator/go for serialization"
 echo "   → Metadata field: 200KB+ large payload support"
 echo ""
@@ -155,12 +155,12 @@ cd ..
 echo ""
 echo "Waiting 15 seconds for chaincode containers to stabilize..."
 sleep 15
-echo -e "${GREEN}✓ SHA-256 chaincode deployed successfully${NC}"
+echo -e "${GREEN}✓ BLAKE3 chaincode deployed successfully${NC}"
 
 # ── STEP 4: Caliper Benchmark Setup ───────────────────────────────────────────
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  STEP 4: Setting Up Caliper for SHA-256 Baseline Benchmark    ${NC}"
+echo -e "${GREEN}  STEP 4: Setting Up Caliper for BLAKE3 Optimized Benchmark     ${NC}"
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
 cd caliper-workspace
 
@@ -426,7 +426,7 @@ echo -e "${GREEN}✓ Connection profiles generated${NC}"
 
 # ── STEP 8: Generate SHA-256 Benchmark Config ─────────────────────────────────
 echo ""
-echo -e "${GREEN}  Generating SHA-256 baseline benchmark configuration...       ${NC}"
+echo -e "${GREEN}  Generating BLAKE3 optimized benchmark configuration...       ${NC}"
 
 cat << 'BENCHEOF' > benchmarks/benchConfig_sha256_baseline.yaml
 # ============================================================================
@@ -459,12 +459,12 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-sha256-baseline-v1
+  name: bcms-black3.
   description: >
-    SHA-256 Baseline Benchmark — BCMS fabric-baseline branch.
-    IssueCertificate with Double SHA-256 and 200KB+ metadata payload.
+    black3. Baseline Benchmark — BCMS fabric-baseline branch.
+    IssueCertificate with Double black3. and 200KB+ metadata payload.
     This establishes the performance baseline for BLAKE3 comparison.
-    Target: measure TPS, latency, and CPU cost under large payload SHA-256.
+    Target: measure TPS, latency, and CPU cost under large payload black3..
   workers:
     type: local
     number: 8
@@ -477,13 +477,9 @@ test:
     #   - Each tx: Double SHA-256 on 200KB+ metadata (CPU-intensive)
     #   - Expected: high latency, lower throughput vs BLAKE3 branch
     # ──────────────────────────────────────────────────────────────────
-    - label: IssueCertificate-SHA256-Baseline
+    - label: IssueCertificate-black3
       description: >
-        Issue certificates with Double SHA-256 hashing of 200KB+ metadata.
-        hash1 = SHA256(studentID|studentName|degree|issuer|issueDate)
-        hash2 = SHA256(metadata_200KB_payload)
-        finalHash = SHA256(hash1_bytes || hash2_bytes)
-        This is the intentionally CPU-heavy baseline for SHA-256.
+       black3.
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -500,15 +496,15 @@ echo -e "${GREEN}✓ SHA-256 benchmark config generated: benchmarks/benchConfig_
 # ── STEP 9: Run SHA-256 Baseline Benchmark ────────────────────────────────────
 echo ""
 echo -e "${BLUE}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}  STEP 9: Running SHA-256 Baseline Benchmark                  ${NC}"
+echo -e "${BLUE}  STEP 9: Running BLAKE3 Optimized Benchmark                  ${NC}"
 echo -e "${BLUE}══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "Configuration:"
-echo "   Algorithm  : Double SHA-256"
+echo "   Algorithm  : BLAKE3"
 echo "   Payload    : 200KB+ random metadata per transaction"
-echo "   Round      : IssueCertificate @ 30 TPS / 1500 transactions"
+echo "   Round      : IssueCertificate @ 50 TPS / 1500 transactions"
 echo "   Workers    : 8"
-echo "   Purpose    : Establish weak baseline for BLAKE3 comparison"
+echo "   Purpose    : Demonstrate BLAKE3 performance improvements"
 echo ""
 
 npx caliper launch manager \
@@ -527,7 +523,7 @@ echo -e "${BLUE}═════════════════════�
 if [ -f "report.html" ]; then
     REPORT_SIZE=$(stat -c%s "report.html" 2>/dev/null || stat -f%z "report.html" 2>/dev/null || echo "unknown")
     echo ""
-    echo -e "${GREEN}✓ SHA-256 BASELINE REPORT GENERATED${NC}"
+    echo -e "${GREEN}✓ BLAKE3 OPTIMIZED REPORT GENERATED${NC}"
     echo "  Report: $(pwd)/report.html ($REPORT_SIZE bytes)"
 
     # Run custom report post-processor if available
@@ -543,15 +539,15 @@ if [ -f "report.html" ]; then
 
     echo ""
     echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║   SHA-256 BASELINE BENCHMARK COMPLETE                       ║${NC}"
+    echo -e "${BLUE}║   BLAKE3 OPTIMIZED BENCHMARK COMPLETE                       ║${NC}"
     echo -e "${BLUE}║                                                              ║${NC}"
-    echo -e "${BLUE}║   Algorithm  : Double SHA-256                               ║${NC}"
+    echo -e "${BLUE}║   Algorithm  : BLAKE3                                       ║${NC}"
     echo -e "${BLUE}║   Payload    : 200KB+ metadata per transaction              ║${NC}"
-    echo -e "${BLUE}║   Branch     : fabric-baseline                              ║${NC}"
+    echo -e "${BLUE}║   Branch     : fabric-blake3                                ║${NC}"
     echo -e "${BLUE}║   Report     : caliper-workspace/report.html                ║${NC}"
     echo -e "${BLUE}║                                                              ║${NC}"
-    echo -e "${BLUE}║   This baseline will be compared with BLAKE3 results        ║${NC}"
-    echo -e "${BLUE}║   from the fabric-blake3 branch.                            ║${NC}"
+    echo -e "${BLUE}║   This report demonstrates the performance gains of BLAKE3  ║${NC}"
+    echo -e "${BLUE}║   compared to the SHA-256 baseline.                         ║${NC}"
     echo -e "${BLUE}║   Generated  : $(date '+%Y-%m-%d %H:%M:%S')                        ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
@@ -561,7 +557,7 @@ else
     echo -e "${RED}║   ERROR: report.html was NOT generated!                     ║${NC}"
     echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo "The SHA-256 baseline benchmark failed. Diagnostics:"
+    echo "The BLAKE3 optimized benchmark failed. Diagnostics:"
     echo ""
     echo "1. Check Docker containers:"
     echo "   docker ps"

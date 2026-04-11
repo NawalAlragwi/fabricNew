@@ -4,21 +4,21 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  IssueCertificate Workload Module — BCMS SHA-256 BASELINE Benchmark
+ *  IssueCertificate Workload Module — BCMS BLAKE3 OPTIMIZED Benchmark
  * ══════════════════════════════════════════════════════════════════════
  *  Function  : IssueCertificate(id, studentID, studentName, degree,
  *                               issuer, issueDate, metadata)
  *  RBAC      : Org1MSP only (invokerIdentity: User1@org1.example.com)
  *  Guarantee : 0 failures — idempotent (duplicate IDs return nil)
  *
- *  SHA-256 BASELINE DESIGN:
+ *  BLAKE3 OPTIMIZATION DESIGN:
  *    - Generates a large random metadata payload of 200KB+ per transaction
- *    - The metadata is passed to the chaincode where Double SHA-256 is applied:
- *        hash1 = SHA256(core fields)
- *        hash2 = SHA256(metadata 200KB+)   ← CPU-intensive for SHA-256
- *        finalHash = SHA256(hash1 || hash2)
- *    - This intentionally stresses the SHA-256 implementation to produce
- *      the "weak baseline" reference point for comparison with BLAKE3.
+ *    - The metadata is passed to the chaincode where BLAKE3 hashing is applied:
+ *        hash1 = BLAKE3(core fields)
+ *        hash2 = BLAKE3(metadata 200KB+)
+ *        finalHash = BLAKE3(hash1 || hash2)
+ *    - This demonstrates the performance benefits of BLAKE3 over SHA-256
+ *      especially on large metadata payloads.
  *
  *  PAYLOAD STRATEGY:
  *    - Base size: 200 * 1024 bytes = 204,800 bytes (~200KB) minimum
@@ -87,17 +87,17 @@ function generateRandomString(length) {
 function generateLargeMetadataPayload(workerIdx, txIdx) {
     // Header section (fixed, small)
     const header = JSON.stringify({
-        source:    'bcms-sha256-baseline-benchmark',
-        algorithm: 'SHA-256-Double',
+        source:    'bcms-blake3-optimized-benchmark',
+        algorithm: 'BLAKE3',
         worker:    workerIdx,
         txIndex:   txIdx,
         timestamp: Date.now(),
-        payloadVersion: '2.0-baseline',
-        description: 'Large metadata payload for SHA-256 baseline stress test. ' +
+        payloadVersion: '2.0-blake3',
+        description: 'Large metadata payload for BLAKE3 performance test. ' +
                      'This payload simulates real-world academic transcript data ' +
                      'embedded as base64-encoded attachments in certificate metadata. ' +
-                     'SHA-256 double-hashing of this payload is intentionally slow ' +
-                     'to establish the performance baseline for BLAKE3 comparison.',
+                     'BLAKE3 hashing of this payload demonstrates the architectural ' +
+                     'throughput improvements over the SHA-256 baseline.',
     });
 
     // Calculate how many random bytes we need to reach 200KB+
@@ -133,7 +133,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const samplePayload = generateLargeMetadataPayload(workerIndex, 0);
         const sampleSizeKB  = (Buffer.byteLength(samplePayload, 'utf8') / 1024).toFixed(2);
         console.log(
-            `[SHA-256 Baseline] Worker ${workerIndex} initialized. ` +
+            `[BLAKE3 Optimized] Worker ${workerIndex} initialized. ` +
             `Sample metadata payload size: ${sampleSizeKB} KB`
         );
     }
@@ -150,10 +150,10 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const issueDate   = new Date().toISOString().split('T')[0];
 
         // ── Generate 200KB+ metadata payload ──────────────────────────────
-        // This is the core of the SHA-256 baseline stress test.
+        // This is the core of the BLAKE3 performance test.
         // The metadata is sent to the chaincode which applies:
-        //   hash2 = SHA256(metadata)   ← expensive for 200KB payloads
-        // This exposes the O(n) cost of SHA-256 on large inputs.
+        //   hash2 = BLAKE3(metadata)
+        // This exposes the high performance of BLAKE3 on large inputs.
         const metadata = generateLargeMetadataPayload(workerIdx, this.txIndex);
 
         // ── Build request using new chaincode signature ───────────────────
@@ -162,7 +162,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         // NEW: IssueCertificate(id, studentID, studentName, degree,
         //                       issuer, issueDate, metadata)
         //
-        // certHash is now computed ON-CHAIN (Double SHA-256)
+        // certHash is now computed ON-CHAIN (BLAKE3)
         // No client-side hash or signature needed
         const request = {
             contractId:       'basic',
@@ -176,7 +176,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
                 degree,
                 issuer,
                 issueDate,
-                metadata,       // ← 200KB+ payload — SHA-256 double-hashed on-chain
+                metadata,       // ← 200KB+ payload — BLAKE3 hashed on-chain
             ],
             readOnly: false
         };
@@ -187,7 +187,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
     async cleanupWorkloadModule() {
         // No cleanup needed — idempotent design
         console.log(
-            `[SHA-256 Baseline] Worker ${this.workerIndex || 0} completed ` +
+            `[BLAKE3 Optimized] Worker ${this.workerIndex || 0} completed ` +
             `${this.txIndex} transactions.`
         );
     }
