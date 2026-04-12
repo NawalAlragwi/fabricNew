@@ -28,12 +28,12 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-black3.
+  name: bcms-sha256-baseline
   description: >
-    black3. Baseline Benchmark — BCMS fabric-baseline branch.
-    IssueCertificate with Double black3. and 200KB+ metadata payload.
-    This establishes the performance baseline for BLAKE3 comparison.
-    Target: measure TPS, latency, and CPU cost under large payload black3..
+    SHA-256 baseline benchmark — BCMS fabric-baseline branch.
+    IssueCertificate with double SHA-256 over fields and metadata plus 200KB+ metadata payload.
+    Establishes the performance baseline for comparison against the BLAKE3-optimized branch.
+    Target: measure TPS, latency, and CPU cost under large payloads.
   workers:
     type: local
     number: 8
@@ -46,9 +46,9 @@ test:
     #   - Each tx: Double SHA-256 on 200KB+ metadata (CPU-intensive)
     #   - Expected: high latency, lower throughput vs BLAKE3 branch
     # ──────────────────────────────────────────────────────────────────
-    - label: IssueCertificate-black3
+    - label: IssueCertificate-sha256-baseline
       description: >
-       black3.
+        Single-round stress test: IssueCertificate with double SHA-256 and large metadata payload.
       txNumber: 1500
       rateControl:
         type: fixed-rate

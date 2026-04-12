@@ -63,11 +63,19 @@ echo "انتظار 30 ثانية لاستقرار CouchDB والـ Peers..."
 sleep 30
 cd "${ROOT_DIR}"
 
-# ─── 6: نشر الـ Chaincode ─────────────────────────────────────────────────────
+# ─── 6: نشر الـ Chaincode (مع زيادة الإصدار لضمان تفعيل الفهارس) ──────────────
 echo ""
-echo -e "${GREEN}=== نشر الـ Smart Contract ===${NC}"
+echo -e "${GREEN}=== نشر الـ Smart Contract (الإصدار 2.0) ===${NC}"
 cd "${ROOT_DIR}/test-network"
-./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
+
+# إضافة -ccv و -ccs لضمان معاملتها كنسخة جديدة تماماً تفعّل الـ Indexes
+./network.sh deployCC \
+    -ccn basic \
+    -ccp ../asset-transfer-basic/chaincode-go \
+    -ccl go \
+    -ccv 2.0 \
+    -ccs 1 \
+    -ccep "OR('Org1MSP.peer','Org2MSP.peer')"
 cd "${ROOT_DIR}"
 
 echo "انتظار 15 ثانية لاستقرار chaincode containers..."

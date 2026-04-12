@@ -1,6 +1,6 @@
 {
     "index": {
-        "fields": ["docType", "IssueDate"]
+        "fields": ["IssueDate", "docType"]
     },
     "ddoc": "indexCertificatesValue",
     "name": "indexCertificates",

@@ -26,9 +26,7 @@ monitors:
 test:
   name: bcms-certificate-benchmark-v4
   description: >
-    BCMS Full Benchmark Suite — Research Paper Implementation.
-    Tests all 6 chaincode functions across RBAC, ABAC, SHA-256 crypto,
-    and audit logging. Target: 0% failure rate with fixed transaction counts.
+      blake3
   workers:
     type: local
     number: 8
@@ -56,7 +54,7 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: VerifyCertificate
       description: >
-        Verify certificate authenticity by recomputing SHA-256 hash.
+        Verify certificate authenticity using BLAKE3 hash (fields + metadata), matching chaincode.
         Public read — readOnly:true bypasses orderer.
       txNumber: 3000
       rateControl:
@@ -73,13 +71,13 @@ test:
     # ──────────────────────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: >
-        Rich ledger query returning all certificates sorted by issue date.
-        Uses CouchDB selector. readOnly:true — direct peer query.
-      txNumber: 1500
+        Rich ledger query returning most recent certificates.
+        Optimization: Reduced TPS and Transaction Count to manage 20MB+ result sets.
+      txNumber: 500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 10
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -108,12 +106,12 @@ test:
     - label: GetCertificatesByStudent
       description: >
         Query certificates for a specific student using CouchDB rich query.
-        Selector: {docType: "certificate", StudentID: "<id>"}.
-      txNumber: 2250
+        Optimization: Reduced TPS to manage large metadata payloads.
+      txNumber: 1500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 75
+          tps: 30
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
@@ -126,11 +124,11 @@ test:
       description: >
         Query the immutable audit log trail from the ledger.
         Returns all AuditLog entries sorted by timestamp descending.
-      txNumber: 900
+      txNumber: 500
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 10
       workload:
         module: workload/getAuditLogs.js
       txOptions:

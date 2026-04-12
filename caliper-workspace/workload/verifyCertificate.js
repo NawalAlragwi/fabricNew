@@ -1,16 +1,38 @@
 'use strict';
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const crypto = require('crypto');
+const { blake3 } = require('@noble/hashes/blake3');
+const { buildDeterministicMetadata } = require('./metadataUtil');
+
+const ISSUE_DATE = '2026-04-13';
+
+/**
+ * Replicates chaincode ComputeCertHash (BLAKE3): hash(fields) || hash(metadata) → final BLAKE3.
+ * @param {string} studentID
+ * @param {string} studentName
+ * @param {string} degree
+ * @param {string} issuer
+ * @param {string} issueDate
+ * @param {string} metadata
+ * @returns {string} hex
+ */
+function computeCertHashHex(studentID, studentName, degree, issuer, issueDate, metadata) {
+    const enc = new TextEncoder();
+    const fields = [studentID, studentName, degree, issuer, issueDate].join('|');
+    const hash1 = blake3(enc.encode(fields));
+    const hash2 = blake3(enc.encode(metadata));
+    const combined = new Uint8Array(64);
+    combined.set(hash1, 0);
+    combined.set(hash2, 32);
+    const finalHash = blake3(combined);
+    return Buffer.from(finalHash).toString('hex');
+}
 
 /**
  * ══════════════════════════════════════════════════════════════════════
- *  VerifyCertificate Workload Module — BCMS Benchmark
+ *  VerifyCertificate Workload — BCMS Benchmark
  * ══════════════════════════════════════════════════════════════════════
- *  Function  : VerifyCertificate(id, certHash) → VerificationResult
- *  RBAC      : Public (any org — readOnly query)
- *  Guarantee : 0 failures — returns false (not error) when cert not found
- *  Crypto    : SHA-256 hash computed client-side matching chaincode logic
+ *  Client hash must match on-chain CertHash (BLAKE3 with metadata).
  * ══════════════════════════════════════════════════════════════════════
  */
 class VerifyCertificateWorkload extends WorkloadModuleBase {
@@ -33,26 +55,21 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         const studentName = `Student_${workerIdx}_${this.txIndex}`;
         const degree      = 'Bachelor of Computer Science';
         const issuer      = 'Digital University';
-        const issueDate   = new Date().toISOString().split('T')[0];
-
-        // MUST match exact hash logic in chaincode ComputeCertHash()
-        const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        const issueDate   = ISSUE_DATE;
+        const metadata    = buildDeterministicMetadata(workerIdx, this.txIndex);
+        const certHash    = computeCertHashHex(studentID, studentName, degree, issuer, issueDate, metadata);
 
         const request = {
             contractId:        'basic',
             contractFunction:  'VerifyCertificate',
-            // Args: (id, certHash)
             contractArguments: [certID, certHash],
-            readOnly:          true    // bypass orderer — direct peer query for max TPS
+            readOnly:          true
         };
 
         return this.sutAdapter.sendRequests(request);
     }
 
-    async cleanupWorkloadModule() {
-        // No cleanup needed
-    }
+    async cleanupWorkloadModule() {}
 }
 
 module.exports = { createWorkloadModule: () => new VerifyCertificateWorkload() };

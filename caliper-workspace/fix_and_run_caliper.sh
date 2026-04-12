@@ -156,8 +156,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 
 channels:
   mychannel:
@@ -193,6 +193,8 @@ orderers:
     grpcOptions:
       ssl-target-name-override: orderer.example.com
       hostnameOverride: orderer.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
     tlsCACerts:
       path: $ORDERER_TLS
 
@@ -202,6 +204,10 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
+      grpc.max_receive_message_length: -1
+      grpc.max_send_message_length: -1
     tlsCACerts:
       path: $PEER0_ORG1_TLS
   peer0.org2.example.com:
@@ -209,6 +215,10 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org2.example.com
       hostnameOverride: peer0.org2.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
+      grpc.max_receive_message_length: -1
+      grpc.max_send_message_length: -1
     tlsCACerts:
       path: $PEER0_ORG2_TLS
 
@@ -235,8 +245,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 
 channels:
   mychannel:
@@ -304,8 +314,8 @@ CONNECTION_EOF
 echo "✓ Org2 connection profile generated."
 
 # ── Install Dependencies ───────────────────────────────────────────────────────
-echo "Installing Caliper dependencies..."
-npm install --silent 2>/dev/null || npm install
+echo "Installing Caliper dependencies (this may take several minutes)..."
+npm install
 
 echo "Binding Caliper to Fabric 2.5..."
 npx caliper bind --caliper-bind-sut fabric:2.5

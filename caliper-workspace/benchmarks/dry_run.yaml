@@ -1,0 +1,16 @@
+# Dry-run Benchmark Config
+test:
+  name: dry-run-verification
+  description: Quick test to verify connectivity and fix implementation.
+  workers:
+    type: local
+    number: 2
+  rounds:
+    - label: IssueCertificate
+      txNumber: 10
+      rateControl: { type: 'fixed-rate', opts: { tps: 5 } }
+      workload: { module: 'workload/issueCertificate.js' }
+    - label: QueryAllCertificates
+      txNumber: 10
+      rateControl: { type: 'fixed-rate', opts: { tps: 2 } }
+      workload: { module: 'workload/queryAllCertificates.js' }

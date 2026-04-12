@@ -282,8 +282,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 
 channels:
   mychannel:
@@ -319,6 +319,8 @@ orderers:
     grpcOptions:
       ssl-target-name-override: orderer.example.com
       hostnameOverride: orderer.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
     tlsCACerts:
       path: $ORDERER_TLS
 
@@ -328,6 +330,10 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
+      grpc.max_receive_message_length: -1
+      grpc.max_send_message_length: -1
     tlsCACerts:
       path: $PEER0_ORG1_TLS
   peer0.org2.example.com:
@@ -335,6 +341,10 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org2.example.com
       hostnameOverride: peer0.org2.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
+      grpc.max_receive_message_length: -1
+      grpc.max_send_message_length: -1
     tlsCACerts:
       path: $PEER0_ORG2_TLS
 
@@ -402,6 +412,10 @@ peers:
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
+      grpc.keepalive_time_ms: 600000
+      grpc.keepalive_timeout_ms: 120000
+      grpc.max_receive_message_length: -1
+      grpc.max_send_message_length: -1
     tlsCACerts:
       path: $PEER0_ORG1_TLS
   peer0.org2.example.com:
@@ -426,7 +440,7 @@ echo -e "${GREEN}✓ Connection profiles generated${NC}"
 
 # ── STEP 8: Generate SHA-256 Benchmark Config ─────────────────────────────────
 echo ""
-echo -e "${GREEN}  Generating BLAKE3 optimized benchmark configuration...       ${NC}"
+echo -e "${GREEN}  Generating SHA-256 baseline benchmark configuration...       ${NC}"
 
 cat << 'BENCHEOF' > benchmarks/benchConfig_sha256_baseline.yaml
 # ============================================================================
@@ -459,12 +473,12 @@ monitors:
           - /ca_orderer
 
 test:
-  name: bcms-black3.
+  name: bcms-sha256-baseline
   description: >
-    black3. Baseline Benchmark — BCMS fabric-baseline branch.
-    IssueCertificate with Double black3. and 200KB+ metadata payload.
-    This establishes the performance baseline for BLAKE3 comparison.
-    Target: measure TPS, latency, and CPU cost under large payload black3..
+    SHA-256 baseline benchmark — BCMS fabric-baseline branch.
+    IssueCertificate with double SHA-256 over fields and metadata plus 200KB+ metadata payload.
+    Establishes the performance baseline for comparison against the BLAKE3-optimized branch.
+    Target: measure TPS, latency, and CPU cost under large payloads.
   workers:
     type: local
     number: 8
@@ -477,9 +491,9 @@ test:
     #   - Each tx: Double SHA-256 on 200KB+ metadata (CPU-intensive)
     #   - Expected: high latency, lower throughput vs BLAKE3 branch
     # ──────────────────────────────────────────────────────────────────
-    - label: IssueCertificate-black3
+    - label: IssueCertificate-sha256-baseline
       description: >
-       black3.
+        Single-round stress test: IssueCertificate with double SHA-256 and large metadata payload.
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -496,15 +510,15 @@ echo -e "${GREEN}✓ SHA-256 benchmark config generated: benchmarks/benchConfig_
 # ── STEP 9: Run SHA-256 Baseline Benchmark ────────────────────────────────────
 echo ""
 echo -e "${BLUE}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}  STEP 9: Running BLAKE3 Optimized Benchmark                  ${NC}"
+echo -e "${BLUE}  STEP 9: Running SHA-256 Baseline Benchmark                  ${NC}"
 echo -e "${BLUE}══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "Configuration:"
-echo "   Algorithm  : BLAKE3"
+echo "   Algorithm  : SHA-256 (double hash baseline)"
 echo "   Payload    : 200KB+ random metadata per transaction"
 echo "   Round      : IssueCertificate @ 50 TPS / 1500 transactions"
 echo "   Workers    : 8"
-echo "   Purpose    : Demonstrate BLAKE3 performance improvements"
+echo "   Purpose    : Baseline for comparison with BLAKE3-optimized chaincode"
 echo ""
 
 npx caliper launch manager \
@@ -523,7 +537,7 @@ echo -e "${BLUE}═════════════════════�
 if [ -f "report.html" ]; then
     REPORT_SIZE=$(stat -c%s "report.html" 2>/dev/null || stat -f%z "report.html" 2>/dev/null || echo "unknown")
     echo ""
-    echo -e "${GREEN}✓ BLAKE3 OPTIMIZED REPORT GENERATED${NC}"
+    echo -e "${GREEN}✓ SHA-256 BASELINE REPORT GENERATED${NC}"
     echo "  Report: $(pwd)/report.html ($REPORT_SIZE bytes)"
 
     # Run custom report post-processor if available
@@ -539,15 +553,15 @@ if [ -f "report.html" ]; then
 
     echo ""
     echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║   BLAKE3 OPTIMIZED BENCHMARK COMPLETE                       ║${NC}"
+    echo -e "${BLUE}║   SHA-256 BASELINE BENCHMARK COMPLETE                       ║${NC}"
     echo -e "${BLUE}║                                                              ║${NC}"
-    echo -e "${BLUE}║   Algorithm  : BLAKE3                                       ║${NC}"
+    echo -e "${BLUE}║   Algorithm  : SHA-256 (baseline)                           ║${NC}"
     echo -e "${BLUE}║   Payload    : 200KB+ metadata per transaction              ║${NC}"
-    echo -e "${BLUE}║   Branch     : fabric-blake3                                ║${NC}"
+    echo -e "${BLUE}║   Branch     : fabric-baseline                              ║${NC}"
     echo -e "${BLUE}║   Report     : caliper-workspace/report.html                ║${NC}"
     echo -e "${BLUE}║                                                              ║${NC}"
-    echo -e "${BLUE}║   This report demonstrates the performance gains of BLAKE3  ║${NC}"
-    echo -e "${BLUE}║   compared to the SHA-256 baseline.                         ║${NC}"
+    echo -e "${BLUE}║   Use this report as the baseline to compare against the    ║${NC}"
+    echo -e "${BLUE}║   BLAKE3-optimized chaincode branch.                        ║${NC}"
     echo -e "${BLUE}║   Generated  : $(date '+%Y-%m-%d %H:%M:%S')                        ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
@@ -557,7 +571,7 @@ else
     echo -e "${RED}║   ERROR: report.html was NOT generated!                     ║${NC}"
     echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo "The BLAKE3 optimized benchmark failed. Diagnostics:"
+    echo "The SHA-256 baseline benchmark failed. Diagnostics:"
     echo ""
     echo "1. Check Docker containers:"
     echo "   docker ps"
