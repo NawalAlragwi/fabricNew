@@ -2,7 +2,7 @@
   "scenario": 3,
   "title": "Hybrid SHA-256 + BLAKE3",
   "description": "Real Caliper benchmark \u2014 Hybrid SHA-256 + BLAKE3",
-  "timestamp": "2026-04-13T23:33:12Z",
+  "timestamp": "2026-04-13T23:37:43Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/hybrid-batch",

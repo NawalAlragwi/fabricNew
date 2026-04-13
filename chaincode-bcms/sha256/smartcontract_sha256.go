@@ -36,7 +36,7 @@ func GetHashMode() string {
 
 // --- Data Structures --------------------------------------------------------
 
-// Certificate — core educational record stored on the ledger
+// Certificate  core educational record stored on the ledger
 type Certificate struct {
 	DocType     string `json:"docType"`
 	ID          string `json:"id"`
@@ -56,7 +56,7 @@ type Certificate struct {
 	TxID        string `json:"txID"`
 }
 
-// VerificationResult — returned by VerifyCertificate
+// VerificationResult  returned by VerifyCertificate
 type VerificationResult struct {
 	CertID    string `json:"certID"`
 	Valid     bool   `json:"valid"`
@@ -67,7 +67,7 @@ type VerificationResult struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// AuditLog — captures mutations for audit trail
+// AuditLog  captures mutations for audit trail
 type AuditLog struct {
 	DocType   string `json:"docType"`
 	TxID      string `json:"txID"`
@@ -78,7 +78,7 @@ type AuditLog struct {
 	Detail    string `json:"detail"`
 }
 
-// SmartContract — the main Hyperledger Fabric contract (SHA-256 mode)
+// SmartContract  the main Hyperledger Fabric contract (SHA-256 mode)
 type SmartContract struct {
 	contractapi.Contract
 }
@@ -104,7 +104,7 @@ func (s *SmartContract) writeAudit(
 	_ = ctx.GetStub().PutState(key, data)
 }
 
-// ─── SHA-256 Hash Implementation ─────────────────────────────────────────---
+//  SHA-256 Hash Implementation ---
 
 // ComputeCertHashSHA256 computes H(C) = SHA256(studentID|name|degree|issuer|date)
 // This is the original BCMS implementation from the research paper.
@@ -200,7 +200,8 @@ func (s *SmartContract) IssueCertificate(
 	degree string,
 	issuer string,
 	issueDate string,
-	certHashInput string,
+	certHash string,
+	blake3Hash string, // Added to match workload's 10 args
 	signature string,
 	batchID string,
 ) error {
@@ -215,8 +216,8 @@ func (s *SmartContract) IssueCertificate(
 	}
 
 	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
-	if certHashInput == "" {
-		certHashInput = computedHash
+	if certHash == "" {
+		certHash = computedHash
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -228,7 +229,7 @@ func (s *SmartContract) IssueCertificate(
 		Degree:      degree,
 		Issuer:      issuer,
 		IssueDate:   issueDate,
-		CertHash:    certHashInput,
+		CertHash:    certHash,
 		HashAlgo:    hashAlgo,
 		Signature:   signature,
 		IsRevoked:   false,
