@@ -1,6 +1,6 @@
 // ============================================================================
-//  BCMS — Blockchain Certificate Management System
-//  Chaincode Entry Point — SHA-256 Mode
+//  BCMS - Blockchain Certificate Management System
+//  Chaincode Entry Point - SHA-256 Mode
 // ============================================================================
 
 package main
