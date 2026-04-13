@@ -21,7 +21,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 class GetAuditLogsWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-hybrid',
+            contractId:        'basic',
             contractFunction:  'GetAuditLogs',
             contractArguments: [],
             readOnly:          true,

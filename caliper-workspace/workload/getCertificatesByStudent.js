@@ -36,7 +36,7 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
         const studentID = `STU_${w}_${this.txIndex}`;
 
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-hybrid',
+            contractId:        'basic',
             contractFunction:  'GetCertificatesByStudent',
             contractArguments: [studentID],
             readOnly:          true,

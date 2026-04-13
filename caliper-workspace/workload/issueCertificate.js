@@ -77,7 +77,7 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const signature  = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
-            contractId:        'bcms-hybrid',
+            contractId:        'basic',
             contractFunction:  'IssueCertificate',
             // Args MUST match Go func signature order exactly:
             // (id, studentId, studentName, degree, issuer, issueDate,

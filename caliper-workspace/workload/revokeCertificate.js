@@ -41,7 +41,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const certID = `CERT_${w}_${this.txIndex}`;
 
         const request = {
-            contractId:        'bcms-hybrid',
+            contractId:        'basic',
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false,

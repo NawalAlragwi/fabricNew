@@ -18,7 +18,7 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({
-            contractId:        'bcms-hybrid',
+            contractId:        'basic',
             contractFunction:  'QueryAllCertificates',
             contractArguments: [], // Go func takes only ctx — no args
             readOnly:          true,
