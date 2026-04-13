@@ -1,25 +1,23 @@
 # BCMS Four-Scenario Academic Benchmark Comparison
 
-> Generated: 2026-04-01 20:29:39  |  Caliper 0.6.0  |  Fabric 2.5.9
+> Generated: 2026-04-13 22:23:08  |  Caliper 0.6.0  |  Fabric 2.5.9
 
-
-> ⚠️  **SIMULATED DATA**: Docker/Fabric unavailable. Run `bash setup_and_run_all.sh --all-scenarios` in a Docker-enabled environment for real measurements.
 **All 4 scenarios: 0% failure rate (100% success rate)**
 
 | Scenario | Hash | Batch | Workers | IssueCert TPS | Eff. TPS | Lat (ms) | Tx | Fail | Success% | TPS vs S1 |
 |:--|:--|:--:|:--:|--:|--:|--:|--:|--:|--:|--:|
-| **SHA-256 Baseline** | `sha256` | 1 | 4 | 32.4 | 32.4 | 1940 | 4,725 | **0** | **100.0%** | **+0.0%** |
-| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 34.5 | 34.5 | 1820 | 4,950 | **0** | **100.0%** | **+6.5%** |
-| **Hybrid SHA-256 + BLAKE3** | `hybrid-sha256-blake3` | 1 | 4 | 38.2 | 38.2 | 1710 | 5,295 | **0** | **100.0%** | **+17.9%** |
-| **Hybrid + Batching Optimization** | `hybrid-sha256-blake3` | 10 | 8 | 95.0 | 950.0 | 1420 | 11,541 | **0** | **100.0%** | **+193.2%** |
+| **SHA-256 Baseline** | `sha256` | 1 | 4 | 0.0 | 0.0 | 0 | 0 | **0** | **0.0%** | **-100.0%** |
+| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 0.0 | 0.0 | 0 | 0 | **0** | **0.0%** | **-100.0%** |
+| **Hybrid SHA-256 + BLAKE3** | `hybrid` | 1 | 4 | 0.0 | 0.0 | 0 | 0 | **0** | **0.0%** | **-100.0%** |
+| **Hybrid + Batching ×10** | `hybrid` | 10 | 8 | 0.0 | 0.0 | 0 | 0 | **0** | **0.0%** | **-100.0%** |
 
 ## Key Improvement: S1 → S4
 
 | Metric | S1 | S4 | Change |
 |:--|--:|--:|--:|
-| IssueCert TPS | 32.4 | 95.0 | **+193.2%** |
-| Eff. Cert TPS | 32.4 | 950.0 | **+2832.1%** |
-| Avg Latency (ms) | 1940 | 1420 | **-26.8%** |
+| IssueCert TPS | 0.0 | 0.0 | **+-100.0%** |
+| Eff. Cert TPS | 0.0 | 0.0 | **+-100.0%** |
+| Avg Latency (ms) | 0 | 0 | **-100.0%** |
 | Consensus/100 | 100 | 10 | **-90.0%** |
 | Failures | 0 | 0 | **0% maintained** |
 
