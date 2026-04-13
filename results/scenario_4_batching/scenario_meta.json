@@ -1,1 +1,1 @@
-{"scenario":4,"key":"scenario_4_batching","label":"S4: Hybrid+Batch (batchSize=10)","chaincode":"chaincode-bcms/hybrid-batch","batch_size":10,"benchconfig":"caliper-workspace/benchmarks/benchConfig_s4_batching.yaml","tps":50,"goflags":"-mod=mod","started":"2026-04-01T20:24:30Z"}
+{"scenario":4,"key":"scenario_4_batching","label":"S4: Hybrid+Batch (batchSize=10)","chaincode":"chaincode-bcms/hybrid-batch","batch_size":10,"benchconfig":"caliper-workspace/benchmarks/benchConfig_s4_batching.yaml","tps":50,"goflags":"-mod=mod","started":"2026-04-13T19:51:58Z"}
