@@ -202,6 +202,7 @@ func (s *SmartContract) IssueCertificate(
 	issueDate string,
 	certHashInput string,
 	signature string,
+	batchID string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil || mspID != "Org1MSP" {
@@ -238,7 +239,9 @@ func (s *SmartContract) IssueCertificate(
 
 	certJSON, _ := json.Marshal(cert)
 	ctx.GetStub().PutState(id, certJSON)
-	s.writeAudit(ctx, id, "ISSUE", issuer, "SHA-256 issue")
+	
+	// Audit log including batch info if needed
+	s.writeAudit(ctx, id, "ISSUE", issuer, fmt.Sprintf("SHA-256 issue | Batch: %s", batchID))
 
 	return nil
 }
@@ -290,40 +293,16 @@ func (s *SmartContract) RevokeCertificate(
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
 	queryString := `{"selector":{"docType":"certificate"},"sort":[{"IssueDate":"desc"}]}`
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil {
-		return nil, err
+	if err != nil || resultsIterator == nil {
+		// Fallback to range scan if Rich Query fails
+		return s.getAllCertificatesByRange(ctx)
 	}
 	defer resultsIterator.Close()
 
 	var certificates []*Certificate
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			continue
-		}
-		var cert Certificate
-		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
-			continue
-		}
-		certificates = append(certificates, &cert)
-	}
-	return certificates, nil
-}
-
-func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","StudentID":"%s"},"sort":[{"IssueDate":"desc"}]}`, studentID)
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	var certificates []*Certificate
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			continue
-		}
+		if err != nil { continue }
 		var cert Certificate
 		json.Unmarshal(queryResponse.Value, &cert)
 		certificates = append(certificates, &cert)
@@ -331,20 +310,83 @@ func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionCont
 	return certificates, nil
 }
 
+func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+	if err != nil { return []*Certificate{}, nil }
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var cert Certificate
+		json.Unmarshal(queryResponse.Value, &cert)
+		if cert.DocType == "certificate" {
+			certificates = append(certificates, &cert)
+		}
+	}
+	return certificates, nil
+}
+
+func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","StudentID":"%s"},"sort":[{"IssueDate":"desc"}]}`, studentID)
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil || resultsIterator == nil {
+		// Fallback to range scan filtered by studentID
+		return s.getCertificatesByStudentRange(ctx, studentID)
+	}
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var cert Certificate
+		json.Unmarshal(queryResponse.Value, &cert)
+		certificates = append(certificates, &cert)
+	}
+	return certificates, nil
+}
+
+func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+	all, _ := s.getAllCertificatesByRange(ctx)
+	var filtered []*Certificate
+	for _, c := range all {
+		if c.StudentID == studentID {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
+}
+
 func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
 	queryString := `{"selector":{"docType":"auditLog"},"sort":[{"Timestamp":"desc"}]}`
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil {
-		return nil, err
+	if err != nil || resultsIterator == nil {
+		return s.getAuditLogsByRange(ctx)
 	}
 	defer resultsIterator.Close()
 
 	var logs []*AuditLog
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			continue
-		}
+		if err != nil { continue }
+		var log AuditLog
+		json.Unmarshal(queryResponse.Value, &log)
+		logs = append(logs, &log)
+	}
+	return logs, nil
+}
+
+func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
+	if err != nil { return []*AuditLog{}, nil }
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
 		var log AuditLog
 		json.Unmarshal(queryResponse.Value, &log)
 		logs = append(logs, &log)
