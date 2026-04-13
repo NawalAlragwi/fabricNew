@@ -67,9 +67,41 @@ type VerificationResult struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// AuditLog — captures mutations for audit trail
+type AuditLog struct {
+	DocType   string `json:"docType"`
+	TxID      string `json:"txID"`
+	CertID    string `json:"certID"`
+	Action    string `json:"action"` // ISSUE | REVOKE
+	Actor     string `json:"actor"`
+	Timestamp string `json:"timestamp"`
+	Detail    string `json:"detail"`
+}
+
 // SmartContract — the main Hyperledger Fabric contract (SHA-256 mode)
 type SmartContract struct {
 	contractapi.Contract
+}
+
+// ─── Internal Helpers ────────────────────────────────────────────────────────
+
+func (s *SmartContract) writeAudit(
+	ctx contractapi.TransactionContextInterface,
+	certID, action, actor, detail string,
+) {
+	txID := ctx.GetStub().GetTxID()
+	key := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
+	log := AuditLog{
+		DocType:   "auditLog",
+		TxID:      txID,
+		CertID:    certID,
+		Action:    action,
+		Actor:     actor,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Detail:    detail,
+	}
+	data, _ := json.Marshal(log)
+	_ = ctx.GetStub().PutState(key, data)
 }
 
 // ─── SHA-256 Hash Implementation ────────────────────────────────────────────
@@ -172,31 +204,15 @@ func (s *SmartContract) IssueCertificate(
 	signature string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
-	if err != nil {
-		return fmt.Errorf("access denied: failed to read MSP: %v", err)
-	}
-	if mspID != "Org1MSP" {
+	if err != nil || mspID != "Org1MSP" {
 		return fmt.Errorf("access denied: only Org1MSP can issue certificates")
 	}
 
-	role := getCallerRole(ctx)
-	if role != "" && role != "issuer" {
-		return fmt.Errorf("access denied: role attribute must be 'issuer'")
-	}
-
-	if id == "" || studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		return fmt.Errorf("validation error: missing fields")
-	}
-
-	existing, err := ctx.GetStub().GetState(id)
-	if err != nil {
-		return fmt.Errorf("failed to read ledger: %v", err)
-	}
+	existing, _ := ctx.GetStub().GetState(id)
 	if existing != nil {
-		return nil // Idempotent — already exists
+		return nil
 	}
 
-	// Compute hash using SHA-256
 	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
 	if certHashInput == "" {
 		certHashInput = computedHash
@@ -220,14 +236,9 @@ func (s *SmartContract) IssueCertificate(
 		TxID:        ctx.GetStub().GetTxID(),
 	}
 
-	certJSON, err := json.Marshal(cert)
-	if err != nil {
-		return fmt.Errorf("failed to marshal certificate: %v", err)
-	}
-
-	if err := ctx.GetStub().PutState(id, certJSON); err != nil {
-		return fmt.Errorf("failed to write certificate to ledger: %v", err)
-	}
+	certJSON, _ := json.Marshal(cert)
+	ctx.GetStub().PutState(id, certJSON)
+	s.writeAudit(ctx, id, "ISSUE", issuer, "SHA-256 issue")
 
 	return nil
 }
@@ -239,74 +250,84 @@ func (s *SmartContract) VerifyCertificate(
 	certHash string,
 ) (*VerificationResult, error) {
 	ts := time.Now().UTC().Format(time.RFC3339)
-
-	role := getCallerRole(ctx)
-	if role != "" && role != "verifier" && role != "issuer" {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "access denied: unauthorized role",
-			HashAlgo:  "sha256",
-			Timestamp: ts,
-		}, nil
-	}
-
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil || certJSON == nil {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "certificate not found",
-			HashAlgo:  "sha256",
-			Timestamp: ts,
-		}, nil
+		return &VerificationResult{CertID: id, Valid: false, Message: "not found", Timestamp: ts}, nil
 	}
 
 	var cert Certificate
-	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "data integrity error",
-			HashAlgo:  "sha256",
-			Timestamp: ts,
-		}, nil
-	}
+	json.Unmarshal(certJSON, &cert)
 
-	if cert.IsRevoked {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			IsRevoked: true,
-			HashMatch: cert.CertHash == certHash,
-			HashAlgo:  "sha256",
-			Message:   "certificate has been revoked",
-			Timestamp: ts,
-		}, nil
+	res := &VerificationResult{
+		CertID: id, IsRevoked: cert.IsRevoked, HashAlgo: "sha256", Timestamp: ts,
+		HashMatch: cert.CertHash == certHash,
 	}
+	res.Valid = res.HashMatch && !cert.IsRevoked
+	return res, nil
+}
 
-	hashMatch := cert.CertHash == certHash
-	if !hashMatch {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			IsRevoked: false,
-			HashMatch: false,
-			HashAlgo:  "sha256",
-			Message:   "hash mismatch — certificate may have been tampered",
-			Timestamp: ts,
-		}, nil
+func (s *SmartContract) RevokeCertificate(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+	revokedBy string,
+) error {
+	certJSON, _ := ctx.GetStub().GetState(id)
+	if certJSON == nil {
+		return fmt.Errorf("not found")
 	}
+	var cert Certificate
+	json.Unmarshal(certJSON, &cert)
+	cert.IsRevoked = true
+	cert.RevokedBy = revokedBy
+	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	
+	updated, _ := json.Marshal(cert)
+	ctx.GetStub().PutState(id, updated)
+	s.writeAudit(ctx, id, "REVOKE", revokedBy, "SHA-256 revoke")
+	return nil
+}
 
-	return &VerificationResult{
-		CertID:    id,
-		Valid:     true,
-		IsRevoked: false,
-		HashMatch: true,
-		HashAlgo:  "sha256",
-		Message:   "certificate is valid and authentic (SHA-256 verified)",
-		Timestamp: ts,
-	}, nil
+func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+	iter, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+	var certs []*Certificate
+	for iter.HasNext() {
+		doc, _ := iter.Next()
+		var c Certificate
+		json.Unmarshal(doc.Value, &c)
+		certs = append(certs, &c)
+	}
+	return certs, nil
+}
+
+func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+	all, _ := s.QueryAllCertificates(ctx)
+	var filtered []*Certificate
+	for _, c := range all {
+		if c.StudentID == studentID {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
+}
+
+func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+	iter, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+	var logs []*AuditLog
+	for iter.HasNext() {
+		doc, _ := iter.Next()
+		var l AuditLog
+		json.Unmarshal(doc.Value, &l)
+		logs = append(logs, &l)
+	}
+	return logs, nil
 }
 
 // ComputeHash exposes hash computation for benchmarking
