@@ -39,21 +39,21 @@ func GetHashMode() string {
 // Certificate — core educational record stored on the ledger
 type Certificate struct {
 	DocType     string `json:"docType"`
-	ID          string `json:"ID"`
-	StudentID   string `json:"StudentID"`
-	StudentName string `json:"StudentName"`
-	Degree      string `json:"Degree"`
-	Issuer      string `json:"Issuer"`
-	IssueDate   string `json:"IssueDate"`
-	CertHash    string `json:"CertHash"`
-	HashAlgo    string `json:"HashAlgo"` // "sha256" or "blake3"
-	Signature   string `json:"Signature"`
-	IsRevoked   bool   `json:"IsRevoked"`
-	RevokedBy   string `json:"RevokedBy"`
-	RevokedAt   string `json:"RevokedAt"`
-	CreatedAt   string `json:"CreatedAt"`
-	UpdatedAt   string `json:"UpdatedAt"`
-	TxID        string `json:"TxID"`
+	ID          string `json:"id"`
+	StudentID   string `json:"studentID"`
+	StudentName string `json:"studentName"`
+	Degree      string `json:"degree"`
+	Issuer      string `json:"issuer"`
+	IssueDate   string `json:"issueDate"`
+	CertHash    string `json:"certHash"`
+	HashAlgo    string `json:"hashAlgo"` // "sha256" or "blake3"
+	Signature   string `json:"signature"`
+	IsRevoked   bool   `json:"isRevoked"`
+	RevokedBy   string `json:"revokedBy"`
+	RevokedAt   string `json:"revokedAt"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+	TxID        string `json:"txID"`
 }
 
 // VerificationResult — returned by VerifyCertificate
@@ -291,21 +291,26 @@ func (s *SmartContract) RevokeCertificate(
 }
 
 func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
-	queryString := `{"selector":{"docType":"certificate"},"sort":[{"IssueDate":"desc"}]}`
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil || resultsIterator == nil {
-		// Fallback to range scan if Rich Query fails
-		return s.getAllCertificatesByRange(ctx)
+	// 1. Starting range scan
+	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+	if err != nil {
+		return []*Certificate{}, nil
 	}
 	defer resultsIterator.Close()
 
-	var certificates []*Certificate
-	for resultsIterator.HasNext() {
+	certificates := make([]*Certificate, 0)
+	count := 0
+	for resultsIterator.HasNext() && count < 500 { // Safety limit: 500 records
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
+
 		var cert Certificate
-		json.Unmarshal(queryResponse.Value, &cert)
-		certificates = append(certificates, &cert)
+		err = json.Unmarshal(queryResponse.Value, &cert)
+		// 2. Strict validation: check for docType
+		if err == nil && cert.DocType == "certificate" {
+			certificates = append(certificates, &cert)
+			count++
+		}
 	}
 	return certificates, nil
 }
@@ -329,11 +334,11 @@ func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionCon
 }
 
 func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","StudentID":"%s"},"sort":[{"IssueDate":"desc"}]}`, studentID)
+	// Fixed: Use lowercase 'studentID' to match the JSON tag in the struct
+	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","studentID":"%s"}}`, studentID)
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
-	if err != nil || resultsIterator == nil {
-		// Fallback to range scan filtered by studentID
-		return s.getCertificatesByStudentRange(ctx, studentID)
+	if err != nil {
+		return []*Certificate{}, nil
 	}
 	defer resultsIterator.Close()
 
@@ -342,15 +347,17 @@ func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionCont
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var cert Certificate
-		json.Unmarshal(queryResponse.Value, &cert)
-		certificates = append(certificates, &cert)
+		err = json.Unmarshal(queryResponse.Value, &cert)
+		if err == nil {
+			certificates = append(certificates, &cert)
+		}
 	}
 	return certificates, nil
 }
 
 func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
 	all, _ := s.getAllCertificatesByRange(ctx)
-	var filtered []*Certificate
+	filtered := make([]*Certificate, 0)
 	for _, c := range all {
 		if c.StudentID == studentID {
 			filtered = append(filtered, c)
@@ -360,7 +367,7 @@ func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.Transactio
 }
 
 func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
-	queryString := `{"selector":{"docType":"auditLog"},"sort":[{"Timestamp":"desc"}]}`
+	queryString := `{"selector":{"docType":"auditLog"}}`
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil || resultsIterator == nil {
 		return s.getAuditLogsByRange(ctx)
@@ -372,8 +379,10 @@ func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var log AuditLog
-		json.Unmarshal(queryResponse.Value, &log)
-		logs = append(logs, &log)
+		err := json.Unmarshal(queryResponse.Value, &log)
+		if err == nil {
+			logs = append(logs, &log)
+		}
 	}
 	return logs, nil
 }
@@ -388,8 +397,10 @@ func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextIn
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var log AuditLog
-		json.Unmarshal(queryResponse.Value, &log)
-		logs = append(logs, &log)
+		err := json.Unmarshal(queryResponse.Value, &log)
+		if err == nil {
+			logs = append(logs, &log)
+		}
 	}
 	return logs, nil
 }

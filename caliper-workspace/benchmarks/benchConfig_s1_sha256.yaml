@@ -58,7 +58,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 30
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -82,11 +82,11 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 30
       workload:
         module: workload/revokeCertificate.js
       txOptions:
-        invokerIdentity: User1@org2.example.com
+        invokerIdentity: User1@org1.example.com
 
     - label: GetCertificatesByStudent
       description: Fixed-rate 200 TPS per-student query.
