@@ -1,6 +1,6 @@
 // ============================================================================
-//  BCMS — Blockchain Certificate Management System
-//  Chaincode Implementation — SHA-256 Mode
+//  BCMS - Blockchain Certificate Management System
+//  Chaincode Implementation - SHA-256 Mode
 //
 //  This implementation uses crypto/sha256 for certificate hashing.
 //  Switchable via HASH_MODE=sha256 environment variable.
@@ -34,7 +34,7 @@ func GetHashMode() string {
 	return strings.ToLower(mode)
 }
 
-// ─── Data Structures ────────────────────────────────────────────────────────
+// --- Data Structures --------------------------------------------------------
 
 // Certificate — core educational record stored on the ledger
 type Certificate struct {
@@ -83,7 +83,7 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
+// --- Internal Helpers --------------------------------------------------------
 
 func (s *SmartContract) writeAudit(
 	ctx contractapi.TransactionContextInterface,
@@ -104,7 +104,7 @@ func (s *SmartContract) writeAudit(
 	_ = ctx.GetStub().PutState(key, data)
 }
 
-// ─── SHA-256 Hash Implementation ────────────────────────────────────────────
+// ─── SHA-256 Hash Implementation ─────────────────────────────────────────---
 
 // ComputeCertHashSHA256 computes H(C) = SHA256(studentID|name|degree|issuer|date)
 // This is the original BCMS implementation from the research paper.
@@ -124,7 +124,7 @@ func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) (
 	return hash, "sha256"
 }
 
-// ─── Identity Helpers ────────────────────────────────────────────────────────
+// --- Identity Helpers --------------------------------------------------------
 
 func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
@@ -142,7 +142,7 @@ func getCallerRole(ctx contractapi.TransactionContextInterface) string {
 	return role
 }
 
-// ─── Smart Contract Functions ────────────────────────────────────────────────
+// --- Smart Contract Functions ------------------------------------------------
 
 // InitLedger seeds the ledger with sample certificates (SHA-256 mode)
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
