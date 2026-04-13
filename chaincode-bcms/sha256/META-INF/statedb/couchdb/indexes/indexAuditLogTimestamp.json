@@ -1,0 +1,7 @@
+{
+    "index": {
+        "fields": ["docType", "Timestamp"]
+    },
+    "name": "indexAuditLogTimestamp",
+    "type": "json"
+}

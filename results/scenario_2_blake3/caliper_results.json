@@ -2,7 +2,7 @@
   "scenario": 2,
   "title": "BLAKE3 Alternative",
   "description": "Real Caliper benchmark \u2014 BLAKE3 Alternative",
-  "timestamp": "2026-04-13T21:03:45Z",
+  "timestamp": "2026-04-13T21:28:10Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/blake3",
