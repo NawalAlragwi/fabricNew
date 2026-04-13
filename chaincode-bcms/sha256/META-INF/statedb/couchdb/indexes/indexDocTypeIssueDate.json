@@ -1,6 +1,6 @@
 {
     "index": {
-        "fields": ["docType", "IssueDate"]
+        "fields": ["docType", "issueDate"]
     },
     "name": "indexDocTypeIssueDate",
     "type": "json"
