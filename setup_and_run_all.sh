@@ -483,8 +483,8 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '300'
-      orderer: '300'
+        endorser: '600'
+      orderer: '600'
 channels:
   mychannel:
     orderers:

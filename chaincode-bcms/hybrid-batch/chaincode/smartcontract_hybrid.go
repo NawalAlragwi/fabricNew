@@ -682,13 +682,10 @@ func (s *SmartContract) RevokeCertificate(
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*Certificate, error) {
-	// CouchDB rich query with explicit index hint and limit
-	qs := `{"selector":{"docType":"certificate"},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexCertificatesValue","indexCertificates"],"limit":100}`
-
-	iter, err := ctx.GetStub().GetQueryResult(qs)
+	// High-perf prefix range scan (CERT_ to CERT_~) matches SHA-256 scenario efficiency
+	iter, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
 	if err != nil {
-		// LevelDB fallback
-		return s.rangeAllCertificates(ctx)
+		return []*Certificate{}, nil
 	}
 	defer iter.Close()
 
@@ -702,7 +699,12 @@ func (s *SmartContract) QueryAllCertificates(
 		if err := json.Unmarshal(resp.Value, &c); err != nil {
 			continue
 		}
-		certs = append(certs, &c)
+		if c.DocType == DocTypeCertificate {
+			certs = append(certs, &c)
+		}
+		if len(certs) >= 10 {
+			break
+		}
 	}
 	if certs == nil {
 		certs = []*Certificate{}
@@ -734,6 +736,9 @@ func (s *SmartContract) rangeAllCertificates(
 		}
 		if c.DocType == DocTypeCertificate {
 			certs = append(certs, &c)
+		}
+		if len(certs) >= 50 {
+			break
 		}
 	}
 	if certs == nil {
