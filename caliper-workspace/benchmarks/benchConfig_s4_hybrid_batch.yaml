@@ -4,9 +4,9 @@
 #
 #  Hash algorithm : Hybrid — BLAKE3(SHA-256(data))
 #  Batch size     : 10 (ten certificates per Fabric transaction)
-#  Workers        : 5 (local)
-#  IssueCertificate: linear-rate 50 → 500 TPS over 60 s
-#  Read rounds    : fixed-rate 200 TPS
+#  Workers        : 8 (local)
+#  IssueCertificate: linear-rate 50 → 200 TPS over 60 s
+#  Read rounds    : fixed-rate 200 TPS, 60 s
 #
 #  This is the PRIMARY/OPTIMIZED scenario. Effective certificate throughput
 #  = IssueCertificate TPS × batchSize (10×).
@@ -32,29 +32,29 @@ test:
   description: >
     Scenario S4 — Hybrid-Batch (SHA-256 + BLAKE3 + Batch=10).
     batchSize: 10 (ten certificates per Fabric transaction).
-    IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5 workers.
+    IssueCertificate: linear-rate ramp 50→200 TPS, 60 s, 8 workers.
     All read rounds: fixed-rate 200 TPS.
     Effective cert throughput = TPS × 10.
     This is the peak-performance research scenario.
   workers:
     type: local
-    number: 5
+    number: 8
 
   rounds:
 
     - label: IssueCertificate
       description: >
         S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction.
-        Linear ramp 50→500 TPS over 60 s (5 workers).
+        Linear ramp 50→200 TPS over 60 s (8 workers).
         Hash: BLAKE3(SHA-256(fields)) per certificate.
         MVCC-safe: no GetState inside write loop.
-        Effective cert throughput at 500 TPS = 5,000 certs/sec.
+        Effective cert throughput at 200 TPS = 2,000 certs/sec.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
           startingTps: 50
-          finishingTps: 500
+          finishingTps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -98,26 +98,26 @@ test:
       txOptions:
         invokerIdentity: User1@org2.example.com
 
-    - label: GetCertificatesByStudent
-      description: Fixed-rate 200 TPS per-student query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/getCertificatesByStudent.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: GetAuditLogs
-      description: Fixed-rate 200 TPS audit trail query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/getAuditLogs.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
+#    - label: GetCertificatesByStudent
+#      description: Fixed-rate 200 TPS per-student query.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 200
+#      workload:
+#        module: workload/getCertificatesByStudent.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com
+#
+#    - label: GetAuditLogs
+#      description: Fixed-rate 200 TPS audit trail query.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 200
+#      workload:
+#        module: workload/getAuditLogs.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com

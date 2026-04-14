@@ -1,4 +1,4 @@
-module github.com/moain2028/fabric/chaincode-bcms/hybrid-batch
+module github.com/NawalAlragwi/fabricNew/chaincode-bcms/hybrid-batch
 
 go 1.23.0
 
@@ -7,7 +7,6 @@ require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0
 	github.com/hyperledger/fabric-protos-go-apiv2 v0.3.4
 	google.golang.org/protobuf v1.36.4
-	lukechampine.com/blake3 v1.4.1
 )
 
 require (

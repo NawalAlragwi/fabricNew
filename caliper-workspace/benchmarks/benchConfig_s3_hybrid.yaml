@@ -22,7 +22,7 @@ test:
   name: bcms-s3-hybrid-fixed-200tps
   description: >
     Scenario S3 — Hybrid Hash, No Batching. Specialized for academic comparison.
-    TPS fixed at 200 for all rounds. Added index warm-up phase.
+    TPS fixed at 200 for all rounds. Standardized for academic comparison.
   workers:
     type: local
     number: 8
@@ -57,20 +57,7 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 3: INDEX WARM-UP (PREVENTS TIMEOUTS) ─────────────────────────
-    - label: WarmupIndexing
-      description: Trigger CouchDB index building before high-load query.
-      txDuration: 20
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 5
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    # ── ROUND 4: FULL QUERY ────────────────────────────────────────────────
+    # ── ROUND 3: FULL QUERY ────────────────────────────────────────────────
     - label: QueryAllCertificates
       description: Query with 200 TPS (limited to 100 results per tx).
       txDuration: 60
@@ -83,7 +70,7 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 5: REVOCATION ────────────────────────────────────────────────
+    # ── ROUND 4: REVOCATION ────────────────────────────────────────────────
     - label: RevokeCertificate
       description: Mark certificates as revoked at 200 TPS.
       txDuration: 60

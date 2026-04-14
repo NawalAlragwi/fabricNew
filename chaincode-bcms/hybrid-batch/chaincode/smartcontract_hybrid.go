@@ -97,7 +97,7 @@ const (
 type Certificate struct {
 	DocType     string `json:"docType"`    // "certificate"
 	ID          string `json:"id"`         // IDc — unique certificate identifier
-	StudentID   string `json:"studentId"`  // IDs — student identifier
+	StudentID   string `json:"studentID"`  // IDs — student identifier
 	StudentName string `json:"studentName"`
 	Degree      string `json:"degree"`     // S — academic score / degree type
 	Issuer      string `json:"issuer"`     // Issuing institution
@@ -156,7 +156,7 @@ type VerificationResult struct {
 // Used by IssueCertificateBatch for multi-cert atomic commit.
 type IssueBatchRequest struct {
 	ID          string `json:"id"`
-	StudentID   string `json:"studentId"`
+	StudentID   string `json:"studentID"`
 	StudentName string `json:"studentName"`
 	Degree      string `json:"degree"`
 	Issuer      string `json:"issuer"`
@@ -702,7 +702,7 @@ func (s *SmartContract) QueryAllCertificates(
 		if c.DocType == DocTypeCertificate {
 			certs = append(certs, &c)
 		}
-		if len(certs) >= 10 {
+		if len(certs) >= 500 {
 			break
 		}
 	}
@@ -754,7 +754,7 @@ func (s *SmartContract) GetCertificatesByStudent(
 	studentId string,
 ) ([]*Certificate, error) {
 	qs := fmt.Sprintf(
-		`{"selector":{"docType":"certificate","studentId":"%s"},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexStudentIdValue","indexStudentId"]}`,
+		`{"selector":{"docType":"certificate","studentID":"%s","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexStudentIdValue","indexStudentId"]}`,
 		studentId,
 	)
 	iter, err := ctx.GetStub().GetQueryResult(qs)
@@ -806,7 +806,7 @@ func (s *SmartContract) GetBatchRecord(
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
-	qs := `{"selector":{"docType":"auditLog"},"sort":[{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
+	qs := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
 	iter, err := ctx.GetStub().GetQueryResult(qs)
 	if err != nil {
 		return s.rangeAuditLogs(ctx)
