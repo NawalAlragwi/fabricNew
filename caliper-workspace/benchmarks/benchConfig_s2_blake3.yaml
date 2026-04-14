@@ -32,7 +32,7 @@ test:
     Requires chaincode deployed with HASH_MODE=blake3.
   workers:
     type: local
-    number: 5
+    number: 4
 
   rounds:
 

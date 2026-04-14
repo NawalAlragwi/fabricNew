@@ -64,6 +64,17 @@ type VerificationResult struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// AuditLog  captures mutations for audit trail
+type AuditLog struct {
+	DocType   string `json:"docType"`
+	TxID      string `json:"txID"`
+	CertID    string `json:"certID"`
+	Action    string `json:"action"` // ISSUE | REVOKE
+	Actor     string `json:"actor"`
+	Timestamp string `json:"timestamp"`
+	Detail    string `json:"detail"`
+}
+
 // SmartContract — the main Hyperledger Fabric contract (BLAKE3 mode)
 type SmartContract struct {
 	contractapi.Contract
@@ -115,6 +126,27 @@ func getCallerRole(ctx contractapi.TransactionContextInterface) string {
 		return ""
 	}
 	return role
+}
+
+// --- Internal Helpers --------------------------------------------------------
+
+func (s *SmartContract) writeAudit(
+	ctx contractapi.TransactionContextInterface,
+	certID, action, actor, detail string,
+) {
+	txID := ctx.GetStub().GetTxID()
+	key := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
+	log := AuditLog{
+		DocType:   "auditLog",
+		TxID:      txID,
+		CertID:    certID,
+		Action:    action,
+		Actor:     actor,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Detail:    detail,
+	}
+	data, _ := json.Marshal(log)
+	_ = ctx.GetStub().PutState(key, data)
 }
 
 // ─── Smart Contract Functions (BLAKE3 mode) ──────────────────────────────────
@@ -314,6 +346,148 @@ func (s *SmartContract) VerifyCertificate(
 		Message:   "certificate is valid and authentic (BLAKE3 verified)",
 		Timestamp: ts,
 	}, nil
+}
+
+func (s *SmartContract) RevokeCertificate(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+	revokedBy string,
+) error {
+	certJSON, _ := ctx.GetStub().GetState(id)
+	if certJSON == nil {
+		return nil
+	}
+	var cert Certificate
+	json.Unmarshal(certJSON, &cert)
+
+	if cert.IsRevoked {
+		return nil
+	}
+
+	cert.IsRevoked = true
+	cert.RevokedBy = revokedBy
+	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	
+	updated, _ := json.Marshal(cert)
+	ctx.GetStub().PutState(id, updated)
+	s.writeAudit(ctx, id, "REVOKE", revokedBy, "BLAKE3 revoke")
+	return nil
+}
+
+func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+	// 1. Starting range scan
+	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+	if err != nil {
+		return []*Certificate{}, nil
+	}
+	defer resultsIterator.Close()
+
+	certificates := make([]*Certificate, 0)
+	count := 0
+	for resultsIterator.HasNext() && count < 500 { // Safety limit: 500 records
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+
+		var cert Certificate
+		err = json.Unmarshal(queryResponse.Value, &cert)
+		// 2. Strict validation: check for docType
+		if err == nil && cert.DocType == "certificate" {
+			certificates = append(certificates, &cert)
+			count++
+		}
+	}
+	return certificates, nil
+}
+
+func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+	if err != nil { return []*Certificate{}, nil }
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var cert Certificate
+		json.Unmarshal(queryResponse.Value, &cert)
+		if cert.DocType == "certificate" {
+			certificates = append(certificates, &cert)
+		}
+	}
+	return certificates, nil
+}
+
+func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+	// Re-added sort and missing selector field to FORCE CouchDB to use the index
+	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","studentID":"%s","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`, studentID)
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil {
+		return []*Certificate{}, nil
+	}
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var cert Certificate
+		err = json.Unmarshal(queryResponse.Value, &cert)
+		if err == nil {
+			certificates = append(certificates, &cert)
+		}
+	}
+	return certificates, nil
+}
+
+func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+	all, _ := s.getAllCertificatesByRange(ctx)
+	filtered := make([]*Certificate, 0)
+	for _, c := range all {
+		if c.StudentID == studentID {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
+}
+
+func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+	// CouchDB Requirement: Fields in sort must exist in selector to use index
+	queryString := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}]}`
+	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	if err != nil || resultsIterator == nil {
+		return s.getAuditLogsByRange(ctx)
+	}
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var log AuditLog
+		err = json.Unmarshal(queryResponse.Value, &log)
+		if err == nil {
+			logs = append(logs, &log)
+		}
+	}
+	return logs, nil
+}
+
+func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
+	if err != nil { return []*AuditLog{}, nil }
+	defer resultsIterator.Close()
+
+	var logs []*AuditLog
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil { continue }
+		var log AuditLog
+		err = json.Unmarshal(queryResponse.Value, &log)
+		if err == nil {
+			logs = append(logs, &log)
+		}
+	}
+	return logs, nil
 }
 
 // ComputeHash exposes hash computation for benchmarking

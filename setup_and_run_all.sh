@@ -757,8 +757,9 @@ run_real_caliper_scenario() {
         warn "  Network down — attempting to start it now"
         setup_fabric_network || { warn "  Startup failed — falling back to simulation"; return 1; }
         FABRIC_NETWORK_OK=true
-    else
-        log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
+    fi
+
+    log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
         cd "${ROOT_DIR}/test-network"
         ./network.sh deployCC \
             -ccn basic \
@@ -775,7 +776,6 @@ run_real_caliper_scenario() {
         # ── FIX-C: Warm up after every scenario re-deploy ─────────────────
         wait_for_chaincode_image
         # ── End FIX-C ──────────────────────────────────────────────────────
-    fi
 
     local PEER1_TLS_CERT PEER2_TLS_CERT ORDERER_TLS_CERT
     PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
