@@ -452,7 +452,8 @@ func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.Transactio
 
 func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
 	// CouchDB Requirement: Fields in sort must exist in selector to use index
-	queryString := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}]}`
+	// Added 'limit': 50 to prevent timeouts under high TPS load (200 TPS)
+	queryString := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}],"limit":50}`
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil || resultsIterator == nil {
 		return s.getAuditLogsByRange(ctx)
@@ -460,13 +461,15 @@ func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface
 	defer resultsIterator.Close()
 
 	var logs []*AuditLog
-	for resultsIterator.HasNext() {
+	count := 0
+	for resultsIterator.HasNext() && count < 50 {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var log AuditLog
 		err = json.Unmarshal(queryResponse.Value, &log)
 		if err == nil {
 			logs = append(logs, &log)
+			count++
 		}
 	}
 	return logs, nil
@@ -478,13 +481,15 @@ func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextIn
 	defer resultsIterator.Close()
 
 	var logs []*AuditLog
-	for resultsIterator.HasNext() {
+	count := 0
+	for resultsIterator.HasNext() && count < 50 { // Limit to 50 for performance
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var log AuditLog
 		err = json.Unmarshal(queryResponse.Value, &log)
 		if err == nil {
 			logs = append(logs, &log)
+			count++
 		}
 	}
 	return logs, nil
