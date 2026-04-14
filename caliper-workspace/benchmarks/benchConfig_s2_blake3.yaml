@@ -32,7 +32,7 @@ test:
     Requires chaincode deployed with HASH_MODE=blake3.
   workers:
     type: local
-    number: 3
+    number: 8
 
   rounds:
 
@@ -45,7 +45,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 50
-          finishingTps: 150
+          finishingTps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -59,7 +59,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 200
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -71,7 +71,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 200
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -83,7 +83,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 200
       workload:
         module: workload/revokeCertificate.js
       txOptions:
