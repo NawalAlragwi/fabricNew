@@ -44,7 +44,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 50
-          finishingTps: 200
+          finishingTps: 250
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -58,7 +58,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 250
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -70,7 +70,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 250
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -82,7 +82,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 250
       workload:
         module: workload/revokeCertificate.js
       txOptions:
