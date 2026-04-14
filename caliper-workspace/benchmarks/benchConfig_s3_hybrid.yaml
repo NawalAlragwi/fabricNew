@@ -35,7 +35,8 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          startingTps: 50
+          finishingTps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
