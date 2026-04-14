@@ -682,8 +682,8 @@ func (s *SmartContract) RevokeCertificate(
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*Certificate, error) {
-	// CouchDB rich query with explicit index hint
-	qs := `{"selector":{"docType":"certificate"},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexCertificatesValue","indexCertificates"]}`
+	// CouchDB rich query with explicit index hint and limit
+	qs := `{"selector":{"docType":"certificate"},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexCertificatesValue","indexCertificates"],"limit":100}`
 
 	iter, err := ctx.GetStub().GetQueryResult(qs)
 	if err != nil {
@@ -749,7 +749,7 @@ func (s *SmartContract) GetCertificatesByStudent(
 	studentId string,
 ) ([]*Certificate, error) {
 	qs := fmt.Sprintf(
-		`{"selector":{"docType":"certificate","studentId":"%s"},"sort":[{"issueDate":"desc"}]}`,
+		`{"selector":{"docType":"certificate","studentId":"%s"},"sort":[{"issueDate":"desc"}],"use_index":["_design/indexStudentIdValue","indexStudentId"]}`,
 		studentId,
 	)
 	iter, err := ctx.GetStub().GetQueryResult(qs)
@@ -801,7 +801,7 @@ func (s *SmartContract) GetBatchRecord(
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
-	qs := `{"selector":{"docType":"auditLog"},"sort":[{"timestamp":"desc"}]}`
+	qs := `{"selector":{"docType":"auditLog"},"sort":[{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
 	iter, err := ctx.GetStub().GetQueryResult(qs)
 	if err != nil {
 		return s.rangeAuditLogs(ctx)

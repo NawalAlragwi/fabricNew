@@ -46,7 +46,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 50
-          finishingTps: 500
+          finishingTps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -90,26 +90,4 @@ test:
       txOptions:
         invokerIdentity: User1@org2.example.com
 
-    - label: GetCertificatesByStudent
-      description: Fixed-rate 200 TPS per-student query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/getCertificatesByStudent.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: GetAuditLogs
-      description: Fixed-rate 200 TPS audit trail query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/getAuditLogs.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
+    

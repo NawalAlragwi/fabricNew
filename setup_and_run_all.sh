@@ -347,6 +347,7 @@ setup_fabric_network() {
         error "go.mod not found at chaincode-bcms/hybrid-batch/go.mod"; exit 1; }
     [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/main.go" ] || {
         error "main.go not found at chaincode-bcms/hybrid-batch/main.go"; exit 1; }
+    [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/chaincode/smartcontract_hybrid.go" ] || \
     [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/smartcontract_hybrid.go" ] || {
         error "smartcontract_hybrid.go not found"; exit 1; }
     log "✓ Chaincode source files verified"

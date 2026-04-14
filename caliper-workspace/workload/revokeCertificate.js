@@ -43,7 +43,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         const request = {
             contractId:        'basic',
             contractFunction:  'RevokeCertificate',
-            contractArguments: [certID, 'Org1MSP'],
+            contractArguments: [certID],
             readOnly:          false,
         };
 
