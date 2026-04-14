@@ -127,7 +127,7 @@
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v6</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v6.0). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5 workers. All read rounds: fixed-rate 200 TPS, 60 s.
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v6.0). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp to 150 TPS, 60 s, 3 workers. All read rounds: fixed-rate 150 TPS, 60 s.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">6</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -158,35 +158,35 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1146</td> <td>0</td> <td>19.2</td> <td>1.16</td> <td>0.07</td> <td>0.41</td> <td>19.1</td>
+                         <td>IssueCertificate</td> <td>4440</td> <td>0</td> <td>74.1</td> <td>1.84</td> <td>0.07</td> <td>0.66</td> <td>73.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>1203</td> <td>0</td> <td>20.0</td> <td>0.10</td> <td>0.01</td> <td>0.01</td> <td>20.0</td>
+                         <td>VerifyCertificate</td> <td>9003</td> <td>0</td> <td>150.0</td> <td>0.12</td> <td>0.00</td> <td>0.02</td> <td>150.0</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>903</td> <td>0</td> <td>15.0</td> <td>38.00</td> <td>0.54</td> <td>33.20</td> <td>9.8</td>
+                         <td>QueryAllCertificates</td> <td>4997</td> <td>4006</td> <td>149.9</td> <td>50.90</td> <td>20.88</td> <td>33.67</td> <td>95.3</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>1203</td> <td>0</td> <td>20.0</td> <td>0.82</td> <td>0.07</td> <td>0.37</td> <td>19.9</td>
+                         <td>RevokeCertificate</td> <td>9003</td> <td>0</td> <td>149.7</td> <td>19.40</td> <td>0.18</td> <td>11.29</td> <td>141.1</td>
                     </tr>
                     <tr>
-                         <td>GetCertificatesByStudent</td> <td>903</td> <td>0</td> <td>15.0</td> <td>0.05</td> <td>0.01</td> <td>0.02</td> <td>15.0</td>
+                         <td>GetCertificatesByStudent</td> <td>9003</td> <td>0</td> <td>149.9</td> <td>0.66</td> <td>0.01</td> <td>0.03</td> <td>149.9</td>
                     </tr>
                     <tr>
-                         <td>GetAuditLogs</td> <td>0</td> <td>903</td> <td>15.0</td> <td>-</td> <td>-</td> <td>-</td> <td>7.5</td>
+                         <td>GetAuditLogs</td> <td>55</td> <td>8948</td> <td>149.9</td> <td>55.96</td> <td>41.79</td> <td>55.15</td> <td>76.9</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). Linear ramp 50→500 TPS over 60 s. Chaincode: SHA-256 hash mode.
+                <p>S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). Linear ramp 50→150 TPS over 60 s. Chaincode: SHA-256 hash mode.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: linear-rate
   opts:
-    startingTps: 10
-    finishingTps: 50
+    startingTps: 50
+    finishingTps: 150
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -194,7 +194,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1146</td> <td>0</td> <td>19.2</td> <td>1.16</td> <td>0.07</td> <td>0.41</td> <td>19.1</td>
+                                     <td>IssueCertificate</td> <td>4440</td> <td>0</td> <td>74.1</td> <td>1.84</td> <td>0.07</td> <td>0.66</td> <td>73.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -202,12 +202,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>Fixed-rate 200 TPS read-only verify.</p>
+                <p>Fixed-rate 150 TPS read-only verify.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 20
+    tps: 150
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -215,7 +215,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>1203</td> <td>0</td> <td>20.0</td> <td>0.10</td> <td>0.01</td> <td>0.01</td> <td>20.0</td>
+                                     <td>VerifyCertificate</td> <td>9003</td> <td>0</td> <td>150.0</td> <td>0.12</td> <td>0.00</td> <td>0.02</td> <td>150.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -223,12 +223,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>Fixed-rate 200 TPS full ledger scan.</p>
+                <p>Fixed-rate 150 TPS full ledger scan.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 15
+    tps: 150
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -236,7 +236,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>903</td> <td>0</td> <td>15.0</td> <td>38.00</td> <td>0.54</td> <td>33.20</td> <td>9.8</td>
+                                     <td>QueryAllCertificates</td> <td>4997</td> <td>4006</td> <td>149.9</td> <td>50.90</td> <td>20.88</td> <td>33.67</td> <td>95.3</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -244,12 +244,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>Fixed-rate 200 TPS revocation (idempotent).</p>
+                <p>Fixed-rate 150 TPS revocation (idempotent).</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 20
+    tps: 150
 </pre>
                         <h3>Performance metrics for RevokeCertificate</h3>
                             <table style="min-width: 100%;">
@@ -257,7 +257,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>1203</td> <td>0</td> <td>20.0</td> <td>0.82</td> <td>0.07</td> <td>0.37</td> <td>19.9</td>
+                                     <td>RevokeCertificate</td> <td>9003</td> <td>0</td> <td>149.7</td> <td>19.40</td> <td>0.18</td> <td>11.29</td> <td>141.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -265,12 +265,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetCertificatesByStudent">
                 <h2>Benchmark round: GetCertificatesByStudent</h2>
-                <p>Fixed-rate 200 TPS per-student query.</p>
+                <p>Fixed-rate 150 TPS per-student query.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 15
+    tps: 150
 </pre>
                         <h3>Performance metrics for GetCertificatesByStudent</h3>
                             <table style="min-width: 100%;">
@@ -278,7 +278,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetCertificatesByStudent</td> <td>903</td> <td>0</td> <td>15.0</td> <td>0.05</td> <td>0.01</td> <td>0.02</td> <td>15.0</td>
+                                     <td>GetCertificatesByStudent</td> <td>9003</td> <td>0</td> <td>149.9</td> <td>0.66</td> <td>0.01</td> <td>0.03</td> <td>149.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetCertificatesByStudent</h3>
@@ -286,12 +286,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="GetAuditLogs">
                 <h2>Benchmark round: GetAuditLogs</h2>
-                <p>Fixed-rate 200 TPS audit trail query.</p>
+                <p>Fixed-rate 150 TPS audit trail query.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 15
+    tps: 150
 </pre>
                         <h3>Performance metrics for GetAuditLogs</h3>
                             <table style="min-width: 100%;">
@@ -299,7 +299,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetAuditLogs</td> <td>0</td> <td>903</td> <td>15.0</td> <td>-</td> <td>-</td> <td>-</td> <td>7.5</td>
+                                     <td>GetAuditLogs</td> <td>55</td> <td>8948</td> <td>149.9</td> <td>55.96</td> <td>41.79</td> <td>55.15</td> <td>76.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetAuditLogs</h3>
@@ -311,8 +311,8 @@ rateControl:
                 <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-baseline-v6
 description: &gt;
   Scenario S1 — SHA-256 Baseline (v6.0). batchSize: 1 (single certificate per
-  Fabric transaction). IssueCertificate: linear-rate ramp 50→500 TPS, 60 s, 5
-  workers. All read rounds: fixed-rate 200 TPS, 60 s.
+  Fabric transaction). IssueCertificate: linear-rate ramp to 150 TPS, 60 s, 3
+  workers. All read rounds: fixed-rate 150 TPS, 60 s.
 workers:
   type: local
   number: 3
@@ -320,13 +320,13 @@ rounds:
   - label: IssueCertificate
     description: &gt;
       S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). Linear ramp
-      50→500 TPS over 60 s. Chaincode: SHA-256 hash mode.
+      50→150 TPS over 60 s. Chaincode: SHA-256 hash mode.
     txDuration: 60
     rateControl:
       type: linear-rate
       opts:
-        startingTps: 10
-        finishingTps: 50
+        startingTps: 50
+        finishingTps: 150
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -334,56 +334,56 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
-    description: Fixed-rate 200 TPS read-only verify.
+    description: Fixed-rate 150 TPS read-only verify.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 20
+        tps: 150
     workload:
       module: workload&#x2F;verifyCertificate.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
-    description: Fixed-rate 200 TPS full ledger scan.
+    description: Fixed-rate 150 TPS full ledger scan.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 15
+        tps: 150
     workload:
       module: workload&#x2F;queryAllCertificates.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
-    description: Fixed-rate 200 TPS revocation (idempotent).
+    description: Fixed-rate 150 TPS revocation (idempotent).
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 20
+        tps: 150
     workload:
       module: workload&#x2F;revokeCertificate.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: GetCertificatesByStudent
-    description: Fixed-rate 200 TPS per-student query.
+    description: Fixed-rate 150 TPS per-student query.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 15
+        tps: 150
     workload:
       module: workload&#x2F;getCertificatesByStudent.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: GetAuditLogs
-    description: Fixed-rate 200 TPS audit trail query.
+    description: Fixed-rate 150 TPS audit trail query.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 15
+        tps: 150
     workload:
       module: workload&#x2F;getAuditLogs.js
     txOptions:

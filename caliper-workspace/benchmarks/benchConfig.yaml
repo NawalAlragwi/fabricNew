@@ -9,13 +9,13 @@
 #    txDuration: 60 s                 (was 30 s)
 #    rateControl: linear-rate         (was fixed-rate)
 #      startingTps:  50
-#      finishingTps: 500
+#      finishingTps: 150
 #    batchSize: 10  (Hybrid-Batch scenario)
 #
-#  REQUEST-2 [Read-operation rounds — fixed-rate 200 TPS]:
+#  REQUEST-2 [Read-operation rounds — fixed-rate 150 TPS]:
 #    All read operations (VerifyCertificate, QueryAllCertificates,
-#    GetCertificatesByStudent, GetAuditLogs) now run at 200 TPS.
-#    RevokeCertificate remains write-mode but also set to 200 TPS.
+#    GetCertificatesByStudent, GetAuditLogs) now run at 150 TPS.
+#    RevokeCertificate remains write-mode but also set to 150 TPS.
 #
 #  REQUEST-3 [batchSize per scenario]:
 #    This config represents the Hybrid-Batch scenario → batchSize: 10
@@ -49,8 +49,8 @@ test:
   description: >
     BCMS Full Benchmark Suite — Hybrid-Batch Framework (SHA-256 + BLAKE3).
     6 rounds covering all chaincode functions.
-    IssueCertificate: linear-rate 50→500 TPS over 60 s, 5 workers, batch=10.
-    All read-operation rounds: fixed-rate 200 TPS.
+    IssueCertificate: linear-rate 50→150 TPS over 60 s, 5 workers, batch=10.
+    All read-operation rounds: fixed-rate 150 TPS.
     Target: 0% failure rate on all rounds.
   workers:
     type: local
@@ -61,7 +61,7 @@ test:
     # ──────────────────────────────────────────────────────────────────────────
     # Round 1: IssueCertificate — Hybrid-Batch Write (Stress Test)
     #
-    # linear-rate ramps from 50 TPS → 500 TPS over 60 seconds (5 workers).
+    # linear-rate ramps from 50 TPS → 150 TPS over 60 seconds (5 workers).
     # batchSize: 10 → each Fabric transaction carries 10 certificates.
     # MVCC-safe: no GetState inside write loop.
     # Key scheme: CERT_<worker>_<round>_<seq> — globally unique.
@@ -69,14 +69,14 @@ test:
     - label: IssueCertificate
       description: >
         Issue certificates via Hybrid-Batch framework (SHA-256 + BLAKE3).
-        Stress test: linear ramp from 50 TPS to 500 TPS over 60 seconds.
+        Stress test: linear ramp from 50 TPS to 150 TPS over 60 seconds.
         10 certs per Fabric transaction. MVCC-safe, zero-failure design.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
           startingTps: 50
-          finishingTps: 500
+          finishingTps: 150
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -85,7 +85,7 @@ test:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 2: VerifyCertificate — Read-Only, 200 TPS
+    # Round 2: VerifyCertificate — Read-Only, 150 TPS
     #
     # inputHash="" → chaincode performs existence+not-revoked check only.
     # readOnly:true bypasses orderer for maximum peer throughput.
@@ -93,19 +93,19 @@ test:
     - label: VerifyCertificate
       description: >
         Verify certificate existence on the ledger (readOnly peer query).
-        Fixed-rate 200 TPS. inputHash is empty — existence check only.
+        Fixed-rate 150 TPS. inputHash is empty — existence check only.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 3: QueryAllCertificates — Full Ledger Scan, 200 TPS
+    # Round 3: QueryAllCertificates — Full Ledger Scan, 150 TPS
     #
     # GetStateByRange("","") — works on LevelDB and CouchDB.
     # readOnly:true — direct peer query.
@@ -113,19 +113,19 @@ test:
     - label: QueryAllCertificates
       description: >
         Scan and return all certificate records from the ledger.
-        Fixed-rate 200 TPS. Filters by docType=="certificate".
+        Fixed-rate 150 TPS. Filters by docType=="certificate".
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 4: RevokeCertificate — Org2 RBAC Write, 200 TPS
+    # Round 4: RevokeCertificate — Org2 RBAC Write, 150 TPS
     #
     # Idempotent: nil when cert not found or already revoked → 0 failures.
     # certID pattern matches IssueCertificate to target real certs.
@@ -133,19 +133,19 @@ test:
     - label: RevokeCertificate
       description: >
         Revoke certificates. Idempotent: nil when cert not found or revoked.
-        Fixed-rate 200 TPS. Targets certs issued in round 1.
+        Fixed-rate 150 TPS. Targets certs issued in round 1.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 5: GetCertificatesByStudent — Per-Student Query, 200 TPS
+    # Round 5: GetCertificatesByStudent — Per-Student Query, 150 TPS
     #
     # readOnly:true — direct peer query.
     # studentID pattern matches IssueCertificate keys.
@@ -153,32 +153,32 @@ test:
     - label: GetCertificatesByStudent
       description: >
         Query all certificates for a specific student.
-        Fixed-rate 200 TPS. studentID aligned with IssueCertificate keys.
+        Fixed-rate 150 TPS. studentID aligned with IssueCertificate keys.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Round 6: GetAuditLogs — Audit Trail Query, 200 TPS
+    # Round 6: GetAuditLogs — Audit Trail Query, 150 TPS
     #
     # Scans "AUDIT_" … "AUDIT_~" key range.
     # readOnly:true — direct peer query.
     # ──────────────────────────────────────────────────────────────────────────
     - label: GetAuditLogs
       description: >
-        Query the immutable audit trail. Fixed-rate 200 TPS.
+        Query the immutable audit trail. Fixed-rate 150 TPS.
         Efficient range scan on AUDIT_ key prefix.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/getAuditLogs.js
       txOptions:

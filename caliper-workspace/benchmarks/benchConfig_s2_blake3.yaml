@@ -3,8 +3,8 @@
 #  Hash algorithm : BLAKE3 only
 #  Batch size     : 1 (one certificate per Fabric transaction)
 #  Workers        : 3 (local)
-#  IssueCertificate: linear-rate 10 → 50 TPS over 60 s
-#  Read rounds    : fixed-rate (15-30 TPS), 60 s
+#  IssueCertificate: linear-rate ramp to 150 TPS over 60 s
+#  Read rounds    : fixed-rate 150 TPS, 60 s
 # ============================================================================
 
 monitors:
@@ -27,8 +27,8 @@ test:
   description: >
     Scenario S2 — BLAKE3 Alternative (v6.0).
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: linear-rate ramp 10→50 TPS, 60 s, 3 workers.
-    All read rounds: fixed-rate matching S1, 60 s.
+    IssueCertificate: linear-rate ramp to 150 TPS, 60 s, 3 workers.
+    All read rounds: fixed-rate 150 TPS, 60 s.
     Requires chaincode deployed with HASH_MODE=blake3.
   workers:
     type: local
@@ -39,13 +39,13 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
-        Linear ramp 10→50 TPS over 60 s. Chaincode: BLAKE3 hash mode.
+        Linear ramp 50→150 TPS over 60 s. Chaincode: BLAKE3 hash mode.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 10
-          finishingTps: 50
+          startingTps: 50
+          finishingTps: 150
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -54,60 +54,60 @@ test:
         invokerIdentity: User1@org1.example.com
 
     - label: VerifyCertificate
-      description: Fixed-rate 30 TPS read-only verify.
+      description: Fixed-rate 150 TPS read-only verify.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 150
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
-      description: Fixed-rate 15 TPS full ledger scan.
+      description: Fixed-rate 150 TPS full ledger scan.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 15
+          tps: 150
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: RevokeCertificate
-      description: Fixed-rate 20 TPS revocation (idempotent).
+      description: Fixed-rate 150 TPS revocation (idempotent).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 150
       workload:
         module: workload/revokeCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: GetCertificatesByStudent
-      description: Fixed-rate 15 TPS per-student query.
+      description: Fixed-rate 150 TPS per-student query.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 15
+          tps: 150
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: GetAuditLogs
-      description: Fixed-rate 15 TPS audit trail query.
+      description: Fixed-rate 150 TPS audit trail query.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 15
+          tps: 150
       workload:
         module: workload/getAuditLogs.js
       txOptions:
