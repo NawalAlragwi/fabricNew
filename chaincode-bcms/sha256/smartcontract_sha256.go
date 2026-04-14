@@ -335,8 +335,8 @@ func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionCon
 }
 
 func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
-	// Re-added sort to FORCE CouchDB to use the indexStudentIDIssueDate index
-	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","studentID":"%s"},"sort":[{"issueDate":"desc"}]}`, studentID)
+	// Re-added sort and missing selector field to FORCE CouchDB to use the index
+	queryString := fmt.Sprintf(`{"selector":{"docType":"certificate","studentID":"%s","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`, studentID)
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
 		return []*Certificate{}, nil
@@ -368,8 +368,8 @@ func (s *SmartContract) getCertificatesByStudentRange(ctx contractapi.Transactio
 }
 
 func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
-	// Re-added sort to FORCE CouchDB to use the indexAuditLogTimestamp index
-	queryString := `{"selector":{"docType":"auditLog"},"sort":[{"timestamp":"desc"}]}`
+	// CouchDB Requirement: Fields in sort must exist in selector to use index
+	queryString := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}]}`
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil || resultsIterator == nil {
 		return s.getAuditLogsByRange(ctx)
