@@ -25,7 +25,7 @@ test:
     TPS fixed at 200 for all rounds. Added index warm-up phase.
   workers:
     type: local
-    number: 5
+    number: 8
 
   rounds:
     # ── ROUND 1: ISSUANCE ──────────────────────────────────────────────────
