@@ -277,10 +277,15 @@ func (s *SmartContract) RevokeCertificate(
 ) error {
 	certJSON, _ := ctx.GetStub().GetState(id)
 	if certJSON == nil {
-		return fmt.Errorf("not found")
+		return nil
 	}
 	var cert Certificate
 	json.Unmarshal(certJSON, &cert)
+
+	if cert.IsRevoked {
+		return nil
+	}
+
 	cert.IsRevoked = true
 	cert.RevokedBy = revokedBy
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)

@@ -43,8 +43,8 @@ test:
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 500
+          startingTps: 10
+          finishingTps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -58,7 +58,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 20
       workload:
         module: workload/verifyCertificate.js
       txOptions:
@@ -70,7 +70,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 15
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -82,7 +82,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 20
       workload:
         module: workload/revokeCertificate.js
       txOptions:
@@ -94,7 +94,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 15
       workload:
         module: workload/getCertificatesByStudent.js
       txOptions:
@@ -106,7 +106,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 15
       workload:
         module: workload/getAuditLogs.js
       txOptions:
