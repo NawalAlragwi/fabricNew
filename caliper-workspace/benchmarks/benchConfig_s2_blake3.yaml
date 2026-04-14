@@ -89,26 +89,26 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    - label: GetCertificatesByStudent
-      description: Fixed-rate 150 TPS per-student query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 150
-      workload:
-        module: workload/getCertificatesByStudent.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: GetAuditLogs
-      description: Fixed-rate 150 TPS audit trail query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 150
-      workload:
-        module: workload/getAuditLogs.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
+#    - label: GetCertificatesByStudent
+#      description: Fixed-rate 150 TPS per-student query.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 150
+#      workload:
+#        module: workload/getCertificatesByStudent.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com
+#
+#    - label: GetAuditLogs
+#      description: Fixed-rate 150 TPS audit trail query.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 150
+#      workload:
+#        module: workload/getAuditLogs.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com
