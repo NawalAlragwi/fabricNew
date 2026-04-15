@@ -51,6 +51,7 @@ for arg in "$@"; do
         --report-only)   REPORT_ONLY=true; SKIP_NETWORK=true; SKIP_CALIPER=true; SKIP_TAMARIN=true ;;
         --all-scenarios) ALL_SCENARIOS=true ;;
         --scenario=*)    SCENARIO_NUM="${arg#--scenario=}" ;;
+        --comparison-only) COMPARISON_ONLY=true ;;
         --tps=*)         IFS=',' read -ra TPS_VALUES <<< "${arg#--tps=}" ;;
         --help)
             echo "Usage: bash setup_and_run_all.sh [OPTIONS]"
@@ -58,6 +59,7 @@ for arg in "$@"; do
             echo "  --skip-caliper    Skip Caliper benchmarks"
             echo "  --skip-tamarin    Skip Tamarin verification"
             echo "  --report-only     Regenerate all reports (no Docker/Fabric needed)"
+            echo "  --comparison-only Regenerate ONLY the final 4-scenario comparison report"
             echo "  --all-scenarios   Run all 4 research scenarios"
             echo "  --scenario=N      Run single scenario (1|2|3|4)"
             echo "  --tps=50,100,200  TPS values for benchmark runs"
@@ -732,10 +734,10 @@ detect_runtime_environment() {
 }
 
 declare -A SCENARIO_CHAINCODE=([1]="chaincode-bcms/sha256" [2]="chaincode-bcms/blake3" [3]="chaincode-bcms/hybrid-batch" [4]="chaincode-bcms/hybrid-batch")
-declare -A SCENARIO_LABEL=([1]="S1: SHA-256 Baseline" [2]="S2: BLAKE3 Alternative" [3]="S3: Hybrid SHA-256+BLAKE3" [4]="S4: Hybrid+Batch (batchSize=10)")
+declare -A SCENARIO_LABEL=([1]="S1: SHA-256 Baseline" [2]="S2: BLAKE3 Alternative" [3]="S3: Hybrid SHA-256+BLAKE3" [4]="S4: Hybrid+Batch (batchSize=20)")
 declare -A SCENARIO_KEY=([1]="scenario_1_sha256" [2]="scenario_2_blake3" [3]="scenario_3_merged" [4]="scenario_4_batching")
 declare -A SCENARIO_BENCHCONFIG=([1]="benchConfig_s1_sha256.yaml" [2]="benchConfig_s2_blake3.yaml" [3]="benchConfig_s3_hybrid.yaml" [4]="benchConfig_s4_hybrid_batch.yaml")
-declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="10")
+declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="20")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # FIX-C: run_real_caliper_scenario() — added wait_for_chaincode_image()
@@ -803,13 +805,26 @@ run_real_caliper_scenario() {
     cd "${ROOT_DIR}"
 
     if [ -f "${ROOT_DIR}/caliper-workspace/report.html" ]; then
+        # ── Professional Custom Report Generation ──────────────────────────
+        log "  Generating professional scenario report..."
+        cd "${ROOT_DIR}/caliper-workspace"
+        node generate_custom_report.js report.html 2>&1 | tee -a "$LOG_FILE" || warn "  Professional report generator failed"
+        
+        # Copy reports to scenario results directory
         cp "${ROOT_DIR}/caliper-workspace/report.html" "${sdir}/caliper_raw_report.html"
+        cp "${ROOT_DIR}/caliper-workspace"/report_S*.html "${sdir}/" 2>/dev/null || true
+        cp "${ROOT_DIR}/caliper-workspace/report_custom.html" "${sdir}/" 2>/dev/null || true
+        # ───────────────────────────────────────────────────────────────────
+
+        cd "${ROOT_DIR}"
         log "  Parsing Caliper report → caliper_results.json"
         python3 scripts/parse_caliper_report.py \
             --report "${sdir}/caliper_raw_report.html" \
             --scenario "$n" \
             --output "${sdir}/caliper_results.json" \
             2>&1 | tee -a "$LOG_FILE" || { warn "  Parser failed"; return 1; }
+        
+        # Mark as real data
         python3 -c "
 import json
 path='${sdir}/caliper_results.json'
@@ -817,7 +832,8 @@ with open(path) as f: d=json.load(f)
 d['data_source']='real_caliper'; d['is_simulated']=False
 with open(path,'w') as f: json.dump(d,f,indent=2)
 " 2>/dev/null || true
-        log "  ✓ Real Caliper data written to ${key}/caliper_results.json"
+        
+        log "  ✓ Real Caliper data and professional reports saved to ${sdir}"
         return 0
     else
         warn "  report.html not found after Caliper run"; return 1
@@ -886,6 +902,12 @@ reporting_pipeline() {
     done
     python3 aggregate_results.py 2>&1 | tee -a "$LOG_FILE" || warn "aggregate_results.py failed"
     python3 generate_four_scenario_report.py 2>&1 | tee -a "$LOG_FILE" || warn "generate_four_scenario_report.py failed"
+    
+    if [ -f "results/final_comparison/four_scenario_report.html" ]; then
+        log "✓ FINAL COMPARISON REPORT: results/final_comparison/four_scenario_report.html"
+        cp "results/final_comparison/four_scenario_report.html" "results/four_scenario_report.html" 2>/dev/null || true
+    fi
+    
     python3 generate_individual_reports.py 2>&1 | tee -a "$LOG_FILE" || warn "generate_individual_reports.py failed"
     log "✓ Reporting pipeline complete"
 }
@@ -960,6 +982,14 @@ main() {
     install_python_dependencies
     install_graphviz
     install_tamarin
+
+    if [ "${COMPARISON_ONLY:-false}" = "true" ]; then
+        info "COMPARISON_ONLY mode"
+        python3 aggregate_results.py 2>&1 | tee -a "$LOG_FILE"
+        python3 generate_four_scenario_report.py 2>&1 | tee -a "$LOG_FILE"
+        log "✓ Comparison report updated"
+        exit 0
+    fi
 
     if [ "$REPORT_ONLY" = "true" ]; then
         info "REPORT_ONLY mode"

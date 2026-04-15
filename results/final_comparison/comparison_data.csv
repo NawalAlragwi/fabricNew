@@ -2,4 +2,4 @@ Scenario,Hash Algorithm,Batch Size,Workers,Total Tx,Success,Failures,Success Rat
 SHA-256 Baseline,sha256,1,4,0,0,0,0.0,0.0,0.0,0.0,100.0,38.2,312.4,-100.0,-100.0,100.0,False
 BLAKE3 Alternative,blake3,1,4,0,0,0,0.0,0.0,0.0,0.0,100.0,36.9,308.1,-100.0,-100.0,100.0,False
 Hybrid SHA-256 + BLAKE3,hybrid,1,4,0,0,0,0.0,0.0,0.0,0.0,100.0,41.6,321.8,-100.0,-100.0,100.0,False
-Hybrid + Batching ×10,hybrid,10,8,0,0,0,0.0,0.0,0.0,0.0,10.0,68.4,478.6,-100.0,-100.0,100.0,False
+Hybrid + Batching ×10,hybrid,20,8,0,0,0,0.0,0.0,0.0,0.0,5.0,68.4,478.6,-100.0,-100.0,100.0,False

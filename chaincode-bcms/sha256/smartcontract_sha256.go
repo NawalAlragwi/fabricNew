@@ -273,8 +273,11 @@ func (s *SmartContract) VerifyCertificate(
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
-	revokedBy string,
 ) error {
+	msp, err := getCallerMSP(ctx)
+	if err != nil {
+		return fmt.Errorf("RevokeCertificate: %v", err)
+	}
 	certJSON, _ := ctx.GetStub().GetState(id)
 	if certJSON == nil {
 		return nil
@@ -287,12 +290,12 @@ func (s *SmartContract) RevokeCertificate(
 	}
 
 	cert.IsRevoked = true
-	cert.RevokedBy = revokedBy
+	cert.RevokedBy = msp
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
 	
 	updated, _ := json.Marshal(cert)
 	ctx.GetStub().PutState(id, updated)
-	s.writeAudit(ctx, id, "REVOKE", revokedBy, "SHA-256 revoke")
+	s.writeAudit(ctx, id, "REVOKE", msp, "SHA-256 revoke")
 	return nil
 }
 

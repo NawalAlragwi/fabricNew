@@ -1,1 +1,1 @@
-{"scenario":3,"key":"scenario_3_merged","label":"S3: Hybrid SHA-256+BLAKE3","chaincode":"chaincode-bcms/hybrid-batch","batch_size":1,"tps":50,"started":"2026-04-14T22:02:42Z"}
+{"scenario":3,"key":"scenario_3_merged","label":"S3: Hybrid SHA-256+BLAKE3","chaincode":"chaincode-bcms/hybrid-batch","batch_size":1,"tps":50,"started":"2026-04-15T10:27:41Z"}

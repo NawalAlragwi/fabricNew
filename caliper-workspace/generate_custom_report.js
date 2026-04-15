@@ -44,11 +44,12 @@ const path = require('path');
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 const INPUT_REPORT  = process.argv[2] || path.join(__dirname, 'report.html');
-const OUTPUT_REPORT = process.argv[3] || path.join(__dirname, 'report_custom.html');
+let OUTPUT_REPORT   = process.argv[3]; // Will be auto-set if empty
 
+// ─── Initial Metadata ────────────────────────────────────────────────────────
 const BENCHMARK_META = {
     title:       'BCMS Hybrid-Batch Certificate Benchmark',
-    version:     'v5.0',
+    version:     'v6.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
     chaincode:   'bcms-hybrid',
@@ -61,6 +62,63 @@ const BENCHMARK_META = {
     crypto:      'Hybrid SHA-256 (on-chain) + BLAKE3 (advisory off-chain)',
     batching:    'MVCC-safe — each cert at independent state key',
 };
+
+// ─── Scenario Detection ──────────────────────────────────────────────────────
+const SCENARIO_MAP = {
+    'bcms-s1': {
+        title: 'Scenario S1: SHA-256 Baseline',
+        batching: 'batchSize: 1 (Linear issuance)',
+        crypto: 'SHA-256 only (Standard Fabric crypto)',
+        branch: 'main / baseline',
+        file: 'report_S1_SHA256.html'
+    },
+    'bcms-s2': {
+        title: 'Scenario S2: BLAKE3 Alternative',
+        batching: 'batchSize: 1 (Linear issuance)',
+        crypto: 'BLAKE3 only (Performance optimized hash)',
+        branch: 'blake3-optimization',
+        file: 'report_S2_BLAKE3.html'
+    },
+    'bcms-s3': {
+        title: 'Scenario S3: Hybrid SHA-256 + BLAKE3',
+        batching: 'batchSize: 1 (Linear issuance)',
+        crypto: 'Hybrid SHA-256 (On-chain) + BLAKE3 (Advisory)',
+        branch: 'hybrid-crypto',
+        file: 'report_S3_Hybrid.html'
+    },
+    'bcms-s4': {
+        title: 'Scenario S4: Hybrid-Batch (Peak Performance)',
+        batching: 'batchSize: 10 (MVCC-safe transactional batching)',
+        crypto: 'Hybrid SHA-256 (On-chain) + BLAKE3 (Advisory)',
+        branch: 'mirage-batch',
+        file: 'report_S4_HybridBatch.html'
+    }
+};
+
+function autoDetectScenario(benchName) {
+    const lowercaseName = (benchName || '').toLowerCase();
+    for (const key in SCENARIO_MAP) {
+        if (lowercaseName.includes(key)) {
+            Object.assign(BENCHMARK_META, SCENARIO_MAP[key]);
+            
+            // Set output report name if not explicitly provided
+            if (!OUTPUT_REPORT) {
+                OUTPUT_REPORT = path.join(__dirname, SCENARIO_MAP[key].file);
+            }
+            
+            console.log(`[SCENARIO] Detected ${SCENARIO_MAP[key].title} from "${benchName}"`);
+            return;
+        }
+    }
+    // Fallback: Use raw name if unknown
+    if (benchName) {
+        BENCHMARK_META.title = benchName.replace(/-/g, ' ').toUpperCase();
+        console.log(`[SCENARIO] Unknown scenario. Using raw name: ${BENCHMARK_META.title}`);
+    }
+    if (!OUTPUT_REPORT) {
+        OUTPUT_REPORT = path.join(__dirname, 'report_custom.html');
+    }
+}
 
 // ─── Round Metadata ─────────────────────────────────────────────────────────
 const ROUND_META = {
@@ -190,108 +248,33 @@ function parseNumericValue(str) {
 }
 
 function parseDefaultReport(htmlContent) {
-    const rounds = [];
-    const roundLabels = Object.keys(ROUND_META);
+    const results = {
+        name: htmlContent.match(/Name:\s*(&nbsp;?)?\s*<span[^>]*>(.*?)<\/span>/i)?.[2] || 'Caliper Benchmark',
+        rounds: []
+    };
 
-    for (const label of roundLabels) {
-        const roundData = {
+    const roundsMap = new Map();
+    const rowsRegex = /<tr[^>]*>\s*<td[^>]*>(.*?)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>\s*<td[^>]*>([\d.,]+)<\/td>/gi;
+    
+    let rowMatch;
+    while ((rowMatch = rowsRegex.exec(htmlContent)) !== null) {
+        const label = stripHtmlTags(rowMatch[1]);
+        if (label === 'Name' || label === 'TOTAL' || !label || roundsMap.has(label)) continue;
+
+        roundsMap.set(label, {
             name: label,
-            succ: 0,
-            fail: 0,
-            sendRate: 0,
-            maxLatency: 0,
-            minLatency: 0,
-            avgLatency: 0,
-            throughput: 0,
-        };
-
-        // Strategy A: plain <td>label</td> followed by 7 numeric <td>s
-        const plainRowRegex = new RegExp(
-            '<td[^>]*>\\s*' + label + '\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>\\s*' +
-            '<td[^>]*>\\s*([\\d.,]+)\\s*</td>',
-            'is'
-        );
-
-        let match = htmlContent.match(plainRowRegex);
-        if (match) {
-            roundData.succ       = parseNumericValue(match[1]);
-            roundData.fail       = parseNumericValue(match[2]);
-            roundData.sendRate   = parseNumericValue(match[3]);
-            roundData.maxLatency = parseNumericValue(match[4]);
-            roundData.minLatency = parseNumericValue(match[5]);
-            roundData.avgLatency = parseNumericValue(match[6]);
-            roundData.throughput = parseNumericValue(match[7]);
-            rounds.push(roundData);
-            continue;
-        }
-
-        // Strategy B: styled row with class attributes
-        const styledRowRegex = new RegExp(
-            '<td[^>]*>[^<]*' + label + '\\s*</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>\\s*' +
-            '<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>',
-            'is'
-        );
-
-        match = htmlContent.match(styledRowRegex);
-        if (match) {
-            roundData.succ       = parseNumericValue(match[1]);
-            roundData.fail       = parseNumericValue(match[2]);
-            roundData.sendRate   = parseNumericValue(match[3]);
-            roundData.maxLatency = parseNumericValue(match[4]);
-            roundData.minLatency = parseNumericValue(match[5]);
-            roundData.avgLatency = parseNumericValue(match[6]);
-            roundData.throughput = parseNumericValue(match[7]);
-            rounds.push(roundData);
-            continue;
-        }
-
-        // Strategy C: fallback — find label in HTML and extract surrounding <td>s
-        const sectionIdIdx = htmlContent.indexOf(`id="${label}"`);
-        const searchStart  = sectionIdIdx !== -1 ? sectionIdIdx : htmlContent.indexOf(label);
-        if (searchStart !== -1) {
-            const snippet  = htmlContent.substring(searchStart, searchStart + 3000);
-            const tdRegex  = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-            const allTds   = [];
-            let tdMatch;
-            while ((tdMatch = tdRegex.exec(snippet)) !== null) {
-                allTds.push(tdMatch[1]);
-            }
-
-            let labelTdIdx = -1;
-            for (let i = 0; i < allTds.length; i++) {
-                if (stripHtmlTags(allTds[i]).includes(label)) {
-                    labelTdIdx = i;
-                    break;
-                }
-            }
-
-            if (labelTdIdx !== -1 && allTds.length > labelTdIdx + 7) {
-                roundData.succ       = parseNumericValue(allTds[labelTdIdx + 1]);
-                roundData.fail       = parseNumericValue(allTds[labelTdIdx + 2]);
-                roundData.sendRate   = parseNumericValue(allTds[labelTdIdx + 3]);
-                roundData.maxLatency = parseNumericValue(allTds[labelTdIdx + 4]);
-                roundData.minLatency = parseNumericValue(allTds[labelTdIdx + 5]);
-                roundData.avgLatency = parseNumericValue(allTds[labelTdIdx + 6]);
-                roundData.throughput = parseNumericValue(allTds[labelTdIdx + 7]);
-            }
-        }
-
-        rounds.push(roundData);
+            succ: parseNumericValue(rowMatch[2]),
+            fail: parseNumericValue(rowMatch[3]),
+            sendRate: parseNumericValue(rowMatch[4]),
+            maxLatency: parseNumericValue(rowMatch[5]),
+            minLatency: parseNumericValue(rowMatch[6]),
+            avgLatency: parseNumericValue(rowMatch[7]),
+            throughput: parseNumericValue(rowMatch[8]),
+        });
     }
 
-    return rounds;
+    results.rounds = Array.from(roundsMap.values());
+    return results;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -523,12 +506,12 @@ function buildRoundSection(round, meta, chartData) {
         <!-- Round: ${round.name} -->
         <div class="round-section" id="${round.name}">
             <div class="round-title">
-                ${meta.emoji}&#xFE0F;&#x20E3;  ${round.name}
-                <span class="${meta.badge}">${meta.badgeText}</span>
-                <span class="badge-success">Fail = ${round.fail} &#x2713;</span>
+                ${meta.emoji || '🏁'}&#xFE0F;&#x20E3;  ${round.name}
+                <span class="${meta.badge || 'badge-blue'}">${meta.badgeText || 'Benchmark'}</span>
+                <span class="${round.fail > 0 ? 'badge-warn' : 'badge-success'}">Fail = ${round.fail} ${round.fail > 0 ? '⚠' : '✓'}</span>
             </div>
             <div class="round-desc">
-                ${meta.description}<br>
+                ${meta.description || 'No description available.'}<br>
                 <strong>Rate Control:</strong> ${rateInfo} &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: ${BENCHMARK_META.workers}
             </div>
             <table>
@@ -540,7 +523,7 @@ function buildRoundSection(round, meta, chartData) {
                 <tr>
                     <td>${round.name}</td>
                     <td class="succ-num">${formatNumber(round.succ)}</td>
-                    <td class="fail-zero">${round.fail}</td>
+                    <td class="${round.fail > 0 ? 'lat-num' : 'fail-zero'}">${round.fail}</td>
                     <td class="tps-num">${round.sendRate.toFixed(1)}</td>
                     <td class="lat-num">${round.maxLatency.toFixed(2)}</td>
                     <td class="lat-num">${round.minLatency.toFixed(2)}</td>
@@ -1221,8 +1204,14 @@ function main() {
     console.log(`[1/5] Read default Caliper report: ${INPUT_REPORT} (${htmlContent.length} bytes)`);
 
     // Step 2: Parse performance metrics
-    const rounds = parseDefaultReport(htmlContent);
-    console.log(`[2/5] Parsed ${rounds.length} benchmark rounds:`);
+    const results = parseDefaultReport(htmlContent);
+    const rounds = results.rounds;
+    
+    // Auto-detect scenario from report name
+    autoDetectScenario(results.name);
+    console.log(`[SCENARIO] Output will be saved to: ${path.basename(OUTPUT_REPORT)}`);
+
+    console.log(`[2/5] Parsed ${rounds.length} benchmark rounds from ${results.name}:`);
     for (const r of rounds) {
         console.log(`      - ${r.name}: Succ=${r.succ}, Fail=${r.fail}, TPS=${r.throughput.toFixed(1)}, AvgLat=${r.avgLatency.toFixed(2)}s`);
     }

@@ -1,6 +1,6 @@
 {
   "title": "BCMS Four-Scenario Comparison",
-  "generated_at": "2026-04-15 09:49:29",
+  "generated_at": "2026-04-15 22:54:04",
   "framework": "Hyperledger Caliper 0.6.0",
   "fabric_version": "2.5.9",
   "data_warning": "Values may be SIMULATED if Docker/Fabric was unavailable. Check is_simulated and data_source fields in each scenario.",
@@ -104,7 +104,7 @@
       "chaincode": "chaincode-bcms/hybrid-batch",
       "hash_algorithm": "hybrid",
       "workers": 8,
-      "batch_size": 10,
+      "batch_size": 20,
       "is_simulated": false,
       "data_source": "real_caliper",
       "total_transactions": 0,
@@ -115,7 +115,7 @@
       "effective_cert_tps": 0.0,
       "avg_latency_ms": 0.0,
       "weighted_avg_latency_s": 0.0,
-      "consensus_rounds_per100": 10.0,
+      "consensus_rounds_per100": 5.0,
       "world_state_puts_per_tx": 10.0,
       "ordering_overhead_reduction_pct": 90.0,
       "cpu_peer_pct": 68.4,
@@ -125,7 +125,7 @@
       "improvement_tps_vs_s1_pct": -100.0,
       "improvement_eff_tps_vs_s1_pct": -100.0,
       "improvement_latency_vs_s1_pct": 100.0,
-      "improvement_consensus_vs_s1_pct": 90.0,
+      "improvement_consensus_vs_s1_pct": 95.0,
       "tps_multiplier": 0.0,
       "eff_tps_multiplier": 0.0
     }
@@ -194,7 +194,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     },
     "VerifyCertificate": {
@@ -260,7 +260,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     },
     "QueryAllCertificates": {
@@ -326,7 +326,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     },
     "RevokeCertificate": {
@@ -392,7 +392,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     },
     "GetCertificatesByStudent": {
@@ -458,7 +458,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     },
     "GetAuditLogs": {
@@ -524,7 +524,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 10.0
+        "consensus_per100": 5.0
       }
     }
   },
@@ -592,7 +592,7 @@
     {
       "Scenario": "Hybrid + Batching \u00d710",
       "Hash Algorithm": "hybrid",
-      "Batch Size": 10,
+      "Batch Size": 20,
       "Workers": 8,
       "Total Tx": 0,
       "Success": 0,
@@ -601,7 +601,7 @@
       "IssueCert TPS": 0.0,
       "Eff. Cert TPS": 0.0,
       "Avg Latency (ms)": 0.0,
-      "Consensus/100 Certs": 10.0,
+      "Consensus/100 Certs": 5.0,
       "Peer CPU (%)": 68.4,
       "Peer MEM (MB)": 478.6,
       "TPS vs S1 (%)": -100.0,

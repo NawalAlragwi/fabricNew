@@ -36,21 +36,21 @@ const HashModeBLAKE3 = "blake3"
 // Certificate — core educational record stored on the ledger (BLAKE3 mode)
 type Certificate struct {
 	DocType     string `json:"docType"`
-	ID          string `json:"ID"`
-	StudentID   string `json:"StudentID"`
-	StudentName string `json:"StudentName"`
-	Degree      string `json:"Degree"`
-	Issuer      string `json:"Issuer"`
-	IssueDate   string `json:"IssueDate"`
-	CertHash    string `json:"CertHash"`
-	HashAlgo    string `json:"HashAlgo"` // "sha256" or "blake3"
-	Signature   string `json:"Signature"`
-	IsRevoked   bool   `json:"IsRevoked"`
-	RevokedBy   string `json:"RevokedBy"`
-	RevokedAt   string `json:"RevokedAt"`
-	CreatedAt   string `json:"CreatedAt"`
-	UpdatedAt   string `json:"UpdatedAt"`
-	TxID        string `json:"TxID"`
+	ID          string `json:"id"`
+	StudentID   string `json:"studentID"`
+	StudentName string `json:"studentName"`
+	Degree      string `json:"degree"`
+	Issuer      string `json:"issuer"`
+	IssueDate   string `json:"issueDate"`
+	CertHash    string `json:"certHash"`
+	HashAlgo    string `json:"hashAlgo"` // "sha256" or "blake3"
+	Signature   string `json:"signature"`
+	IsRevoked   bool   `json:"isRevoked"`
+	RevokedBy   string `json:"revokedBy"`
+	RevokedAt   string `json:"revokedAt"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+	TxID        string `json:"txID"`
 }
 
 // VerificationResult — returned by VerifyCertificate
