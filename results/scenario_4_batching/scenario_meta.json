@@ -1,1 +1,1 @@
-{"scenario":4,"key":"scenario_4_batching","label":"S4: Hybrid+Batch (batchSize=10)","chaincode":"chaincode-bcms/hybrid-batch","batch_size":10,"tps":50,"started":"2026-04-14T22:28:11Z"}
+{"scenario":4,"key":"scenario_4_batching","label":"S4: Hybrid+Batch (batchSize=10)","chaincode":"chaincode-bcms/hybrid-batch","batch_size":10,"tps":50,"started":"2026-04-15T06:34:47Z"}
