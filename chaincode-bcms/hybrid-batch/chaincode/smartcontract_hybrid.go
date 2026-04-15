@@ -141,6 +141,14 @@ type AuditLog struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// PaginatedQueryResult — response structure for paginated ledger scans.
+// This is the industry-standard way to return large datasets in Hyperledger Fabric.
+type PaginatedQueryResult struct {
+	Certificates []*Certificate `json:"certificates"`
+	Bookmark     string         `json:"bookmark"`
+	Count        int            `json:"count"`
+}
+
 // VerificationResult — structured response from VerifyCertificate.
 type VerificationResult struct {
 	CertID        string `json:"certId"`
@@ -605,6 +613,58 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+// QueryAllCertificates returns a paginated list of certificates.
+//
+// ─── PH.D. RESEARCH FEATURE: PAGINATION ──────────────────────────────────
+// Instead of fetching all records (which causes gRPC timeouts at scale),
+// this function fetches a 'page' of results.
+//
+// Arguments:
+//   pageSize — number of certificates per page (e.g., 20)
+//   bookmark — the starting point for the next page (empty string for page 1)
+func (s *SmartContract) QueryAllCertificates(
+	ctx contractapi.TransactionContextInterface,
+	pageSize int32,
+	bookmark string,
+) (*PaginatedQueryResult, error) {
+
+	// Fabric's native pagination at the ledger level.
+	// Range scan (CERT_ to CERT_~) is efficient and index-backed.
+	resultsIterator, metadata, err := ctx.GetStub().GetStateByRangeWithPagination(
+		"CERT_", "CERT_~", pageSize, bookmark)
+
+	if err != nil {
+		return nil, fmt.Errorf("QueryAllCertificates: ledger read error: %v", err)
+	}
+	defer resultsIterator.Close()
+
+	var certs []*Certificate
+	for resultsIterator.HasNext() {
+		resp, err := resultsIterator.Next()
+		if err != nil {
+			continue
+		}
+		var c Certificate
+		if err := json.Unmarshal(resp.Value, &c); err != nil {
+			continue
+		}
+		// Only collect records with DocTypeCertificate
+		if c.DocType == DocTypeCertificate {
+			certs = append(certs, &c)
+		}
+	}
+
+	if certs == nil {
+		certs = []*Certificate{}
+	}
+
+	return &PaginatedQueryResult{
+		Certificates: certs,
+		Bookmark:     metadata.Bookmark,
+		Count:        len(certs),
+	}, nil
+}
+
 // ReadCertificate returns the full certificate record for a given ID.
 func (s *SmartContract) ReadCertificate(
 	ctx contractapi.TransactionContextInterface,
@@ -676,41 +736,6 @@ func (s *SmartContract) RevokeCertificate(
 	return nil
 }
 
-// QueryAllCertificates returns all certificates sorted by issueDate desc.
-// Uses CouchDB rich query with index hint. Falls back to range scan for LevelDB.
-// readOnly=true in workload — never touches orderer.
-func (s *SmartContract) QueryAllCertificates(
-	ctx contractapi.TransactionContextInterface,
-) ([]*Certificate, error) {
-	// High-perf prefix range scan (CERT_ to CERT_~) matches SHA-256 scenario efficiency
-	iter, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
-	if err != nil {
-		return []*Certificate{}, nil
-	}
-	defer iter.Close()
-
-	var certs []*Certificate
-	for iter.HasNext() {
-		resp, err := iter.Next()
-		if err != nil {
-			continue
-		}
-		var c Certificate
-		if err := json.Unmarshal(resp.Value, &c); err != nil {
-			continue
-		}
-		if c.DocType == DocTypeCertificate {
-			certs = append(certs, &c)
-		}
-		if len(certs) >= 500 {
-			break
-		}
-	}
-	if certs == nil {
-		certs = []*Certificate{}
-	}
-	return certs, nil
-}
 
 func (s *SmartContract) rangeAllCertificates(
 	ctx contractapi.TransactionContextInterface,

@@ -195,7 +195,7 @@ wait_for_chaincode_image() {
         result=$(peer chaincode query \
             -C mychannel \
             -n basic \
-            -c '{"Args":["QueryAllCertificates"]}' \
+            -c '{"Args":["QueryAllCertificates", "20", ""]}' \
             2>&1) && {
             log "  ✓ Chaincode responded on attempt ${attempt}"
             log "    Response preview: ${result:0:120}..."

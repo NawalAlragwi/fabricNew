@@ -53,18 +53,17 @@ type Certificate struct {
 	TxID        string `json:"txID"`
 }
 
-// VerificationResult — returned by VerifyCertificate
-type VerificationResult struct {
-	CertID    string `json:"certID"`
-	Valid     bool   `json:"valid"`
-	IsRevoked bool   `json:"isRevoked"`
-	HashMatch bool   `json:"hashMatch"`
-	HashAlgo  string `json:"hashAlgo"`
-	Message   string `json:"message"`
 	Timestamp string `json:"timestamp"`
 }
 
-// AuditLog  captures mutations for audit trail
+// PaginatedQueryResult structure for pagination support
+type PaginatedQueryResult struct {
+	Certificates []*Certificate `json:"certificates"`
+	Bookmark     string         `json:"bookmark"`
+	Count        int            `json:"count"`
+}
+
+// AuditLog captures mutations for audit trail
 type AuditLog struct {
 	DocType   string `json:"docType"`
 	TxID      string `json:"txID"`
@@ -374,29 +373,38 @@ func (s *SmartContract) RevokeCertificate(
 	return nil
 }
 
-func (s *SmartContract) QueryAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
-	// 1. Starting range scan
-	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
+// QueryAllCertificates returns a paginated list of certificates (BLAKE3 mode)
+func (s *SmartContract) QueryAllCertificates(
+	ctx contractapi.TransactionContextInterface,
+	pageSize int32,
+	bookmark string,
+) (*PaginatedQueryResult, error) {
+
+	resultsIterator, metadata, err := ctx.GetStub().GetStateByRangeWithPagination("CERT_", "CERT_~", pageSize, bookmark)
 	if err != nil {
-		return []*Certificate{}, nil
+		return &PaginatedQueryResult{}, nil
 	}
 	defer resultsIterator.Close()
 
 	certificates := make([]*Certificate, 0)
-	count := 0
-	for resultsIterator.HasNext() && count < 500 { // Safety limit: 500 records
+	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
-		if err != nil { continue }
+		if err != nil {
+			continue
+		}
 
 		var cert Certificate
 		err = json.Unmarshal(queryResponse.Value, &cert)
-		// 2. Strict validation: check for docType
 		if err == nil && cert.DocType == "certificate" {
 			certificates = append(certificates, &cert)
-			count++
 		}
 	}
-	return certificates, nil
+
+	return &PaginatedQueryResult{
+		Certificates: certificates,
+		Bookmark:     metadata.Bookmark,
+		Count:        len(certificates),
+	}, nil
 }
 
 func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
