@@ -259,7 +259,7 @@ function parseDefaultReport(htmlContent) {
     let rowMatch;
     while ((rowMatch = rowsRegex.exec(htmlContent)) !== null) {
         const label = stripHtmlTags(rowMatch[1]);
-        if (label === 'Name' || label === 'TOTAL' || !label || roundsMap.has(label)) continue;
+        if (label === 'Name' || label === 'TOTAL' || !label || roundsMap.has(label) || label.includes('Warmup')) continue;
 
         roundsMap.set(label, {
             name: label,

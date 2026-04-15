@@ -129,12 +129,13 @@
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s4-hybrid-batch</span></li>
                 <li>Description: &nbsp<span style="font-weight: 500;">Scenario S4 — Hybrid-Batch (SHA-256 + BLAKE3 + Batch&#x3D;10). batchSize: 10 (ten certificates per Fabric transaction). IssueCertificate: linear-rate ramp 50→200 TPS, 60 s, 8 workers. All read rounds: fixed-rate 200 TPS. Effective cert throughput &#x3D; TPS × 20. This is the peak-performance research scenario.
 </span></li>
-                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">5</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
             <ul>
                 <h3>&nbspBenchmark results</h3>
                 <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#WarmupIndexing">WarmupIndexing</a></li>
                     <li><a href="#IssueCertificate">IssueCertificate</a></li>
                     <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
@@ -156,19 +157,43 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>4568</td> <td>0</td> <td>75.9</td> <td>1.56</td> <td>0.09</td> <td>0.51</td> <td>75.5</td>
+                         <td>WarmupIndexing</td> <td>760</td> <td>0</td> <td>48.4</td> <td>35.26</td> <td>3.78</td> <td>34.95</td> <td>15.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>12008</td> <td>0</td> <td>198.4</td> <td>0.72</td> <td>0.01</td> <td>0.04</td> <td>198.3</td>
+                         <td>IssueCertificate</td> <td>4645</td> <td>0</td> <td>77.1</td> <td>1.67</td> <td>0.09</td> <td>0.50</td> <td>76.6</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>4276</td> <td>7013</td> <td>186.6</td> <td>54.68</td> <td>14.76</td> <td>35.17</td> <td>110.8</td>
+                         <td>VerifyCertificate</td> <td>12008</td> <td>0</td> <td>198.0</td> <td>0.45</td> <td>0.01</td> <td>0.04</td> <td>198.0</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>10204</td> <td>0</td> <td>168.1</td> <td>34.42</td> <td>0.38</td> <td>14.84</td> <td>124.8</td>
+                         <td>QueryAllCertificates</td> <td>4312</td> <td>7188</td> <td>190.0</td> <td>57.90</td> <td>14.02</td> <td>35.74</td> <td>113.8</td>
+                    </tr>
+                    <tr>
+                         <td>RevokeCertificate</td> <td>10227</td> <td>0</td> <td>168.9</td> <td>33.82</td> <td>0.54</td> <td>14.22</td> <td>126.9</td>
                     </tr>
                 </table>
             </div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="WarmupIndexing">
+                <h2>Benchmark round: WarmupIndexing</h2>
+                <p>Warm-up round to trigger CouchDB index building and container startup.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 15
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for WarmupIndexing</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>WarmupIndexing</td> <td>760</td> <td>0</td> <td>48.4</td> <td>35.26</td> <td>3.78</td> <td>34.95</td> <td>15.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for WarmupIndexing</h3>
+            </div>
+
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
                 <p>S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction. Linear ramp 50→200 TPS over 60 s (8 workers). Hash: BLAKE3(SHA-256(fields)) per certificate. MVCC-safe: no GetState inside write loop. Effective cert throughput at 200 TPS &#x3D; 4,000 certs&#x2F;sec.
@@ -186,7 +211,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>4568</td> <td>0</td> <td>75.9</td> <td>1.56</td> <td>0.09</td> <td>0.51</td> <td>75.5</td>
+                                     <td>IssueCertificate</td> <td>4645</td> <td>0</td> <td>77.1</td> <td>1.67</td> <td>0.09</td> <td>0.50</td> <td>76.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -207,7 +232,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>12008</td> <td>0</td> <td>198.4</td> <td>0.72</td> <td>0.01</td> <td>0.04</td> <td>198.3</td>
+                                     <td>VerifyCertificate</td> <td>12008</td> <td>0</td> <td>198.0</td> <td>0.45</td> <td>0.01</td> <td>0.04</td> <td>198.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -228,7 +253,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>4276</td> <td>7013</td> <td>186.6</td> <td>54.68</td> <td>14.76</td> <td>35.17</td> <td>110.8</td>
+                                     <td>QueryAllCertificates</td> <td>4312</td> <td>7188</td> <td>190.0</td> <td>57.90</td> <td>14.02</td> <td>35.74</td> <td>113.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -249,7 +274,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>10204</td> <td>0</td> <td>168.1</td> <td>34.42</td> <td>0.38</td> <td>14.84</td> <td>124.8</td>
+                                     <td>RevokeCertificate</td> <td>10227</td> <td>0</td> <td>168.9</td> <td>33.82</td> <td>0.54</td> <td>14.22</td> <td>126.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -268,6 +293,17 @@ workers:
   type: local
   number: 8
 rounds:
+  - label: WarmupIndexing
+    description: Warm-up round to trigger CouchDB index building and container startup.
+    txDuration: 15
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;queryAllCertificates.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
   - label: IssueCertificate
     description: &gt;
       S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction. Linear
