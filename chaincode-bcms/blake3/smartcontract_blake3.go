@@ -52,7 +52,14 @@ type Certificate struct {
 	UpdatedAt   string `json:"updatedAt"`
 	TxID        string `json:"txID"`
 }
-
+// VerificationResult — returned by VerifyCertificate
+type VerificationResult struct {
+	CertID    string `json:"certID"`
+	Valid     bool   `json:"valid"`
+	IsRevoked bool   `json:"isRevoked"`
+	HashMatch bool   `json:"hashMatch"`
+	HashAlgo  string `json:"hashAlgo"`
+	Message   string `json:"message"`
 	Timestamp string `json:"timestamp"`
 }
 
