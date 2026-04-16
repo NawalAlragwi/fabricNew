@@ -31,7 +31,7 @@ test:
     All read rounds: fixed-rate 150 TPS, 60 s.
   workers:
     type: local
-    number: 8
+    number: 10
 
   rounds:
 
@@ -43,8 +43,8 @@ test:
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 200
+          startingTps: 100
+          finishingTps: 2000
       workload:
         module: workload/issueCertificate.js
         arguments:
