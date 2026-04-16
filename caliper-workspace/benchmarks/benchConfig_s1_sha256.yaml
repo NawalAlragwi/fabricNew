@@ -31,7 +31,7 @@ test:
     All read rounds: fixed-rate 150 TPS, 60 s.
   workers:
     type: local
-    number:10
+    number: 10
 
   rounds:
 

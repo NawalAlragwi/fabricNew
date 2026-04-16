@@ -1,50 +1,50 @@
 {
   "metadata": {
     "title": "BCMS Hash Algorithm Benchmark: SHA-256 vs BLAKE3",
-    "timestamp": "2026-04-16T10:46:58.789040",
+    "timestamp": "2026-04-17T02:08:20.332601",
     "platform": "linux",
     "python_version": "3.12.3 (main, Mar  3 2026, 12:15:18) [GCC 13.3.0]",
-    "blake3_native": false
+    "blake3_native": true
   },
   "results": {
     "sha256": {
       "algorithm": "SHA-256",
       "iterations": 50000,
-      "throughput_hashes_per_sec": 114113.43,
+      "throughput_hashes_per_sec": 120943.02,
       "latency_us": {
-        "mean": 3.87,
-        "median": 2.327,
-        "stddev": 42.188,
-        "min": 2.135,
-        "max": 6569.212,
-        "p50": 2.327,
-        "p95": 5.164,
-        "p99": 10.894
+        "mean": 3.94,
+        "median": 2.268,
+        "stddev": 57.847,
+        "min": 2.061,
+        "max": 9157.601,
+        "p50": 2.268,
+        "p95": 4.648,
+        "p99": 9.207
       },
-      "memory_bytes": 1644865,
-      "memory_kb": 1606.31
+      "memory_bytes": 1645185,
+      "memory_kb": 1606.63
     },
     "blake3": {
-      "algorithm": "BLAKE3 (simulated)",
+      "algorithm": "BLAKE3",
       "iterations": 50000,
-      "throughput_hashes_per_sec": 99498.58,
+      "throughput_hashes_per_sec": 113443.68,
       "latency_us": {
-        "mean": 4.93,
-        "median": 3.148,
-        "stddev": 42.104,
-        "min": 2.724,
-        "max": 6962.816,
-        "p50": 3.148,
-        "p95": 6.679,
-        "p99": 14.813
+        "mean": 4.869,
+        "median": 3.185,
+        "stddev": 21.376,
+        "min": 2.862,
+        "max": 2328.267,
+        "p50": 3.185,
+        "p95": 7.098,
+        "p99": 16.603
       },
-      "memory_bytes": 1644865,
-      "memory_kb": 1606.31
+      "memory_bytes": 1646866,
+      "memory_kb": 1608.27
     }
   },
   "comparison": {
-    "throughput_speedup_x": 0.8719,
-    "latency_improvement_x": 0.7851,
+    "throughput_speedup_x": 0.938,
+    "latency_improvement_x": 0.8091,
     "winner": "SHA-256",
     "recommendation": "BLAKE3 recommended for high-throughput certificate issuance"
   },
