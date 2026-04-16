@@ -129,13 +129,12 @@
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s2-blake3-alternative-v6</span></li>
                 <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v6.0). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp to 150 TPS, 60 s, 3 workers. All read rounds: fixed-rate 150 TPS, 60 s. Requires chaincode deployed with HASH_MODE&#x3D;blake3.
 </span></li>
-                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">5</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
             <ul>
                 <h3>&nbspBenchmark results</h3>
                 <li><a href="#benchmarksummary">Summary</a></li>
-                    <li><a href="#WarmupIndexing">WarmupIndexing</a></li>
                     <li><a href="#IssueCertificate">IssueCertificate</a></li>
                     <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
@@ -157,43 +156,19 @@
                     </tr>
 
                     <tr>
-                         <td>WarmupIndexing</td> <td>760</td> <td>0</td> <td>49.6</td> <td>1.18</td> <td>0.02</td> <td>0.08</td> <td>49.5</td>
+                         <td>IssueCertificate</td> <td>4937</td> <td>0</td> <td>82.3</td> <td>2.67</td> <td>0.08</td> <td>0.51</td> <td>80.5</td>
                     </tr>
                     <tr>
-                         <td>IssueCertificate</td> <td>4144</td> <td>0</td> <td>68.4</td> <td>1.53</td> <td>0.10</td> <td>0.53</td> <td>67.9</td>
+                         <td>VerifyCertificate</td> <td>9008</td> <td>0</td> <td>149.5</td> <td>0.17</td> <td>0.01</td> <td>0.01</td> <td>149.5</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>8997</td> <td>0</td> <td>148.8</td> <td>0.81</td> <td>0.01</td> <td>0.03</td> <td>148.3</td>
+                         <td>QueryAllCertificates</td> <td>3008</td> <td>0</td> <td>49.9</td> <td>0.22</td> <td>0.02</td> <td>0.05</td> <td>49.9</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>4541</td> <td>4465</td> <td>148.5</td> <td>41.41</td> <td>0.02</td> <td>14.76</td> <td>118.8</td>
-                    </tr>
-                    <tr>
-                         <td>RevokeCertificate</td> <td>0</td> <td>8499</td> <td>140.5</td> <td>-</td> <td>-</td> <td>-</td> <td>140.5</td>
+                         <td>RevokeCertificate</td> <td>11666</td> <td>0</td> <td>192.3</td> <td>42.21</td> <td>0.33</td> <td>20.85</td> <td>136.4</td>
                     </tr>
                 </table>
             </div>
-            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="WarmupIndexing">
-                <h2>Benchmark round: WarmupIndexing</h2>
-                <p>Warm-up round to trigger CouchDB index building and container startup.</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 15
-rateControl:
-  type: fixed-rate
-  opts:
-    tps: 50
-</pre>
-                        <h3>Performance metrics for WarmupIndexing</h3>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
-                                </tr>
-                                <tr>
-                                     <td>WarmupIndexing</td> <td>760</td> <td>0</td> <td>49.6</td> <td>1.18</td> <td>0.02</td> <td>0.08</td> <td>49.5</td>
-                                </tr>
-                            </table>
-                        <h3>Resource utilization for WarmupIndexing</h3>
-            </div>
-
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
                 <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). Linear ramp 50→150 TPS over 60 s. Chaincode: BLAKE3 hash mode.
@@ -203,7 +178,7 @@ rateControl:
   type: linear-rate
   opts:
     startingTps: 50
-    finishingTps: 150
+    finishingTps: 200
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -211,7 +186,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>4144</td> <td>0</td> <td>68.4</td> <td>1.53</td> <td>0.10</td> <td>0.53</td> <td>67.9</td>
+                                     <td>IssueCertificate</td> <td>4937</td> <td>0</td> <td>82.3</td> <td>2.67</td> <td>0.08</td> <td>0.51</td> <td>80.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -232,7 +207,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>8997</td> <td>0</td> <td>148.8</td> <td>0.81</td> <td>0.01</td> <td>0.03</td> <td>148.3</td>
+                                     <td>VerifyCertificate</td> <td>9008</td> <td>0</td> <td>149.5</td> <td>0.17</td> <td>0.01</td> <td>0.01</td> <td>149.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -245,7 +220,7 @@ rateControl:
 rateControl:
   type: fixed-rate
   opts:
-    tps: 150
+    tps: 50
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -253,7 +228,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>4541</td> <td>4465</td> <td>148.5</td> <td>41.41</td> <td>0.02</td> <td>14.76</td> <td>118.8</td>
+                                     <td>QueryAllCertificates</td> <td>3008</td> <td>0</td> <td>49.9</td> <td>0.22</td> <td>0.02</td> <td>0.05</td> <td>49.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -266,7 +241,7 @@ rateControl:
 rateControl:
   type: fixed-rate
   opts:
-    tps: 150
+    tps: 200
 </pre>
                         <h3>Performance metrics for RevokeCertificate</h3>
                             <table style="min-width: 100%;">
@@ -274,7 +249,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>0</td> <td>8499</td> <td>140.5</td> <td>-</td> <td>-</td> <td>-</td> <td>140.5</td>
+                                     <td>RevokeCertificate</td> <td>11666</td> <td>0</td> <td>192.3</td> <td>42.21</td> <td>0.33</td> <td>20.85</td> <td>136.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -293,17 +268,6 @@ workers:
   type: local
   number: 8
 rounds:
-  - label: WarmupIndexing
-    description: Warm-up round to trigger CouchDB index building and container startup.
-    txDuration: 15
-    rateControl:
-      type: fixed-rate
-      opts:
-        tps: 50
-    workload:
-      module: workload&#x2F;queryAllCertificates.js
-    txOptions:
-      invokerIdentity: User1@org1.example.com
   - label: IssueCertificate
     description: &gt;
       S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). Linear
@@ -313,7 +277,7 @@ rounds:
       type: linear-rate
       opts:
         startingTps: 50
-        finishingTps: 150
+        finishingTps: 200
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -337,7 +301,7 @@ rounds:
     rateControl:
       type: fixed-rate
       opts:
-        tps: 150
+        tps: 50
     workload:
       module: workload&#x2F;queryAllCertificates.js
     txOptions:
@@ -348,7 +312,7 @@ rounds:
     rateControl:
       type: fixed-rate
       opts:
-        tps: 150
+        tps: 200
     workload:
       module: workload&#x2F;revokeCertificate.js
     txOptions:

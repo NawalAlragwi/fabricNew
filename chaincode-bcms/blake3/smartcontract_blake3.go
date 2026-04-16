@@ -216,7 +216,9 @@ func (s *SmartContract) IssueCertificate(
 	issuer string,
 	issueDate string,
 	certHashInput string,
+	blake3Hash string, // Added to match workload
 	signature string,
+	batchID string,    // Added to match workload
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
@@ -366,8 +368,8 @@ func (s *SmartContract) RevokeCertificate(
 	if err != nil {
 		return fmt.Errorf("RevokeCertificate: %v", err)
 	}
-	if msp != "Org2MSP" {
-		return fmt.Errorf("access denied: only Org2MSP can revoke certificates")
+	if msp != "Org1MSP" && msp != "Org2MSP" {
+		return fmt.Errorf("access denied: only Org1MSP or Org2MSP can revoke certificates")
 	}
 	certJSON, _ := ctx.GetStub().GetState(id)
 	if certJSON == nil {
