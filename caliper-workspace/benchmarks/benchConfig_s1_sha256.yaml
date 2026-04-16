@@ -65,12 +65,12 @@ test:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
-      description: Fixed-rate 150 TPS full ledger scan.
+      description: Fixed-rate 50 TPS paginated rich query (optimized index).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -86,7 +86,7 @@ test:
       workload:
         module: workload/revokeCertificate.js
       txOptions:
-        invokerIdentity: User1@org1.example.com
+        invokerIdentity: User1@org2.example.com
 
 #    - label: GetCertificatesByStudent
 #      description: Fixed-rate 150 TPS per-student query.

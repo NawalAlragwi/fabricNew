@@ -284,6 +284,9 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			Blake3Hash:  "", // seeded records have no BLAKE3 hash
 			Signature:   fmt.Sprintf("SIG_%s_%s", s2.id, h[:16]),
 			BatchID:     "SEED_BATCH",
+			IsRevoked:   false,
+			RevokedBy:   "N/A",
+			RevokedAt:   "N/A",
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			TxID:        ctx.GetStub().GetTxID(),
@@ -398,6 +401,8 @@ func (s *SmartContract) IssueCertificate(
 		Signature:   signature,
 		BatchID:     batchId,
 		IsRevoked:   false,
+		RevokedBy:   "N/A",
+		RevokedAt:   "N/A",
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		TxID:        ctx.GetStub().GetTxID(),
@@ -499,6 +504,8 @@ func (s *SmartContract) IssueCertificateBatch(
 			Signature:   req.Signature,
 			BatchID:     batchId,
 			IsRevoked:   false,
+			RevokedBy:   "N/A",
+			RevokedAt:   "N/A",
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			TxID:        ctx.GetStub().GetTxID(),
@@ -628,14 +635,16 @@ func (s *SmartContract) QueryAllCertificates(
 	bookmark string,
 ) (*PaginatedQueryResult, error) {
 
-	// Use Rich Query with selector to leverage CouchDB index (indexDocTypeIssueDate)
-	queryString := `{"selector":{"docType":"certificate"}}`
+	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
+	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
+	// Sort: [ {"issueDate": "desc"} ]
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
 
 	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
 		queryString, pageSize, bookmark)
 
 	if err != nil {
-		return nil, fmt.Errorf("QueryAllCertificates: ledger read error: %v", err)
+		return nil, fmt.Errorf("failed to get query result with pagination: %v", err)
 	}
 	defer resultsIterator.Close()
 
@@ -696,8 +705,8 @@ func (s *SmartContract) RevokeCertificate(
 	if err != nil {
 		return fmt.Errorf("RevokeCertificate: %v", err)
 	}
-	if msp != "Org1MSP" && msp != "Org2MSP" {
-		return fmt.Errorf("RevokeCertificate: access denied — unauthorized org %s", msp)
+	if msp != "Org2MSP" {
+		return fmt.Errorf("access denied: only Org2MSP can revoke certificates")
 	}
 
 	certJSON, err := ctx.GetStub().GetState(id)

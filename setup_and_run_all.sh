@@ -255,7 +255,7 @@ verify_peers_healthy() {
 
     local result
     result=$(peer chaincode query -C mychannel -n basic \
-        -c '{"Args":["QueryAllCertificates"]}' 2>&1) && {
+        -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>&1) && {
         log "  ✓ Peer healthy — chaincode responds"
         return 0
     }
@@ -266,7 +266,7 @@ verify_peers_healthy() {
         sleep 15
         # Retry once after restart
         peer chaincode query -C mychannel -n basic \
-            -c '{"Args":["QueryAllCertificates"]}' 2>/dev/null && {
+            -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>/dev/null && {
             log "  ✓ Peer healthy after restart"
             return 0
         }

@@ -182,6 +182,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			HashAlgo:    hashAlgo,
 			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
 			IsRevoked:   false,
+			RevokedBy:   "N/A",
+			RevokedAt:   "N/A",
 			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
 			UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
 			TxID:        ctx.GetStub().GetTxID(),
@@ -239,6 +241,8 @@ func (s *SmartContract) IssueCertificate(
 		HashAlgo:    hashAlgo,
 		Signature:   signature,
 		IsRevoked:   false,
+		RevokedBy:   "N/A",
+		RevokedAt:   "N/A",
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		TxID:        ctx.GetStub().GetTxID(),
@@ -284,6 +288,9 @@ func (s *SmartContract) RevokeCertificate(
 	if err != nil {
 		return fmt.Errorf("RevokeCertificate: %v", err)
 	}
+	if msp != "Org2MSP" {
+		return fmt.Errorf("access denied: only Org2MSP can revoke certificates")
+	}
 	certJSON, _ := ctx.GetStub().GetState(id)
 	if certJSON == nil {
 		return nil
@@ -312,13 +319,14 @@ func (s *SmartContract) QueryAllCertificates(
 	bookmark string,
 ) (*PaginatedQueryResult, error) {
 
-	// Use Rich Query with selector to leverage CouchDB index (indexDocTypeIssueDate)
-	// Selector: { "docType": "certificate" }
-	queryString := `{"selector":{"docType":"certificate"}}`
+	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
+	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
+	// Sort: [ {"issueDate": "desc"} ]
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
 	
 	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
-		return &PaginatedQueryResult{}, nil
+		return nil, fmt.Errorf("failed to get query result with pagination: %v", err)
 	}
 	defer resultsIterator.Close()
 
