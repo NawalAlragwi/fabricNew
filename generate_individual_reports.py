@@ -17,7 +17,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 ROOT_DIR    = Path(__file__).parent
 RESULTS     = ROOT_DIR / "results"
@@ -373,7 +373,7 @@ def build_report(meta: dict, data: dict, baselines: dict, chartjs: str,
           <td>{c.get('mem_mb_max',0):.1f} MB</td>
         </tr>"""
 
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
