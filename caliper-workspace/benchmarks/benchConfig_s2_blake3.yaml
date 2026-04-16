@@ -32,20 +32,20 @@ test:
     Requires chaincode deployed with HASH_MODE=blake3.
   workers:
     type: local
-    number: 10
+    number: 5
 
   rounds:
 
     - label: IssueCertificate
       description: >
         S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
-        Linear ramp 50→150 TPS over 60 s. Chaincode: BLAKE3 hash mode.
+        Linear ramp 50→300 TPS. Chaincode: BLAKE3 hash mode.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 100
-          finishingTps: 2000
+          startingTps: 50
+          finishingTps: 300
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -59,7 +59,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 150
       workload:
         module: workload/verifyCertificate.js
       txOptions:

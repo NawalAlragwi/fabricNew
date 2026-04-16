@@ -1,5 +1,5 @@
 // ============================================================================
-//  BCMS Hybrid-Batch Chaincode — Entry Point
+//  BCMS Hybrid-Batch Chaincode - Entry Point
 //  Branch: mirage-batch
 // ============================================================================
 

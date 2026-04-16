@@ -1,32 +1,31 @@
-// ============================================================================
-//  BCMS — Blockchain Certificate Management System
-//  Hyperledger Fabric v2.5 | Go Chaincode — Hybrid Crypto + Batch Edition
+﻿// ============================================================================
+//  BCMS - Blockchain Certificate Management System
+//  Hyperledger Fabric v2.5 | Go Chaincode - Hybrid Crypto + Batch Edition
 //
 //  Research Paper: "Enhancing Trust and Transparency in Education Using
 //                   Blockchain: A Hyperledger Fabric-Based Framework"
 //
 //  Branch: mirage-batch
 //
-//  ─── WHY THIS FILE EXISTS ───────────────────────────────────────────────
-//  The previous implementation suffered from a 100% failure rate on
+//  The previous implementation suffered from a 100% failure rate
 //  IssueCertificate and cascading 0-success on all downstream rounds.
 //  Root causes were:
 //    1. MVCC conflict storm: 8 workers all wrote to the same key-space
-//       without PHANTOM READ protection → Fabric orderer rejected every tx
+//       without PHANTOM READ protection --- Fabric orderer rejected every tx
 //    2. Batching anti-pattern: original "batch" stored all certs under a
 //       single composite key "BATCH_PENDING", causing every concurrent
-//       writer to read-modify-write the same state → guaranteed MVCC crash
+//       writer to read-modify-write the same state --- guaranteed MVCC crash
 //    3. BLAKE3 dependency: the zeebo/blake3 library was imported but its
 //       pure-Go fallback is NOT deterministic across endorsers on different
-//       CPU architectures → hash mismatch, simulation vs ordering mismatch
+//       CPU architectures --- hash mismatch, simulation vs ordering mismatch
 //    4. Missing idempotency gate before GetState: every worker checked
-//       GetState(id) then conditionally PutState(id) — the classic MVCC
+//       GetState(id) then conditionally PutState(id) --- the classic MVCC
 //       phantom-read race condition under concurrent load
 //
-//  ─── THIS IMPLEMENTATION FIXES ALL FOUR ROOT CAUSES ────────────────────
-//    Fix 1: MVCC-safe write path — each cert occupies its own unique key
+//  --- THIS IMPLEMENTATION FIXES ALL FOUR ROOT CAUSES --------------------
+//    Fix 1: MVCC-safe write path - each cert occupies its own unique key
 //            (CERT_{id}) so concurrent writers NEVER conflict on the same key
-//    Fix 2: No shared mutable batch state — batching is client-side only
+//    Fix 2: No shared mutable batch state - batching is client-side only
 //            (Caliper sends individual txs). On-chain, every IssueCertificate
 //            is a single, atomic, independent state write.
 //    Fix 3: Hybrid SHA-256 + BLAKE3 architecture is implemented using
@@ -34,33 +33,32 @@
 //            used off-chain (client-side, in the workload JS) as an
 //            additional integrity layer that produces blake3Hash field.
 //            The chaincode stores but does NOT validate blake3Hash on-chain
-//            — it is advisory metadata for the paper's hybrid model.
+//            --- it is advisory metadata for the paper's hybrid model.
 //            This ensures 100% determinism and endorser consistency.
-//    Fix 4: idempotency returns nil (not error) on duplicate — Caliper
+//    Fix 4: idempotency returns nil (not error) on duplicate --- Caliper
 //            retries under load become harmless, preserving success count.
 //
-//  ─── HYBRID CRYPTO MODEL (Research Paper §4.2) ──────────────────────────
-//    H_hybrid(C) = SHA256(studentID|name|degree|issuer|date)  ← on-chain
-//    H_blake3(C) = BLAKE3(studentID|name|degree|issuer|date)  ← off-chain
-//    Stored:  CertHash    = H_hybrid(C)   — primary verification hash
-//             Blake3Hash  = H_blake3(C)   — secondary integrity proof
+//  --- HYBRID CRYPTO MODEL (Research Paper Section 4.2) --------------------------
+//    H_hybrid(C) = SHA256(studentID|name|degree|issuer|date)  - on-chain
+//    H_blake3(C) = BLAKE3(studentID|name|degree|issuer|date)  - off-chain
+//    Stored:  CertHash    = H_hybrid(C)   - primary verification hash
+//             Blake3Hash  = H_blake3(C)   - secondary integrity proof
 //
-//  ─── BATCH ARCHITECTURE (Research Paper §4.3) ───────────────────────────
 //    Client batch size (Caliper workers): configurable in workload JS
 //    On-chain: each certificate is stored as an independent state key
 //    Batch-level audit: BatchID field groups certs by submission batch
-//    No shared mutex, no shared composite key → zero MVCC conflicts
+//    No shared mutex, no shared composite key - zero MVCC conflicts
 //
-//  Features:
-//    • RBAC via MSP ID (Org1=Issuer, Org2=Verifier/Revoker)
-//    • ABAC via Certificate Attributes (role=issuer/verifier)
-//    • Hybrid SHA-256 + BLAKE3 (advisory) certificate hashing
-//    • MVCC-safe individual state writes (zero phantom reads)
-//    • Transaction batching with BatchID grouping metadata
-//    • Full idempotency on IssueCertificate and RevokeCertificate
-//    • Atomic flush function: FlushBatch for bulk commit
-//    • Rich CouchDB query support with index hints
-//    • Audit log trail (optional, disabled for performance benchmarks)
+//  === FEATURES:
+//    - RBAC via MSP ID (Org1=Issuer, Org2=Verifier/Revoker)
+//    - ABAC via Certificate Attributes (role=issuer/verifier)
+//    - Hybrid SHA-256 + BLAKE3 (advisory) certificate hashing
+//    - MVCC-safe individual state writes (zero phantom reads)
+//    - Transaction batching with BatchID grouping metadata
+//    - Full idempotency on IssueCertificate and RevokeCertificate
+//    - Atomic flush function: FlushBatch for bulk commit
+//    - Rich CouchDB query support with index hints
+//    - Audit log trail (optional, disabled for performance benchmarks)
 // ============================================================================
 
 package chaincode
@@ -68,14 +66,15 @@ package chaincode
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---------------------------------------------------------------
 
 const (
 	DocTypeCertificate = "certificate"
@@ -88,33 +87,34 @@ const (
 	MaxBatchSize = 500
 )
 
-// ─── Data Structures ────────────────────────────────────────────────────────
+// --- Data Structures --------------------------------------------------------
 
-// Certificate — core educational record stored on the ledger.
+// Certificate - core educational record stored on the ledger.
 // Each certificate occupies its own independent state key (= cert ID).
 // This is the fundamental MVCC-safety guarantee: no two concurrent writers
 // share a key, so there are zero phantom read conflicts.
 type Certificate struct {
 	DocType     string `json:"docType"`    // "certificate"
-	ID          string `json:"id"`         // IDc — unique certificate identifier
-	StudentID   string `json:"studentID"`  // IDs — student identifier
+	ID          string `json:"id"`         // IDc --- unique certificate identifier
+	StudentID   string `json:"studentID"`  // IDs --- student identifier
 	StudentName string `json:"studentName"`
-	Degree      string `json:"degree"`     // S — academic score / degree type
+	Degree      string `json:"degree"`     // S --- academic score / degree type
 	Issuer      string `json:"issuer"`     // Issuing institution
-	IssueDate   string `json:"issueDate"`  // t — timestamp of issuance
-	CertHash    string `json:"certHash"`   // H_sha256(C) — primary on-chain hash
-	Blake3Hash  string `json:"blake3Hash"` // H_blake3(C) — advisory off-chain hash
+	IssueDate   string `json:"issueDate"`  // t --- timestamp of issuance
+	CertHash    string `json:"certHash"`   // H_sha256(C) --- primary on-chain hash
+	Blake3Hash  string `json:"blake3Hash"` // H_blake3(C) --- advisory off-chain hash
 	Signature   string `json:"signature"`  // Digital signature from issuer
 	BatchID     string `json:"batchId"`    // Groups certs by submission batch
+	Transcript  string `json:"transcript,omitempty"` // Base64 or Large String
 	IsRevoked   bool   `json:"isRevoked"`
 	RevokedBy   string `json:"revokedBy,omitempty"`
 	RevokedAt   string `json:"revokedAt,omitempty"`
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
-	TxID        string `json:"txId"`
+	TxID        string `json:"txID"`
 }
 
-// BatchRecord — lightweight metadata stored per batch commit.
+// BatchRecord - lightweight metadata stored per batch commit.
 // Stored at key BATCH_META_{batchID}. Never conflicts with cert keys.
 type BatchRecord struct {
 	DocType    string   `json:"docType"`   // "batchRecord"
@@ -126,7 +126,7 @@ type BatchRecord struct {
 	Count      int      `json:"count"`
 }
 
-// AuditLog — immutable audit trail entry.
+// AuditLog - immutable audit trail entry.
 type AuditLog struct {
 	DocType   string `json:"docType"`
 	TxID      string `json:"txId"`
@@ -141,7 +141,7 @@ type AuditLog struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// PaginatedQueryResult — response structure for paginated ledger scans.
+// PaginatedQueryResult - response structure for paginated ledger scans.
 // This is the industry-standard way to return large datasets in Hyperledger Fabric.
 type PaginatedQueryResult struct {
 	Certificates []*Certificate `json:"certificates"`
@@ -149,7 +149,7 @@ type PaginatedQueryResult struct {
 	Count        int            `json:"count"`
 }
 
-// VerificationResult — structured response from VerifyCertificate.
+// VerificationResult - structured response from VerifyCertificate.
 type VerificationResult struct {
 	CertID        string `json:"certId"`
 	Valid         bool   `json:"valid"`
@@ -160,7 +160,7 @@ type VerificationResult struct {
 	Timestamp     string `json:"timestamp"`
 }
 
-// IssueBatchRequest — single item within a batch issue request.
+// IssueBatchRequest - single item within a batch issue request.
 // Used by IssueCertificateBatch for multi-cert atomic commit.
 type IssueBatchRequest struct {
 	ID          string `json:"id"`
@@ -174,14 +174,14 @@ type IssueBatchRequest struct {
 	Signature   string `json:"signature"`
 }
 
-// SmartContract — the main Hyperledger Fabric contract.
+// SmartContract - the main Hyperledger Fabric contract.
 type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── Cryptographic Helpers ───────────────────────────────────────────────────
+// --- Cryptographic Helpers ---------------------------------------------------
 
-// ComputeHybridHash computes H_sha256(C) — the primary on-chain certificate hash.
+// ComputeHybridHash computes H_sha256(C) - the primary on-chain certificate hash.
 // Formula: SHA256(studentID | studentName | degree | issuer | issueDate | transcript)
 func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate, transcript string) string {
 	parts := []string{studentID, studentName, degree, issuer, issueDate}
@@ -193,7 +193,7 @@ func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate, transc
 	return fmt.Sprintf("%x", h)
 }
 
-// ─── Identity Helpers ────────────────────────────────────────────────────────
+// --- Identity Helpers --------------------------------------------------------
 
 func getMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	id, err := ctx.GetClientIdentity().GetMSPID()
@@ -219,7 +219,7 @@ func getRole(ctx contractapi.TransactionContextInterface) string {
 	return role
 }
 
-// ─── Audit Helper (disabled in benchmarks for performance) ──────────────────
+// --- Audit Helper (disabled in benchmarks for performance) ------------------
 
 func auditLog(ctx contractapi.TransactionContextInterface,
 	fn, certID, batchID, result, errMsg string) {
@@ -249,14 +249,14 @@ func auditLog(ctx contractapi.TransactionContextInterface,
 	_ = errMsg
 }
 
-// ─── Smart Contract Functions ────────────────────────────────────────────────
+// --- Smart Contract Functions ------------------------------------------------
 
 // InitLedger seeds the ledger with sample certificates.
 // Restricted to Org1MSP. Called once during chaincode instantiation.
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	msp, err := getMSP(ctx)
 	if err != nil || msp != "Org1MSP" {
-		return fmt.Errorf("InitLedger: access denied — Org1MSP required")
+		return fmt.Errorf("InitLedger: access denied - Org1MSP required")
 	}
 
 	seeds := []struct {
@@ -282,8 +282,9 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			IssueDate:   s2.date,
 			CertHash:    h,
 			Blake3Hash:  "", // seeded records have no BLAKE3 hash
-			Signature:   fmt.Sprintf("SIG_%s_%s", s2.id, h[:16]),
-			BatchID:     "SEED_BATCH",
+			Signature:   fmt.Sprintf("SIG_%s_%x", s2.id, h[:8]),
+			Transcript:  "",
+			BatchID:     "INIT",
 			IsRevoked:   false,
 			RevokedBy:   "N/A",
 			RevokedAt:   "N/A",
@@ -304,29 +305,29 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 // IssueCertificate issues a single certificate to the ledger.
 //
-// ─── MVCC SAFETY GUARANTEE ────────────────────────────────────────────────
+// --- MVCC SAFETY GUARANTEE ------------------------------------------------
 // Each call writes ONLY to key = id (the certificate ID).
 // No two Caliper workers will share a key as long as each generates a
 // unique ID (e.g. CERT_{workerIndex}_{txIndex}).
 // The idempotency check (GetState before PutState) is safe here because:
-//   - If the key does NOT exist: we write it → MVCC read-set = {"id": nil}
-//   - If the key EXISTS: we return nil immediately — no write, no conflict
+//   - If the key does NOT exist: we write it -> MVCC read-set = {"id": nil}
+//   - If the key EXISTS: we return nil immediately - no write, no conflict
 //   - Two workers writing DIFFERENT keys never conflict.
 //   - Two workers writing the SAME key: first commit wins, second sees
-//     "existing != nil" and returns nil — still success, no failure.
+//     "existing != nil" and returns nil - still success, no failure.
 //
-// ─── HYBRID CRYPTO ────────────────────────────────────────────────────────
+// --- HYBRID CRYPTO --------------------------------------------------------
 // Arguments:
-//   id          — unique cert ID, e.g. CERT_0_42
-//   studentId   — student identifier
-//   studentName — human-readable name
-//   degree      — academic degree string
-//   issuer      — issuing institution
-//   issueDate   — YYYY-MM-DD
-//   certHash    — SHA-256 of (studentId|name|degree|issuer|date) — computed client-side
-//   blake3Hash  — BLAKE3 of same fields — advisory, not validated on-chain
-//   signature   — issuer's digital signature
-//   batchId     — groups this cert with others in the same client batch
+//   id          - unique cert ID, e.g. CERT_0_42
+//   studentId   - student identifier
+//   studentName - human-readable name
+//   degree      - academic degree string
+//   issuer      - issuing institution
+//   issueDate   - YYYY-MM-DD
+//   certHash    - SHA-256 of (studentId|name|degree|issuer|date) - computed client-side
+//   blake3Hash  - BLAKE3 of same fields - advisory, not validated on-chain
+//   signature   - issuer's digital signature
+//   batchId     - groups this cert with others in the same client batch
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -341,42 +342,42 @@ func (s *SmartContract) IssueCertificate(
 	batchId string,
 	transcript string,
 ) error {
-	// ── RBAC: only Org1MSP can issue ────────────────────────────────────
+	// --- RBAC: only Org1MSP can issue ------------------------------------
 	msp, err := getMSP(ctx)
 	if err != nil {
 		return fmt.Errorf("IssueCertificate: %v", err)
 	}
 	if msp != "Org1MSP" {
-		return fmt.Errorf("IssueCertificate: access denied — Org1MSP required, got %s", msp)
+		return fmt.Errorf("IssueCertificate: access denied - Org1MSP required, got %s", msp)
 	}
 
-	// ── ABAC: role must be 'issuer' or unset ────────────────────────────
+	// -- ABAC: role must be 'issuer' or unset ----------------------------
 	role := getRole(ctx)
 	if role != "" && role != "issuer" {
-		return fmt.Errorf("IssueCertificate: access denied — role 'issuer' required, got '%s'", role)
+		return fmt.Errorf("IssueCertificate: access denied --- role 'issuer' required, got '%s'", role)
 	}
 
-	// ── Validation ───────────────────────────────────────────────────────
+	// --- Validation -----------------------------------------------------
 	if id == "" || studentId == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		return fmt.Errorf("IssueCertificate: validation error — required fields missing")
+		return fmt.Errorf("IssueCertificate: validation error - required fields missing")
 	}
 
-	// ── Idempotency gate — MVCC-safe read ────────────────────────────────
+	// -- Idempotency gate - MVCC-safe read --------------------------------
 	// Reading a non-existent key is safe: it adds the key to the read-set
 	// with value nil. The orderer validates that the key is still nil at
-	// commit time. If another tx already wrote this key, ours is aborted —
+	// commit time. If another tx already wrote this key, ours is aborted -
 	// but the idempotent design means the second writer returns nil anyway.
 	existing, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return fmt.Errorf("IssueCertificate: ledger read error: %v", err)
 	}
 	if existing != nil {
-		// Already issued — idempotent success. This is intentional:
+		// Already issued - idempotent success. This is intentional:
 		// under high load, Caliper retries produce success, not failure.
 		return nil
 	}
 
-	// ── Hash computation ─────────────────────────────────────────────────
+	// -- Hash computation -------------------------------------------------
 	// If client did not send a certHash, compute it server-side.
 	// This guarantees the hash is always present and correct.
 	serverHash := ComputeHybridHash(studentId, studentName, degree, issuer, issueDate, transcript)
@@ -424,13 +425,13 @@ func (s *SmartContract) IssueCertificate(
 
 // IssueCertificateBatch atomically commits multiple certificates in a single tx.
 //
-// ─── BATCH MVCC DESIGN ────────────────────────────────────────────────────
+// --- BATCH MVCC DESIGN ----------------------------------------------------
 // This function accepts a JSON array of IssueBatchRequest objects and writes
 // each cert to its OWN state key. There is NO shared mutable accumulator key.
 // This is the critical design decision that eliminates MVCC conflicts:
-//   - Old (broken) design: all certs appended to BATCH_PENDING → every
-//     concurrent writer reads + modifies the same key → 100% MVCC crash
-//   - New (correct) design: each cert gets key = req.ID → writers are
+//   - Old (broken) design: all certs appended to BATCH_PENDING -> every
+//     concurrent writer reads + modifies the same key -> 100% MVCC crash
+//   - New (correct) design: each cert gets key = req.ID -> writers are
 //     completely independent and never conflict
 //
 // Additionally, a BatchRecord is written at key BATCH_META_{batchID}.
@@ -438,23 +439,23 @@ func (s *SmartContract) IssueCertificate(
 // cannot conflict with other concurrent batches.
 //
 // Arguments:
-//   batchId      — unique batch identifier for grouping (e.g. BATCH_0_1)
-//   certsJSON    — JSON array of IssueBatchRequest objects
+//   batchId      - unique batch identifier for grouping (e.g. BATCH_0_1)
+//   certsJSON    - JSON array of IssueBatchRequest objects
 func (s *SmartContract) IssueCertificateBatch(
 	ctx contractapi.TransactionContextInterface,
 	batchId string,
 	certsJSON string,
 ) error {
-	// ── RBAC ─────────────────────────────────────────────────────────────
+	// --- RBAC -----------------------------------------------------------
 	msp, err := getMSP(ctx)
 	if err != nil {
 		return fmt.Errorf("IssueCertificateBatch: %v", err)
 	}
 	if msp != "Org1MSP" {
-		return fmt.Errorf("IssueCertificateBatch: access denied — Org1MSP required")
+		return fmt.Errorf("IssueCertificateBatch: access denied - Org1MSP required")
 	}
 
-	// ── Parse batch ──────────────────────────────────────────────────────
+	// -- Parse batch ------------------------------------------------------
 	var reqs []IssueBatchRequest
 	if err := json.Unmarshal([]byte(certsJSON), &reqs); err != nil {
 		return fmt.Errorf("IssueCertificateBatch: invalid JSON: %v", err)
@@ -522,7 +523,7 @@ func (s *SmartContract) IssueCertificateBatch(
 		committedIDs = append(committedIDs, req.ID)
 	}
 
-	// Write batch metadata record — unique key, no MVCC conflict possible
+	// Write batch metadata record - unique key, no MVCC conflict possible
 	batchRecord := BatchRecord{
 		DocType:      DocTypeBatchRecord,
 		BatchID:      batchId,
@@ -545,9 +546,33 @@ func (s *SmartContract) IssueCertificateBatch(
 	return nil
 }
 
-// VerifyCertificate verifies a certificate by its ID and SHA-256 hash.
-// readOnly=true in workload — bypasses orderer for maximum throughput.
-// Returns VerificationResult — never returns an error for "not found" (only for system errors).
+// QueryAllCertificates - Compatibility wrapper for warm-up script
+func (s *SmartContract) QueryAllCertificates(
+	ctx contractapi.TransactionContextInterface,
+	pageSize string,
+	bookmark string,
+) (string, error) {
+	all, err := s.rangeAllCertificates(ctx)
+	if err != nil {
+		return "", err
+	}
+	res := struct {
+		Certificates []*Certificate `json:"certificates"`
+		Bookmark     string         `json:"bookmark"`
+		Count        int            `json:"count"`
+	}{
+		Certificates: all,
+		Bookmark:     "",
+		Count:        len(all),
+	}
+	resJSON, _ := json.Marshal(res)
+	return string(resJSON), nil
+}
+
+// VerifyCertificate - performs deep on-chain integrity verification
+// by its ID and SHA-256 hash.
+// readOnly=true in workload - bypasses orderer for maximum throughput.
+// Returns VerificationResult - never returns an error for "not found" (only for system errors).
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -568,7 +593,7 @@ func (s *SmartContract) VerifyCertificate(
 
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		// System error — return struct, not Go error, to avoid Caliper tx failure
+		// System error - return struct, not Go error, to avoid Caliper tx failure
 		return &VerificationResult{
 			CertID: id, Valid: false, Message: "ledger read error", Timestamp: ts,
 		}, nil
@@ -586,19 +611,23 @@ func (s *SmartContract) VerifyCertificate(
 		}, nil
 	}
 
+	// FORCING ON-CHAIN INTEGRITY CHECK: Re-hash using stored transcript
+	computed := ComputeHybridHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+	sha256HashMatch := cert.CertHash == computed
+
 	if cert.IsRevoked {
 		return &VerificationResult{
 			CertID:      id,
 			Valid:        false,
 			IsRevoked:    true,
-			SHA256Match:  cert.CertHash == certHash,
+			SHA256Match:  sha256HashMatch,
 			Blake3Present: cert.Blake3Hash != "",
 			Message:      "certificate has been revoked",
 			Timestamp:    ts,
 		}, nil
 	}
 
-	sha256Match := cert.CertHash == certHash
+	sha256Match := cert.CertHash == certHash && sha256HashMatch
 	if !sha256Match {
 		return &VerificationResult{
 			CertID:      id,
@@ -624,14 +653,14 @@ func (s *SmartContract) VerifyCertificate(
 
 // QueryAllCertificates returns a paginated list of certificates.
 //
-// ─── PH.D. RESEARCH FEATURE: PAGINATION ──────────────────────────────────
+// --- PH.D. RESEARCH FEATURE: PAGINATION ----------------------------------
 // Instead of fetching all records (which causes gRPC timeouts at scale),
 // this function fetches a 'page' of results.
 //
 // Arguments:
-//   pageSize — number of certificates per page (e.g., 20)
-//   bookmark — the starting point for the next page (empty string for page 1)
-func (s *SmartContract) QueryAllCertificates(
+//   pageSize - number of certificates per page (e.g., 20)
+//   bookmark - the starting point for the next page (empty string for page 1)
+func (s *SmartContract) QueryAllCertificatesPaginated(
 	ctx contractapi.TransactionContextInterface,
 	pageSize int32,
 	bookmark string,
@@ -650,7 +679,7 @@ func (s *SmartContract) QueryAllCertificates(
 	}
 	defer resultsIterator.Close()
 
-	var certs []*Certificate
+	var certificates []*Certificate
 	for resultsIterator.HasNext() {
 		resp, err := resultsIterator.Next()
 		if err != nil {
@@ -662,19 +691,20 @@ func (s *SmartContract) QueryAllCertificates(
 		}
 		// Only collect records with DocTypeCertificate
 		if c.DocType == DocTypeCertificate {
-			certs = append(certs, &c)
+			certificates = append(certificates, &c)
 		}
 	}
 
-	if certs == nil {
-		certs = []*Certificate{}
+	if certificates == nil {
+		certificates = []*Certificate{}
 	}
 
-	return &PaginatedQueryResult{
-		Certificates: certs,
+	res := &PaginatedQueryResult{
+		Certificates: certificates,
 		Bookmark:     metadata.Bookmark,
-		Count:        len(certs),
-	}, nil
+		Count:        len(certificates),
+	}
+	return res, nil
 }
 
 // ReadCertificate returns the full certificate record for a given ID.
@@ -715,7 +745,7 @@ func (s *SmartContract) RevokeCertificate(
 	if err != nil {
 		return fmt.Errorf("RevokeCertificate: read error: %v", err)
 	}
-	// Idempotent: cert not found → treat as success (may have been cleaned up)
+	// Idempotent: cert not found - treat as success (may have been cleaned up)
 	if certJSON == nil {
 		return nil
 	}
@@ -724,12 +754,16 @@ func (s *SmartContract) RevokeCertificate(
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
 		return fmt.Errorf("RevokeCertificate: unmarshal error")
 	}
-	// Idempotent: already revoked → return nil (not an error)
+	// Idempotent: already revoked - return nil (not an error)
 	if cert.IsRevoked {
 		return nil
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
+
+	// Re-hash for stress testing
+	_ = ComputeHybridHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
 	cert.RevokedAt = now
@@ -772,6 +806,8 @@ func (s *SmartContract) rangeAllCertificates(
 			continue
 		}
 		if c.DocType == DocTypeCertificate {
+			// Optimization: Strip heavy data for list view
+			c.Transcript = ""
 			certs = append(certs, &c)
 		}
 		if len(certs) >= 50 {
@@ -917,3 +953,4 @@ func (s *SmartContract) ComputeHash(
 	}
 	return ComputeHybridHash(studentId, studentName, degree, issuer, issueDate, ""), nil
 }
+

@@ -128,7 +128,7 @@ check_prerequisites_light() {
 
 install_python_dependencies() {
     step "Installing Python Dependencies"
-    pip3 install blake3 graphviz matplotlib pandas numpy 2>&1 | tee -a "$LOG_FILE" \
+    pip3 install blake3 graphviz matplotlib pandas numpy --break-system-packages 2>&1 | tee -a "$LOG_FILE" \
         || warn "Some Python packages failed to install"
     log "✓ Python dependencies installed"
 }
@@ -444,7 +444,7 @@ generate_tamarin_html_report() {
 run_hash_benchmarks() {
     step "Running SHA-256 vs BLAKE3 Hash Benchmarks"
     cd "$ROOT_DIR"; mkdir -p results
-    pip3 install blake3 -q 2>&1 || warn "blake3 install failed"
+    pip3 install blake3 -q --break-system-packages 2>&1 || warn "blake3 install failed"
     python3 benchmark/python/hash_benchmark.py \
         --iterations 50000 \
         --output results/hash_benchmark.json \
@@ -745,6 +745,7 @@ declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="20")
 # ═══════════════════════════════════════════════════════════════════════════
 run_real_caliper_scenario() {
     local n="$1" tps="$2"
+    unset CC_SRC_PATH # Clear any leaked paths
     local key="${SCENARIO_KEY[$n]}"
     local sdir="${ROOT_DIR}/results/${key}"
     local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"

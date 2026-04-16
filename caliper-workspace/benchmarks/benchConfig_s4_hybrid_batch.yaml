@@ -38,7 +38,7 @@ test:
     This is the peak-performance research scenario.
   workers:
     type: local
-    number: 8
+    number: 5
 
   rounds:
 
@@ -57,18 +57,16 @@ test:
     - label: IssueCertificate
       description: >
         S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction.
-        Linear ramp 50→200 TPS over 60 s (8 workers).
-        Hash: BLAKE3(SHA-256(fields)) per certificate.
-        MVCC-safe: no GetState inside write loop.
-        Effective cert throughput at 200 TPS = 4,000 certs/sec.
+        Linear ramp 10→100 TPS (200→2000 certs/sec).
+        Effective cert throughput at 100 TPS = 2,000 certs/sec.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 200
+          startingTps: 10
+          finishingTps: 100
       workload:
-        module: workload/issueCertificate.js
+        module: workload/issueCertificateBatch.js
         arguments:
           batchSize: 20
       txOptions:

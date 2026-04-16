@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,6 +49,7 @@ type Certificate struct {
 	CertHash    string `json:"certHash"`
 	HashAlgo    string `json:"hashAlgo"` // "sha256" or "blake3"
 	Signature   string `json:"signature"`
+	Transcript  string `json:"transcript,omitempty"` // Base64 or Large String
 	IsRevoked   bool   `json:"isRevoked"`
 	RevokedBy   string `json:"revokedBy"`
 	RevokedAt   string `json:"revokedAt"`
@@ -179,7 +181,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			IssueDate:   seed.issueDate,
 			CertHash:    certHash,
 			HashAlgo:    hashAlgo,
-			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
+			Signature:   fmt.Sprintf("SIG_%s_%x", seed.id, certHash[:8]),
+			Transcript:  "", 
 			IsRevoked:   false,
 			RevokedBy:   "N/A",
 			RevokedAt:   "N/A",
@@ -240,6 +243,7 @@ func (s *SmartContract) IssueCertificate(
 		CertHash:    certHash,
 		HashAlgo:    hashAlgo,
 		Signature:   signature,
+		Transcript:  transcript,
 		IsRevoked:   false,
 		RevokedBy:   "N/A",
 		RevokedAt:   "N/A",
@@ -270,11 +274,16 @@ func (s *SmartContract) VerifyCertificate(
 	}
 
 	var cert Certificate
-	json.Unmarshal(certJSON, &cert)
+	if err := json.Unmarshal(certJSON, &cert); err != nil {
+		return &VerificationResult{CertID: id, Valid: false, Message: "corrupt data", Timestamp: ts}, nil
+	}
+
+	// FORCING ON-CHAIN INTEGRITY CHECK
+	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
 
 	res := &VerificationResult{
 		CertID: id, IsRevoked: cert.IsRevoked, HashAlgo: "sha256", Timestamp: ts,
-		HashMatch: cert.CertHash == certHash,
+		HashMatch: cert.CertHash == computed,
 	}
 	res.Valid = res.HashMatch && !cert.IsRevoked
 	return res, nil
@@ -302,6 +311,9 @@ func (s *SmartContract) RevokeCertificate(
 		return nil
 	}
 
+	// Performance stress
+	_, _ = ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
@@ -315,18 +327,22 @@ func (s *SmartContract) RevokeCertificate(
 // QueryAllCertificates returns a paginated list of certificates (SHA-256 mode)
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
-	pageSize int32,
+	pageSize string, // Type-safe string input
 	bookmark string,
-) (*PaginatedQueryResult, error) {
+) (string, error) {
 
 	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
 	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
 	// Sort: [ {"issueDate": "desc"} ]
 	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
 	
-	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, pageSize, bookmark)
+	// Convert pageSize string to int32 for Fabric compatibility
+	ps, err := strconv.ParseInt(pageSize, 10, 32)
+	if err != nil { ps = 20 } // Default fallback
+
+	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, int32(ps), bookmark)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get query result with pagination: %v", err)
+		return "", fmt.Errorf("failed to get query result with pagination: %v", err)
 	}
 	defer resultsIterator.Close()
 
@@ -338,17 +354,22 @@ func (s *SmartContract) QueryAllCertificates(
 		}
 
 		var cert Certificate
-		err = json.Unmarshal(queryResponse.Value, &cert)
-		if err == nil && cert.DocType == "certificate" {
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		if cert.DocType == "certificate" {
+			cert.Transcript = "" // Optimization: Strip heavy data for list view
 			certificates = append(certificates, &cert)
 		}
 	}
 
-	return &PaginatedQueryResult{
+	res := &PaginatedQueryResult{
 		Certificates: certificates,
 		Bookmark:     metadata.Bookmark,
 		Count:        len(certificates),
-	}, nil
+	}
+	resJSON, _ := json.Marshal(res)
+	return string(resJSON), nil
 }
 
 func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
@@ -383,8 +404,10 @@ func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionCont
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var cert Certificate
-		err = json.Unmarshal(queryResponse.Value, &cert)
-		if err == nil {
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		if cert.DocType == "certificate" {
 			certificates = append(certificates, &cert)
 		}
 	}

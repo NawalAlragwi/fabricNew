@@ -1,6 +1,6 @@
-// ============================================================================
-//  BCMS — Blockchain Certificate Management System
-//  Chaincode Entry Point — BLAKE3 Mode
+﻿// ============================================================================
+//  BCMS --- Blockchain Certificate Management System
+//  Chaincode Entry Point --- BLAKE3 Mode
 // ============================================================================
 
 package main
@@ -23,3 +23,4 @@ func main() {
 		os.Exit(1)
 	}
 }
+

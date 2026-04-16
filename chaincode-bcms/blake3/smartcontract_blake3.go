@@ -1,6 +1,6 @@
-// ============================================================================
-//  BCMS — Blockchain Certificate Management System
-//  Chaincode Implementation — BLAKE3 Mode
+﻿// ============================================================================
+//  BCMS --- Blockchain Certificate Management System
+//  Chaincode Implementation --- BLAKE3 Mode
 //
 //  This implementation uses BLAKE3 for certificate hashing.
 //  Switchable via HASH_MODE=blake3 environment variable.
@@ -21,6 +21,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,9 +32,9 @@ import (
 // HashModeBLAKE3 identifies the BLAKE3 hash algorithm
 const HashModeBLAKE3 = "blake3"
 
-// ─── Data Structures (same as SHA-256 variant) ───────────────────────────────
+// --------- Data Structures (same as SHA-256 variant) ---------------------------------------------------------------------------------------------
 
-// Certificate — core educational record stored on the ledger (BLAKE3 mode)
+// Certificate --- core educational record stored on the ledger (BLAKE3 mode)
 type Certificate struct {
 	DocType     string `json:"docType"`
 	ID          string `json:"id"`
@@ -45,6 +46,7 @@ type Certificate struct {
 	CertHash    string `json:"certHash"`
 	HashAlgo    string `json:"hashAlgo"` // "sha256" or "blake3"
 	Signature   string `json:"signature"`
+	Transcript  string `json:"transcript,omitempty"` // Base64 or Large String
 	IsRevoked   bool   `json:"isRevoked"`
 	RevokedBy   string `json:"revokedBy"`
 	RevokedAt   string `json:"revokedAt"`
@@ -52,7 +54,7 @@ type Certificate struct {
 	UpdatedAt   string `json:"updatedAt"`
 	TxID        string `json:"txID"`
 }
-// VerificationResult — returned by VerifyCertificate
+// VerificationResult --- returned by VerifyCertificate
 type VerificationResult struct {
 	CertID    string `json:"certID"`
 	Valid     bool   `json:"valid"`
@@ -81,17 +83,17 @@ type AuditLog struct {
 	Detail    string `json:"detail"`
 }
 
-// SmartContract — the main Hyperledger Fabric contract (BLAKE3 mode)
+// SmartContract --- the main Hyperledger Fabric contract (BLAKE3 mode)
 type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── BLAKE3 Hash Implementation ──────────────────────────────────────────────
+// --------- BLAKE3 Hash Implementation ------------------------------------------------------------------------------------------------------------------------------------------
 
 // ComputeCertHashBLAKE3 computes H(C) = BLAKE3(studentID|name|degree|issuer|date)
 //
 // BLAKE3 Algorithm Properties:
-//   - Output size: 256 bits (32 bytes) — same as SHA-256
+//   - Output size: 256 bits (32 bytes) --- same as SHA-256
 //   - Security level: 128-bit (collision), 256-bit (preimage)
 //   - Performance: ~3-10x faster than SHA-256 on modern hardware
 //   - Tree-based: supports parallel hashing for large inputs
@@ -120,7 +122,7 @@ func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcri
 	return hash, "blake3"
 }
 
-// ─── Identity Helpers ────────────────────────────────────────────────────────
+// --------- Identity Helpers ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
@@ -159,7 +161,7 @@ func (s *SmartContract) writeAudit(
 	_ = ctx.GetStub().PutState(key, data)
 }
 
-// ─── Smart Contract Functions (BLAKE3 mode) ──────────────────────────────────
+// --------- Smart Contract Functions (BLAKE3 mode) ------------------------------------------------------------------------------------------------------
 
 // InitLedger seeds the ledger with sample certificates (BLAKE3 mode)
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
@@ -191,7 +193,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			IssueDate:   seed.issueDate,
 			CertHash:    certHash,
 			HashAlgo:    hashAlgo,
-			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:16]),
+			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:4]),
+			Transcript:  "",
 			IsRevoked:   false,
 			RevokedBy:   "N/A",
 			RevokedAt:   "N/A",
@@ -268,6 +271,7 @@ func (s *SmartContract) IssueCertificate(
 		CertHash:    certHashInput,
 		HashAlgo:    hashAlgo,
 		Signature:   signature,
+		Transcript:  transcript,
 		IsRevoked:   false,
 		RevokedBy:   "N/A",
 		RevokedAt:   "N/A",
@@ -320,28 +324,25 @@ func (s *SmartContract) VerifyCertificate(
 
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		return &VerificationResult{
-			CertID:    id,
-			Valid:     false,
-			Message:   "data integrity error",
-			HashAlgo:  "blake3",
-			Timestamp: ts,
-		}, nil
+		return &VerificationResult{CertID: id, Valid: false, Message: "corrupt data", Timestamp: ts}, nil
 	}
+
+	// Re-hash for stress testing
+	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+	hashMatch := cert.CertHash == computed
 
 	if cert.IsRevoked {
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
 			IsRevoked: true,
-			HashMatch: cert.CertHash == certHash,
+			HashMatch: hashMatch,
 			HashAlgo:  "blake3",
 			Message:   "certificate has been revoked",
 			Timestamp: ts,
 		}, nil
 	}
 
-	hashMatch := cert.CertHash == certHash
 	if !hashMatch {
 		return &VerificationResult{
 			CertID:    id,
@@ -349,7 +350,7 @@ func (s *SmartContract) VerifyCertificate(
 			IsRevoked: false,
 			HashMatch: false,
 			HashAlgo:  "blake3",
-			Message:   "hash mismatch — certificate may have been tampered",
+			Message:   "hash mismatch --- certificate may have been tampered",
 			Timestamp: ts,
 		}, nil
 	}
@@ -387,6 +388,9 @@ func (s *SmartContract) RevokeCertificate(
 		return nil
 	}
 
+	// Re-hash for stress testing
+	_, _ = ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
@@ -400,18 +404,22 @@ func (s *SmartContract) RevokeCertificate(
 // QueryAllCertificates returns a paginated list of certificates (BLAKE3 mode)
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
-	pageSize int32,
+	pageSize string, // string to match CLI
 	bookmark string,
-) (*PaginatedQueryResult, error) {
+) (string, error) {
 
 	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
 	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
 	// Sort: [ {"issueDate": "desc"} ]
 	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
 
-	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, pageSize, bookmark)
+	// Manual conversion for stability
+	ps, err := strconv.ParseInt(pageSize, 10, 32)
+	if err != nil { ps = 20 }
+
+	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, int32(ps), bookmark)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get query result with pagination: %v", err)
+		return "", fmt.Errorf("failed to get query result with pagination: %v", err)
 	}
 	defer resultsIterator.Close()
 
@@ -429,11 +437,13 @@ func (s *SmartContract) QueryAllCertificates(
 		}
 	}
 
-	return &PaginatedQueryResult{
+	res := &PaginatedQueryResult{
 		Certificates: certificates,
 		Bookmark:     metadata.Bookmark,
 		Count:        len(certificates),
-	}, nil
+	}
+	resJSON, _ := json.Marshal(res)
+	return string(resJSON), nil
 }
 
 func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
@@ -446,10 +456,12 @@ func (s *SmartContract) getAllCertificatesByRange(ctx contractapi.TransactionCon
 		queryResponse, err := resultsIterator.Next()
 		if err != nil { continue }
 		var cert Certificate
-		json.Unmarshal(queryResponse.Value, &cert)
-		if cert.DocType == "certificate" {
-			certificates = append(certificates, &cert)
+		if err := json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
 		}
+		// Optimization: Strip heavy data for list view
+		cert.Transcript = ""
+		certificates = append(certificates, &cert)
 	}
 	return certificates, nil
 }
@@ -554,3 +566,4 @@ func (s *SmartContract) GetHashAlgorithm(
 ) (string, error) {
 	return "blake3", nil
 }
+

@@ -61,12 +61,10 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const issuer      = 'Digital University';
         const issueDate   = this.issueDate;
 
-        // ── HEAVY PAYLOAD (Ph.D. Research Stress Test) ──────────────────
-        // To demonstrate the performance ceiling of SHA-256 vs BLAKE3, we 
-        // simulate a 50KB educational transcript/portfolio. 
-        // Large payloads force the CPU to work harder on hashing, surfacing
-        // the algorithmic efficiency gaps that are invisible with small data.
-        const transcriptPayload = 'X'.repeat(50000); 
+        // ── EDUCATIONAL PAYLOAD (Optimized Stress Test) ──────────────────
+        // Large payloads force the CPU to work harder on hashing. 
+        // Reduced from 50KB to 5KB for local stability.
+        const transcriptPayload = 'X'.repeat(5000); 
 
         // ── SHA-256 hash (primary, validated on-chain) ──────────────────
         // Formula: SHA256(studentId|studentName|degree|issuer|issueDate|payload)

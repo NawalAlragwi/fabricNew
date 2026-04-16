@@ -25,7 +25,7 @@ test:
     TPS fixed at 200 for all rounds. Standardized for academic comparison.
   workers:
     type: local
-    number: 8
+    number: 5
 
   rounds:
 
@@ -42,13 +42,12 @@ test:
         invokerIdentity: User1@org1.example.com
     # ── ROUND 1: ISSUANCE ──────────────────────────────────────────────────
     - label: IssueCertificate
-      description: Issue single certificates at fixed 200 TPS.
+      description: Issue single certificates at fixed 150 TPS.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          startingTps: 50
-          finishingTps: 200
+          tps: 150
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -58,12 +57,12 @@ test:
 
     # ── ROUND 2: VERIFICATION ──────────────────────────────────────────────
     - label: VerifyCertificate
-      description: Read-only verification at 200 TPS.
+      description: Read-only verification at 150 TPS.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 150
       workload:
         module: workload/verifyCertificate.js
       txOptions:

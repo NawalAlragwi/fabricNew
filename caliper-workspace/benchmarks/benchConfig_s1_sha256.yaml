@@ -31,20 +31,20 @@ test:
     All read rounds: fixed-rate 150 TPS, 60 s.
   workers:
     type: local
-    number: 10
+    number: 5
 
   rounds:
 
     - label: IssueCertificate
       description: >
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
-        Linear ramp 50→150 TPS over 60 s. Chaincode: SHA-256 hash mode.
+        Linear ramp 50→300 TPS. Chaincode: SHA-256 hash mode.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 100
-          finishingTps: 2000
+          startingTps: 50
+          finishingTps: 300
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -58,7 +58,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 150
       workload:
         module: workload/verifyCertificate.js
       txOptions:
