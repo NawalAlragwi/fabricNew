@@ -271,7 +271,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	for _, s2 := range seeds {
-		h := ComputeHybridHash(s2.studentID, s2.name, s2.degree, s2.issuer, s2.date)
+		h := ComputeHybridHash(s2.studentID, s2.name, s2.degree, s2.issuer, s2.date, "")
 		cert := Certificate{
 			DocType:     DocTypeCertificate,
 			ID:          s2.id,
@@ -490,7 +490,7 @@ func (s *SmartContract) IssueCertificateBatch(
 
 		certHash := req.CertHash
 		if certHash == "" {
-			certHash = ComputeHybridHash(req.StudentID, req.StudentName, req.Degree, req.Issuer, req.IssueDate)
+			certHash = ComputeHybridHash(req.StudentID, req.StudentName, req.Degree, req.Issuer, req.IssueDate, "")
 		}
 
 		cert := Certificate{
@@ -915,5 +915,5 @@ func (s *SmartContract) ComputeHash(
 	if studentId == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
 		return "", fmt.Errorf("ComputeHash: all fields required")
 	}
-	return ComputeHybridHash(studentId, studentName, degree, issuer, issueDate), nil
+	return ComputeHybridHash(studentId, studentName, degree, issuer, issueDate, ""), nil
 }

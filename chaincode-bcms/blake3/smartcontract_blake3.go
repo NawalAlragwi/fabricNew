@@ -180,7 +180,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	for _, seed := range seeds {
-		certHash, hashAlgo := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate)
+		certHash, hashAlgo := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate, "")
 		cert := Certificate{
 			DocType:     "certificate",
 			ID:          seed.id,
@@ -544,7 +544,7 @@ func (s *SmartContract) ComputeHash(
 	if studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
 		return "", fmt.Errorf("all fields are required")
 	}
-	hash, _ := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
+	hash, _ := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, "")
 	return hash, nil
 }
 
