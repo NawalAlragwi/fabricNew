@@ -103,16 +103,20 @@ type SmartContract struct {
 //
 // For certificate data (~50-100 bytes), timing difference is negligible
 // in isolation, but compounds to significant savings at scale (1000+ TPS).
-func ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate string) string {
-	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
+func ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, transcript string) string {
+	parts := []string{studentID, studentName, degree, issuer, issueDate}
+	if transcript != "" {
+		parts = append(parts, transcript)
+	}
+	data := strings.Join(parts, "|")
 	// BLAKE3 hash with 256-bit (32 byte) output
 	hashBytes := blake3.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hashBytes)
 }
 
 // ComputeCertHash is the switchable hash function entry point (BLAKE3 variant)
-func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) (string, string) {
-	hash := ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate)
+func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
+	hash := ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, transcript)
 	return hash, "blake3"
 }
 
@@ -219,6 +223,7 @@ func (s *SmartContract) IssueCertificate(
 	blake3Hash string, // Added to match workload
 	signature string,
 	batchID string,    // Added to match workload
+	transcript string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil {
@@ -246,7 +251,7 @@ func (s *SmartContract) IssueCertificate(
 	}
 
 	// Compute hash using BLAKE3
-	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
+	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript)
 	if certHashInput == "" {
 		certHashInput = computedHash
 	}

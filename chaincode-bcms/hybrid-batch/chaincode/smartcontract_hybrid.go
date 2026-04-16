@@ -182,13 +182,13 @@ type SmartContract struct {
 // ─── Cryptographic Helpers ───────────────────────────────────────────────────
 
 // ComputeHybridHash computes H_sha256(C) — the primary on-chain certificate hash.
-// Formula: SHA256(studentID | studentName | degree | issuer | issueDate)
-// The "|" separator is identical to the JS workload: fields.join('|')
-// This is the ONLY hash that the chaincode validates on-chain.
-// BLAKE3 is stored as advisory metadata but NOT verified on-chain,
-// ensuring 100% determinism across all endorsing peers regardless of CPU arch.
-func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate string) string {
-	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
+// Formula: SHA256(studentID | studentName | degree | issuer | issueDate | transcript)
+func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate, transcript string) string {
+	parts := []string{studentID, studentName, degree, issuer, issueDate}
+	if transcript != "" {
+		parts = append(parts, transcript)
+	}
+	data := strings.Join(parts, "|")
 	h := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", h)
 }
@@ -339,6 +339,7 @@ func (s *SmartContract) IssueCertificate(
 	blake3Hash string,
 	signature string,
 	batchId string,
+	transcript string,
 ) error {
 	// ── RBAC: only Org1MSP can issue ────────────────────────────────────
 	msp, err := getMSP(ctx)
@@ -378,7 +379,7 @@ func (s *SmartContract) IssueCertificate(
 	// ── Hash computation ─────────────────────────────────────────────────
 	// If client did not send a certHash, compute it server-side.
 	// This guarantees the hash is always present and correct.
-	serverHash := ComputeHybridHash(studentId, studentName, degree, issuer, issueDate)
+	serverHash := ComputeHybridHash(studentId, studentName, degree, issuer, issueDate, transcript)
 	if certHash == "" {
 		certHash = serverHash
 	}
@@ -400,6 +401,7 @@ func (s *SmartContract) IssueCertificate(
 		Blake3Hash:  blake3Hash,
 		Signature:   signature,
 		BatchID:     batchId,
+		Transcript:  transcript,
 		IsRevoked:   false,
 		RevokedBy:   "N/A",
 		RevokedAt:   "N/A",

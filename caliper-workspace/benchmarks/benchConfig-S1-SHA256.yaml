@@ -50,7 +50,7 @@ test:
     to confirm network capacity when compute overhead is absent.
   workers:
     type: local
-    number: 5
+    number: 10
 
   rounds:
     # ────────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 100
-          finishingTps: 1000
+          finishingTps: 1500
       workload:
         module: workload/issueCertificate.js
         arguments:

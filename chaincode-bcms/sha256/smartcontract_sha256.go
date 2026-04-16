@@ -112,21 +112,20 @@ func (s *SmartContract) writeAudit(
 
 //  SHA-256 Hash Implementation ---
 
-// ComputeCertHashSHA256 computes H(C) = SHA256(studentID|name|degree|issuer|date)
-// This is the original BCMS implementation from the research paper.
-// Time complexity: O(n) where n = total byte length of certificate fields
-// Security: 256-bit output, collision resistance: 2^128, preimage: 2^256
-func ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate string) string {
-	data := strings.Join([]string{studentID, studentName, degree, issuer, issueDate}, "|")
+// ComputeCertHashSHA256 computes H(C) = SHA256(studentID|name|degree|issuer|date|transcript)
+func ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, transcript string) string {
+	parts := []string{studentID, studentName, degree, issuer, issueDate}
+	if transcript != "" {
+		parts = append(parts, transcript)
+	}
+	data := strings.Join(parts, "|")
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash)
 }
 
 // ComputeCertHash is the switchable hash function entry point
-// Routes to SHA256 or BLAKE3 depending on HASH_MODE environment variable
-func ComputeCertHash(studentID, studentName, degree, issuer, issueDate string) (string, string) {
-	// In SHA256 mode, always use SHA256
-	hash := ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate)
+func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
+	hash := ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, transcript)
 	return hash, "sha256"
 }
 
@@ -212,6 +211,7 @@ func (s *SmartContract) IssueCertificate(
 	blake3Hash string, // Added to match workload's 10 args
 	signature string,
 	batchID string,
+	transcript string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
 	if err != nil || mspID != "Org1MSP" {
@@ -223,7 +223,7 @@ func (s *SmartContract) IssueCertificate(
 		return nil
 	}
 
-	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate)
+	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript)
 	if certHash == "" {
 		certHash = computedHash
 	}

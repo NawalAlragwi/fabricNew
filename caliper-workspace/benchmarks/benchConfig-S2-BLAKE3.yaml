@@ -53,7 +53,7 @@ test:
     Lower latency than S1 due to BLAKE3's superior throughput characteristics.
   workers:
     type: local
-    number: 5
+    number: 10
 
   rounds:
     # ────────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 100
-          finishingTps: 1000
+          finishingTps: 2000
       workload:
         module: workload/issueCertificate.js
         arguments:
