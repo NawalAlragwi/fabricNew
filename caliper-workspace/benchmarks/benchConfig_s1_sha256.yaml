@@ -35,18 +35,6 @@ test:
 
   rounds:
 
-    - label: WarmupIndexing
-      description: Warm-up round to trigger CouchDB index building and container startup.
-      txDuration: 15
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
     - label: IssueCertificate
       description: >
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
