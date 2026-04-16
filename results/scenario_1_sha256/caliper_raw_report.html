@@ -156,16 +156,16 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>5629</td> <td>0</td> <td>93.8</td> <td>6.58</td> <td>0.10</td> <td>1.74</td> <td>88.7</td>
+                         <td>IssueCertificate</td> <td>4948</td> <td>0</td> <td>81.9</td> <td>36.96</td> <td>1.04</td> <td>26.44</td> <td>52.7</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>9005</td> <td>0</td> <td>149.8</td> <td>0.06</td> <td>0.00</td> <td>0.01</td> <td>149.8</td>
+                         <td>VerifyCertificate</td> <td>7604</td> <td>2507</td> <td>166.9</td> <td>47.29</td> <td>0.01</td> <td>8.55</td> <td>125.9</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>3005</td> <td>0</td> <td>50.0</td> <td>0.15</td> <td>0.02</td> <td>0.03</td> <td>50.0</td>
+                         <td>QueryAllCertificates</td> <td>7</td> <td>4057</td> <td>66.6</td> <td>15.32</td> <td>0.10</td> <td>2.78</td> <td>36.4</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>11999</td> <td>0</td> <td>199.4</td> <td>32.63</td> <td>0.43</td> <td>18.26</td> <td>173.1</td>
+                         <td>RevokeCertificate</td> <td>3122</td> <td>1</td> <td>50.8</td> <td>60.16</td> <td>1.40</td> <td>42.55</td> <td>28.1</td>
                     </tr>
                 </table>
             </div>
@@ -178,7 +178,7 @@ rateControl:
   type: linear-rate
   opts:
     startingTps: 50
-    finishingTps: 300
+    finishingTps: 1000
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -186,7 +186,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>5629</td> <td>0</td> <td>93.8</td> <td>6.58</td> <td>0.10</td> <td>1.74</td> <td>88.7</td>
+                                     <td>IssueCertificate</td> <td>4948</td> <td>0</td> <td>81.9</td> <td>36.96</td> <td>1.04</td> <td>26.44</td> <td>52.7</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -199,7 +199,7 @@ rateControl:
 rateControl:
   type: fixed-rate
   opts:
-    tps: 150
+    tps: 200
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -207,7 +207,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>9005</td> <td>0</td> <td>149.8</td> <td>0.06</td> <td>0.00</td> <td>0.01</td> <td>149.8</td>
+                                     <td>VerifyCertificate</td> <td>7604</td> <td>2507</td> <td>166.9</td> <td>47.29</td> <td>0.01</td> <td>8.55</td> <td>125.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -215,12 +215,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>Fixed-rate 50 TPS paginated rich query (optimized index).</p>
+                <p>Fixed-rate 150 TPS full ledger scan.</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 50
+    tps: 100
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -228,7 +228,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>3005</td> <td>0</td> <td>50.0</td> <td>0.15</td> <td>0.02</td> <td>0.03</td> <td>50.0</td>
+                                     <td>QueryAllCertificates</td> <td>7</td> <td>4057</td> <td>66.6</td> <td>15.32</td> <td>0.10</td> <td>2.78</td> <td>36.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -249,7 +249,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>11999</td> <td>0</td> <td>199.4</td> <td>32.63</td> <td>0.43</td> <td>18.26</td> <td>173.1</td>
+                                     <td>RevokeCertificate</td> <td>3122</td> <td>1</td> <td>50.8</td> <td>60.16</td> <td>1.40</td> <td>42.55</td> <td>28.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -265,7 +265,7 @@ description: &gt;
   workers. All read rounds: fixed-rate 150 TPS, 60 s.
 workers:
   type: local
-  number: 5
+  number: 10
 rounds:
   - label: IssueCertificate
     description: &gt;
@@ -276,7 +276,7 @@ rounds:
       type: linear-rate
       opts:
         startingTps: 50
-        finishingTps: 300
+        finishingTps: 1000
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -289,18 +289,18 @@ rounds:
     rateControl:
       type: fixed-rate
       opts:
-        tps: 150
+        tps: 200
     workload:
       module: workload&#x2F;verifyCertificate.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
-    description: Fixed-rate 50 TPS paginated rich query (optimized index).
+    description: Fixed-rate 150 TPS full ledger scan.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 50
+        tps: 100
     workload:
       module: workload&#x2F;queryAllCertificates.js
     txOptions:

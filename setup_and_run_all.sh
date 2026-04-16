@@ -32,6 +32,7 @@ TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 LOG_FILE="${ROOT_DIR}/setup_run_${TIMESTAMP}.log"
 
 SKIP_NETWORK=false
+SKIP_DEPLOY=false
 SKIP_CALIPER=false
 SKIP_TAMARIN=false
 DOCS_ONLY=false
@@ -44,6 +45,7 @@ TPS_VALUES=(50 100 200)
 for arg in "$@"; do
     case $arg in
         --skip-network)  SKIP_NETWORK=true ;;
+        --skip-deploy)   SKIP_DEPLOY=true ;;
         --skip-caliper)  SKIP_CALIPER=true ;;
         --skip-tamarin)  SKIP_TAMARIN=true ;;
         --docs-only)     DOCS_ONLY=true; SKIP_NETWORK=true; SKIP_CALIPER=true ;;
@@ -763,7 +765,8 @@ run_real_caliper_scenario() {
         FABRIC_NETWORK_OK=true
     fi
 
-    log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
+    if [ "$SKIP_DEPLOY" = "false" ]; then
+        log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
         cd "${ROOT_DIR}/test-network"
         ./network.sh deployCC \
             -ccn basic \
@@ -780,6 +783,9 @@ run_real_caliper_scenario() {
         # ── FIX-C: Warm up after every scenario re-deploy ─────────────────
         wait_for_chaincode_image
         # ── End FIX-C ──────────────────────────────────────────────────────
+    else
+        warn "  SKIP_DEPLOY: skipping chaincode deployment, using existing 'basic' CC"
+    fi
 
     local PEER1_TLS_CERT PEER2_TLS_CERT ORDERER_TLS_CERT
     PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
