@@ -2,7 +2,7 @@
 #  BCMS — Scenario S1: SHA-256 Baseline  (v6.0)
 #  Hash algorithm : SHA-256 only
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 5 (local)
+#  Workers        : 10 (local)
 #  IssueCertificate: linear-rate ramp to 150 TPS over 60 s
 #  Read rounds    : fixed-rate 150 TPS, 60 s
 # ============================================================================
@@ -58,19 +58,19 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 200
       workload:
         module: workload/verifyCertificate.js
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
-      description: Fixed-rate 50 TPS paginated rich query (optimized index).
+      description: Fixed-rate 150 TPS full ledger scan.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 100
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
@@ -94,7 +94,7 @@ test:
 #      rateControl:
 #        type: fixed-rate
 #        opts:
-#          tps: 150
+#          tps: 200
 #      workload:
 #        module: workload/getCertificatesByStudent.js
 #      txOptions:
