@@ -20,7 +20,7 @@ class QueryAllCertificatesWorkload extends WorkloadModuleBase {
         return this.sutAdapter.sendRequests({
             contractId:        'basic',
             contractFunction:  'QueryAllCertificates',
-            contractArguments: ['20', ''], // PageSize: 20, Bookmark: ""
+            contractArguments: [20, ''], // PageSize: 20 (Number), Bookmark: ""
             readOnly:          true,
         });
     }

@@ -312,7 +312,11 @@ func (s *SmartContract) QueryAllCertificates(
 	bookmark string,
 ) (*PaginatedQueryResult, error) {
 
-	resultsIterator, metadata, err := ctx.GetStub().GetStateByRangeWithPagination("CERT_", "CERT_~", pageSize, bookmark)
+	// Use Rich Query with selector to leverage CouchDB index (indexDocTypeIssueDate)
+	// Selector: { "docType": "certificate" }
+	queryString := `{"selector":{"docType":"certificate"}}`
+	
+	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
 		return &PaginatedQueryResult{}, nil
 	}

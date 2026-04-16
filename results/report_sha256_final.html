@@ -1,0 +1,373 @@
+<!doctype html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script>
+    function plotChart(divId, chartData) {
+        // Convert from stringified html, to valid JSON
+        const chartDetails = JSON.parse(chartData.replace(/&quot;/g,'"'));
+        new Chart(document.getElementById(divId), {
+            type: chartDetails.type,
+            data: {
+                labels: chartDetails.labels,
+                datasets: chartDetails.datasets
+            },
+            options: {
+                legend: { display: chartDetails.legend },
+                title: {
+                    display: true,
+                    text: chartDetails.title
+                }
+            }
+        });
+    }
+</script>
+<html>
+<head>
+    <title>Hyperledger Caliper Report</title>
+    <meta charset="UTF-8"/>
+    <style type="text/css">
+        .left-column {
+            position: fixed;
+            width:20%;
+        }
+        .left-column ul {
+            display: block;
+            padding: 0;
+            list-style: none;
+            border-bottom: 1px solid #d9d9d9;
+            font-size: 14px;
+        }
+        .left-column h2{
+            font-size: 24px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column h3{
+            font-size: 18px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column li{
+            margin-left: 10px;
+            margin-bottom: 5px;
+            color: #5e6b73;
+        }
+        .right-column {
+            margin-left: 22%;
+            width:60%;
+        }
+        .right-column table {
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .right-column h2{
+            font-weight: 400;
+        }
+        .right-column h3{
+            font-weight: 400;
+        }
+        .right-column h4 {
+            font-weight: 400;
+            margin-block-end: 0;
+        }
+        .right-column th {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #f2f2f2;
+        }
+        .right-column td {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+            font-weight: 400;
+        }
+        .tag {
+            margin-bottom: 10px;
+            padding: 5px 10px;
+        }
+        pre {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f2f2f2;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            -khtml-border-radius: 5px;
+            overflow:auto;
+            max-height:300px;
+            font-size:12px;
+        }
+        .charting {
+            display:flex;
+            flex-direction:row;
+            flex-wrap: wrap;
+            page-break-inside: auto;
+        }
+        .chart {
+            display:flex;
+            flex:1;
+            max-width: 50%;
+        }
+    </style>
+</head>
+<body style="font-family: IBM Plex Sans; font-weight: 200;">
+    <main>
+        <div class="left-column">
+            <img src="https://hyperledger.github.io/caliper/assets/img/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
+            <ul>
+                <h3>&nbspBasic information</h3>
+                <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-hybrid-batch-benchmark-v6</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BCMS Full Benchmark Suite — Hybrid-Batch Framework (SHA-256 + BLAKE3). 6 rounds covering all chaincode functions. IssueCertificate: linear-rate 50→150 TPS over 60 s, 5 workers, batch&#x3D;10. All read-operation rounds: fixed-rate 150 TPS. Target: 0% failure rate on all rounds.
+</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">5</span></li>
+                <li><a href="#benchmarkInfo">Details</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspBenchmark results</h3>
+                <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#WarmupIndexing">WarmupIndexing</a></li>
+                    <li><a href="#IssueCertificate">IssueCertificate</a></li>
+                    <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
+                    <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
+                    <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspSystem under test</h3>
+                <li><a href="#sutdetails">Details</a></li>
+            </ul>
+        </div>
+
+        <div class="right-column">
+            <h1 style="padding-top: 3em; font-weight: 500;">Caliper report</h1>
+            <div style="border-bottom: 1px solid #d9d9d9; margin-bottom: 10px;" id="benchmarksummary">
+                <table style="min-width: 100%;">
+                    <h3>Summary of performance metrics</h3>
+                    <tr>
+                         <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                    </tr>
+
+                    <tr>
+                         <td>WarmupIndexing</td> <td>0</td> <td>755</td> <td>49.8</td> <td>-</td> <td>-</td> <td>-</td> <td>49.6</td>
+                    </tr>
+                    <tr>
+                         <td>IssueCertificate</td> <td>3787</td> <td>0</td> <td>62.4</td> <td>4.55</td> <td>0.24</td> <td>1.58</td> <td>61.3</td>
+                    </tr>
+                    <tr>
+                         <td>VerifyCertificate</td> <td>9005</td> <td>0</td> <td>149.4</td> <td>1.03</td> <td>0.01</td> <td>0.08</td> <td>149.4</td>
+                    </tr>
+                    <tr>
+                         <td>QueryAllCertificates</td> <td>0</td> <td>8921</td> <td>148.0</td> <td>-</td> <td>-</td> <td>-</td> <td>93.3</td>
+                    </tr>
+                    <tr>
+                         <td>RevokeCertificate</td> <td>7926</td> <td>0</td> <td>131.4</td> <td>55.49</td> <td>0.73</td> <td>36.53</td> <td>90.5</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="WarmupIndexing">
+                <h2>Benchmark round: WarmupIndexing</h2>
+                <p>Warm-up round to trigger CouchDB index building and container startup.</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 15
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for WarmupIndexing</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>WarmupIndexing</td> <td>0</td> <td>755</td> <td>49.8</td> <td>-</td> <td>-</td> <td>-</td> <td>49.6</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for WarmupIndexing</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
+                <h2>Benchmark round: IssueCertificate</h2>
+                <p>Issue certificates via Hybrid-Batch framework (SHA-256 + BLAKE3). Stress test: linear ramp from 50 TPS to 150 TPS over 60 seconds. 10 certs per Fabric transaction. MVCC-safe, zero-failure design.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: linear-rate
+  opts:
+    startingTps: 50
+    finishingTps: 150
+</pre>
+                        <h3>Performance metrics for IssueCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>IssueCertificate</td> <td>3787</td> <td>0</td> <td>62.4</td> <td>4.55</td> <td>0.24</td> <td>1.58</td> <td>61.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for IssueCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
+                <h2>Benchmark round: VerifyCertificate</h2>
+                <p>Verify certificate existence on the ledger (readOnly peer query). Fixed-rate 150 TPS. inputHash is empty — existence check only.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 150
+</pre>
+                        <h3>Performance metrics for VerifyCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>VerifyCertificate</td> <td>9005</td> <td>0</td> <td>149.4</td> <td>1.03</td> <td>0.01</td> <td>0.08</td> <td>149.4</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for VerifyCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
+                <h2>Benchmark round: QueryAllCertificates</h2>
+                <p>Scan and return all certificate records from the ledger. Fixed-rate 150 TPS. Filters by docType&#x3D;&#x3D;&quot;certificate&quot;.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 150
+</pre>
+                        <h3>Performance metrics for QueryAllCertificates</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>QueryAllCertificates</td> <td>0</td> <td>8921</td> <td>148.0</td> <td>-</td> <td>-</td> <td>-</td> <td>93.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for QueryAllCertificates</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
+                <h2>Benchmark round: RevokeCertificate</h2>
+                <p>Revoke certificates. Idempotent: nil when cert not found or revoked. Fixed-rate 150 TPS. Targets certs issued in round 1.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 150
+</pre>
+                        <h3>Performance metrics for RevokeCertificate</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>RevokeCertificate</td> <td>7926</td> <td>0</td> <td>131.4</td> <td>55.49</td> <td>0.73</td> <td>36.53</td> <td>90.5</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for RevokeCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
+                <h2>Test Environment</h2>
+                <h3>benchmark config</h3>
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-hybrid-batch-benchmark-v6
+description: &gt;
+  BCMS Full Benchmark Suite — Hybrid-Batch Framework (SHA-256 + BLAKE3). 6
+  rounds covering all chaincode functions. IssueCertificate: linear-rate 50→150
+  TPS over 60 s, 5 workers, batch&#x3D;10. All read-operation rounds: fixed-rate 150
+  TPS. Target: 0% failure rate on all rounds.
+workers:
+  type: local
+  number: 5
+rounds:
+  - label: WarmupIndexing
+    description: Warm-up round to trigger CouchDB index building and container startup.
+    txDuration: 15
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;queryAllCertificates.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: IssueCertificate
+    description: &gt;
+      Issue certificates via Hybrid-Batch framework (SHA-256 + BLAKE3). Stress
+      test: linear ramp from 50 TPS to 150 TPS over 60 seconds. 10 certs per
+      Fabric transaction. MVCC-safe, zero-failure design.
+    txDuration: 60
+    rateControl:
+      type: linear-rate
+      opts:
+        startingTps: 50
+        finishingTps: 150
+    workload:
+      module: workload&#x2F;issueCertificate.js
+      arguments:
+        batchSize: 10
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: VerifyCertificate
+    description: &gt;
+      Verify certificate existence on the ledger (readOnly peer query).
+      Fixed-rate 150 TPS. inputHash is empty — existence check only.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 150
+    workload:
+      module: workload&#x2F;verifyCertificate.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: QueryAllCertificates
+    description: &gt;
+      Scan and return all certificate records from the ledger. Fixed-rate 150
+      TPS. Filters by docType&#x3D;&#x3D;&quot;certificate&quot;.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 150
+    workload:
+      module: workload&#x2F;queryAllCertificates.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: RevokeCertificate
+    description: &gt;
+      Revoke certificates. Idempotent: nil when cert not found or revoked.
+      Fixed-rate 150 TPS. Targets certs issued in round 1.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 150
+    workload:
+      module: workload&#x2F;revokeCertificate.js
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+</pre>
+                <h3>SUT</h3>
+                <pre id="sutdetails">not provided</pre>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

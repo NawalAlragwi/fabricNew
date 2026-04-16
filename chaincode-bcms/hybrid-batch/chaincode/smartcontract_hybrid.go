@@ -628,10 +628,11 @@ func (s *SmartContract) QueryAllCertificates(
 	bookmark string,
 ) (*PaginatedQueryResult, error) {
 
-	// Fabric's native pagination at the ledger level.
-	// Range scan (CERT_ to CERT_~) is efficient and index-backed.
-	resultsIterator, metadata, err := ctx.GetStub().GetStateByRangeWithPagination(
-		"CERT_", "CERT_~", pageSize, bookmark)
+	// Use Rich Query with selector to leverage CouchDB index (indexDocTypeIssueDate)
+	queryString := `{"selector":{"docType":"certificate"}}`
+
+	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
+		queryString, pageSize, bookmark)
 
 	if err != nil {
 		return nil, fmt.Errorf("QueryAllCertificates: ledger read error: %v", err)
