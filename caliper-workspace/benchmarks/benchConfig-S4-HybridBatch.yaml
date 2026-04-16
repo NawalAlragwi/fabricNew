@@ -232,7 +232,7 @@ test:
       workload:
         module: workload/revokeCertificate.js
       txOptions:
-        invokerIdentity: User1@org2.example.com
+        invokerIdentity: User1@org1.example.com
 
     # ══════════════════════════════════════════════════════════════════════════
     # ROUND 6: GetCertificatesByStudent — CouchDB Composite Index at 1000 TPS

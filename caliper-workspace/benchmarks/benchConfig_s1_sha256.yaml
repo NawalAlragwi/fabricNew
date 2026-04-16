@@ -86,7 +86,7 @@ test:
       workload:
         module: workload/revokeCertificate.js
       txOptions:
-        invokerIdentity: User1@org2.example.com
+        invokerIdentity: User1@org1.example.com
 
 #    - label: GetCertificatesByStudent
 #      description: Fixed-rate 150 TPS per-student query.

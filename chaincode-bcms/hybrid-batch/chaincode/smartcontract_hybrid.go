@@ -705,8 +705,8 @@ func (s *SmartContract) RevokeCertificate(
 	if err != nil {
 		return fmt.Errorf("RevokeCertificate: %v", err)
 	}
-	if msp != "Org2MSP" {
-		return fmt.Errorf("access denied: only Org2MSP can revoke certificates")
+	if msp != "Org1MSP" && msp != "Org2MSP" {
+		return fmt.Errorf("access denied: only Org1MSP or Org2MSP can revoke certificates")
 	}
 
 	certJSON, err := ctx.GetStub().GetState(id)
