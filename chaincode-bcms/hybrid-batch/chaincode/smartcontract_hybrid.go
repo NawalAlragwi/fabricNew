@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 //  BCMS - Blockchain Certificate Management System
 //  Hyperledger Fabric v2.5 | Go Chaincode - Hybrid Crypto + Batch Edition
 //
