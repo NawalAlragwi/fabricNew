@@ -343,16 +343,7 @@ func (s *SmartContract) VerifyCertificate(
 		}, nil
 	}
 
-	return &VerificationResult{
-		CertID:    id,
-		Valid:     isValid,
-		HashMatch: isValid,
-		HashAlgo:  "blake3",
-		Message:   "certificate integrity verified",
-		Timestamp: ts,
-	}, nil
-
-	if !hashMatch {
+	if !isValid {
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
