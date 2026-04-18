@@ -1,1 +1,16 @@
-{"scenario":1,"key":"scenario_1_sha256","label":"S1: SHA-256 Baseline","chaincode":"chaincode-bcms/sha256","batch_size":1,"tps":50,"started":"2026-04-16T23:16:09Z"}
+{
+  "scenario": 1,
+  "key": "scenario_1_sha256",
+  "label": "S1: SHA-256 Baseline",
+  "hash_algorithm": "sha256",
+  "chaincode": "chaincode-bcms/sha256",
+  "benchmark_config": "benchConfig_s1_sha256.yaml",
+  "workers": 10,
+  "batch_size": 1,
+  "timestamp": "2026-04-18T09:22:37Z",
+  "status": "completed",
+  "reports": [
+    "report_S1_SHA256.html",
+    "caliper_results.json"
+  ]
+}
