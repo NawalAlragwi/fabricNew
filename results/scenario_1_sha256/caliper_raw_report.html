@@ -127,7 +127,7 @@
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v7</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 5KB transcript per certificate (realistic stress test). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to S2-BLAKE3 for fair comparison.
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 50KB transcript per certificate (PhD Research Stress Test). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to S2-BLAKE3 for fair comparison.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -156,22 +156,22 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>5956</td> <td>0</td> <td>99.1</td> <td>2.48</td> <td>0.07</td> <td>0.50</td> <td>96.6</td>
+                         <td>IssueCertificate</td> <td>3512</td> <td>0</td> <td>58.0</td> <td>31.46</td> <td>0.30</td> <td>13.09</td> <td>50.9</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>5956</td> <td>6054</td> <td>199.0</td> <td>0.07</td> <td>0.00</td> <td>0.01</td> <td>199.0</td>
+                         <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>198.6</td> <td>0.32</td> <td>0.01</td> <td>0.03</td> <td>198.6</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>50.0</td> <td>0.21</td> <td>0.02</td> <td>0.04</td> <td>49.9</td>
+                         <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.7</td> <td>2.63</td> <td>0.03</td> <td>0.42</td> <td>49.6</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>10676</td> <td>264</td> <td>180.4</td> <td>55.86</td> <td>0.68</td> <td>35.59</td> <td>141.3</td>
+                         <td>RevokeCertificate</td> <td>7851</td> <td>0</td> <td>127.7</td> <td>4.49</td> <td>0.40</td> <td>1.72</td> <td>126.8</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 5KB transcript payload forces SHA-256 to process ~5100 bytes per hash. SHA-256 measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300 TPS, 60 s, 10 workers.
+                <p>S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash. SHA-256 measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300 TPS, 60 s, 10 workers.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -186,7 +186,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>5956</td> <td>0</td> <td>99.1</td> <td>2.48</td> <td>0.07</td> <td>0.50</td> <td>96.6</td>
+                                     <td>IssueCertificate</td> <td>3512</td> <td>0</td> <td>58.0</td> <td>31.46</td> <td>0.30</td> <td>13.09</td> <td>50.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -208,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>5956</td> <td>6054</td> <td>199.0</td> <td>0.07</td> <td>0.00</td> <td>0.01</td> <td>199.0</td>
+                                     <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>198.6</td> <td>0.32</td> <td>0.01</td> <td>0.03</td> <td>198.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -230,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>50.0</td> <td>0.21</td> <td>0.02</td> <td>0.04</td> <td>49.9</td>
+                                     <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.7</td> <td>2.63</td> <td>0.03</td> <td>0.42</td> <td>49.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -252,7 +252,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>10676</td> <td>264</td> <td>180.4</td> <td>55.86</td> <td>0.68</td> <td>35.59</td> <td>141.3</td>
+                                     <td>RevokeCertificate</td> <td>7851</td> <td>0</td> <td>127.7</td> <td>4.49</td> <td>0.40</td> <td>1.72</td> <td>126.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -264,8 +264,8 @@ rateControl:
                 <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-baseline-v7
 description: &gt;
   Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison). Hash: SHA-256
-  (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 5KB transcript per
-  certificate (realistic stress test). batchSize: 1 (single certificate per
+  (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 50KB transcript per
+  certificate (PhD Research Stress Test). batchSize: 1 (single certificate per
   Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10
   workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to
   S2-BLAKE3 for fair comparison.
@@ -275,10 +275,10 @@ workers:
 rounds:
   - label: IssueCertificate
     description: &gt;
-      S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 5KB
-      transcript payload forces SHA-256 to process ~5100 bytes per hash. SHA-256
-      measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300 TPS, 60
-      s, 10 workers.
+      S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 50KB
+      transcript payload forces SHA-256 to process ~51,000 bytes per hash.
+      SHA-256 measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300
+      TPS, 60 s, 10 workers.
     txDuration: 60
     rateControl:
       type: linear-rate
@@ -302,6 +302,8 @@ rounds:
         tps: 200
     workload:
       module: workload&#x2F;verifyCertificate.js
+      arguments:
+        totalIssued: 500
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates

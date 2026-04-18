@@ -35,10 +35,12 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         this.txIndex++;
-        // Cycle through possible certs issued by this worker or others
-        // Pattern: CERT_{worker}_{index}
-        const targetWorker = this.workerIndex; 
-        const certID = `CERT_${targetWorker}_${this.txIndex}`;
+        
+        // --- RESEARCH FIX #1: Worker-Specific Range --------------------------
+        // Ensures each worker only queries the IDs it (or its counterpart) issued.
+        const issuedCount = Math.floor(this.totalIssued / this.totalWorkers);
+        const idx = ((this.txIndex - 1) % issuedCount) + 1;
+        const certID = `CERT_${this.workerIndex}_${idx}`;
         
         const request = {
             contractId: 'basic',

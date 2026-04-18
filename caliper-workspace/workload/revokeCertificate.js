@@ -35,9 +35,12 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         this.txIndex++;
-        // Revoke the pre-seeded certificates for 100% success rate
-        const seeds = ['CERT_SEED_001', 'CERT_SEED_002', 'CERT_SEED_003', 'CERT_SEED_004', 'CERT_SEED_005'];
-        const certID = seeds[(this.txIndex - 1) % seeds.length];
+        // --- RESEARCH FIX #3: MVCC-Safe Revocation ---------------------------
+        // Instead of hammering the same 5 seed certificates (which causes 
+        // 90% MVCC conflicts), each worker revokes its own set of certs.
+        const issuedCount = 500; 
+        const idx = ((this.txIndex - 1) % issuedCount) + 1;
+        const certID = `CERT_${this.workerIndex}_${idx}`;
 
         const request = {
             contractId:        'basic',

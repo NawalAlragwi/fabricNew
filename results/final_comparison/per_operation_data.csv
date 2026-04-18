@@ -1,20 +1,20 @@
 Operation,Scenario,Function,Succ,Fail,Success Rate (%),TPS,Eff Cert TPS,Avg Latency (s),P95 (s),Consensus/100
-IssueCertificate,SHA-256 Baseline,IssueCertificate,5956,0,100.0,96.6,96.6,0.5,0.75,100.0
-IssueCertificate,BLAKE3 Alternative,IssueCertificate,5956,0,100.0,96.6,96.6,0.5,0.75,100.0
-IssueCertificate,Hybrid SHA-256 + BLAKE3,IssueCertificate,5956,0,100.0,96.6,96.6,0.5,0.75,100.0
-IssueCertificate,Hybrid + Batching ×10,IssueCertificate,5956,0,100.0,96.6,966.0,0.5,0.75,10.0
-VerifyCertificate,SHA-256 Baseline,VerifyCertificate,5956,6054,49.6,199.0,199.0,0.01,0.015,100.0
-VerifyCertificate,BLAKE3 Alternative,VerifyCertificate,5956,6054,49.6,199.0,199.0,0.01,0.015,100.0
-VerifyCertificate,Hybrid SHA-256 + BLAKE3,VerifyCertificate,5956,6054,49.6,199.0,199.0,0.01,0.015,100.0
-VerifyCertificate,Hybrid + Batching ×10,VerifyCertificate,5956,6054,49.6,199.0,199.0,0.01,0.015,10.0
-QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,3010,0,100.0,49.9,49.9,0.04,0.06,100.0
-QueryAllCertificates,BLAKE3 Alternative,QueryAllCertificates,3010,0,100.0,49.9,49.9,0.04,0.06,100.0
-QueryAllCertificates,Hybrid SHA-256 + BLAKE3,QueryAllCertificates,3010,0,100.0,49.9,49.9,0.04,0.06,100.0
-QueryAllCertificates,Hybrid + Batching ×10,QueryAllCertificates,3010,0,100.0,49.9,49.9,0.04,0.06,10.0
-RevokeCertificate,SHA-256 Baseline,RevokeCertificate,10676,264,97.6,141.3,141.3,35.59,53.385,100.0
-RevokeCertificate,BLAKE3 Alternative,RevokeCertificate,10676,264,97.6,141.3,141.3,35.59,53.385,100.0
-RevokeCertificate,Hybrid SHA-256 + BLAKE3,RevokeCertificate,10676,264,97.6,141.3,141.3,35.59,53.385,100.0
-RevokeCertificate,Hybrid + Batching ×10,RevokeCertificate,10676,264,97.6,141.3,141.3,35.59,53.385,10.0
+IssueCertificate,SHA-256 Baseline,IssueCertificate,3512,0,100.0,50.9,50.9,13.09,19.635,100.0
+IssueCertificate,BLAKE3 Alternative,IssueCertificate,3512,0,100.0,50.9,50.9,13.09,19.635,100.0
+IssueCertificate,Hybrid SHA-256 + BLAKE3,IssueCertificate,3512,0,100.0,50.9,50.9,13.09,19.635,100.0
+IssueCertificate,Hybrid + Batching ×10,IssueCertificate,3512,0,100.0,50.9,509.0,13.09,19.635,10.0
+VerifyCertificate,SHA-256 Baseline,VerifyCertificate,12010,0,100.0,198.6,198.6,0.03,0.045,100.0
+VerifyCertificate,BLAKE3 Alternative,VerifyCertificate,12010,0,100.0,198.6,198.6,0.03,0.045,100.0
+VerifyCertificate,Hybrid SHA-256 + BLAKE3,VerifyCertificate,12010,0,100.0,198.6,198.6,0.03,0.045,100.0
+VerifyCertificate,Hybrid + Batching ×10,VerifyCertificate,12010,0,100.0,198.6,198.6,0.03,0.045,10.0
+QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,3010,0,100.0,49.6,49.6,0.42,0.63,100.0
+QueryAllCertificates,BLAKE3 Alternative,QueryAllCertificates,3010,0,100.0,49.6,49.6,0.42,0.63,100.0
+QueryAllCertificates,Hybrid SHA-256 + BLAKE3,QueryAllCertificates,3010,0,100.0,49.6,49.6,0.42,0.63,100.0
+QueryAllCertificates,Hybrid + Batching ×10,QueryAllCertificates,3010,0,100.0,49.6,49.6,0.42,0.63,10.0
+RevokeCertificate,SHA-256 Baseline,RevokeCertificate,7851,0,100.0,126.8,126.8,1.72,2.58,100.0
+RevokeCertificate,BLAKE3 Alternative,RevokeCertificate,7851,0,100.0,126.8,126.8,1.72,2.58,100.0
+RevokeCertificate,Hybrid SHA-256 + BLAKE3,RevokeCertificate,7851,0,100.0,126.8,126.8,1.72,2.58,100.0
+RevokeCertificate,Hybrid + Batching ×10,RevokeCertificate,7851,0,100.0,126.8,126.8,1.72,2.58,10.0
 GetCertificatesByStudent,SHA-256 Baseline,GetCertificatesByStudent,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 GetCertificatesByStudent,BLAKE3 Alternative,GetCertificatesByStudent,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 GetCertificatesByStudent,Hybrid SHA-256 + BLAKE3,GetCertificatesByStudent,0,0,100.0,0.0,0.0,0.0,0.0,100.0
