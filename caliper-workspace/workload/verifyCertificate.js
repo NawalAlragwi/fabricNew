@@ -29,8 +29,8 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         this.workerIndex = workerIndex;
         this.txIndex = 0;
-        this.totalIssued = roundArguments.totalIssued || 1000; // Assume 1000 certs were issued
-        console.log(`Worker ${workerIndex}: Initialized for VerifyCertificate`);
+        this.totalIssued = (roundArguments && roundArguments.totalIssued) ? roundArguments.totalIssued : 1000;
+        console.log(`Worker ${workerIndex}: Initialized for VerifyCertificate (Target: ${this.totalIssued} certs)`);
     }
 
     async submitTransaction() {
