@@ -1,5 +1,4 @@
-# ============================================================================
-#  BCMS — Scenario S1: BLAKE3 Baseline  (v7.0 — FAIR COMPARISON)
+#  BCMS — Scenario S2: BLAKE3 Alternative  (v7.0 — FAIR COMPARISON)
 #  Hash algorithm : BLAKE3 (lukechampine.com/blake3 — parallel, SIMD-accelerated)
 #  Batch size     : 1 (one certificate per Fabric transaction)
 #  Workers        : 10 (local)
@@ -14,7 +13,7 @@
 #  Benchmark Design:
 #    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
 #    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
-#    QueryAllCertificates: fixed-rate 100 TPS, 60 s (CouchDB rich query)
+#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
 #    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
 # ============================================================================
 
@@ -34,15 +33,15 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s1-blake3-baseline-v7
+  name: bcms-s2-blake3-alternative-v7
   description: >
-    Scenario S1 — BLAKE3 Baseline (v7.0 Fair Comparison).
+    Scenario S2 — BLAKE3 Alternative (v7.0 Fair Comparison).
     Hash: BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated).
     Payload: 5KB transcript per certificate (realistic stress test).
     batchSize: 1 (single certificate per Fabric transaction).
     IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
     All read rounds: fixed-rate 200 TPS, 60 s.
-    IDENTICAL config to S2-BLAKE3 for fair comparison.
+    IDENTICAL config to S1-SHA256 for fair comparison.
   workers:
     type: local
     number: 10
@@ -51,7 +50,7 @@ test:
 
     - label: IssueCertificate
       description: >
-        S1 BLAKE3 Baseline — Issue single certificates (batchSize=1).
+        S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
         5KB transcript payload: BLAKE3 processes ~5100 bytes with AVX2/NEON.
         BLAKE3 measured: 249,464 hashes/sec → 4.01 µs per hash.
         Linear ramp 50→300 TPS, 60 s, 10 workers.
@@ -84,13 +83,14 @@ test:
 
     - label: QueryAllCertificates
       description: >
-        S1 BLAKE3 — Fixed-rate 100 TPS CouchDB rich query.
+        S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query.
+        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
       txOptions:

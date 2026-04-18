@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v7</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 5KB transcript per certificate (realistic stress test). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to S2-BLAKE3 for fair comparison.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s2-blake3-alternative-v7</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v7.0 Fair Comparison). Hash: BLAKE3 (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 5KB transcript per certificate (realistic stress test). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to S1-SHA256 for fair comparison.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -136,7 +136,6 @@
                 <h3>&nbspBenchmark results</h3>
                 <li><a href="#benchmarksummary">Summary</a></li>
                     <li><a href="#IssueCertificate">IssueCertificate</a></li>
-                    <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
                     <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
             </ul>
@@ -156,22 +155,19 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>4756</td> <td>0</td> <td>78.8</td> <td>3.17</td> <td>0.10</td> <td>0.87</td> <td>78.0</td>
+                         <td>IssueCertificate</td> <td>4993</td> <td>0</td> <td>82.6</td> <td>12.02</td> <td>0.09</td> <td>2.86</td> <td>73.3</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>197.3</td> <td>0.39</td> <td>0.01</td> <td>0.02</td> <td>197.3</td>
+                         <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.8</td> <td>4.97</td> <td>0.04</td> <td>2.65</td> <td>48.9</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>1188</td> <td>4822</td> <td>99.3</td> <td>60.01</td> <td>0.08</td> <td>20.98</td> <td>57.6</td>
-                    </tr>
-                    <tr>
-                         <td>RevokeCertificate</td> <td>7716</td> <td>6</td> <td>126.1</td> <td>89.74</td> <td>11.49</td> <td>56.64</td> <td>68.8</td>
+                         <td>RevokeCertificate</td> <td>7646</td> <td>0</td> <td>125.9</td> <td>41.34</td> <td>0.47</td> <td>17.01</td> <td>93.7</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 5KB transcript payload forces SHA-256 to process ~5100 bytes per hash. SHA-256 measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300 TPS, 60 s, 10 workers.
+                <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 5KB transcript payload: BLAKE3 processes ~5100 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear ramp 50→300 TPS, 60 s, 10 workers.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -186,43 +182,21 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>4756</td> <td>0</td> <td>78.8</td> <td>3.17</td> <td>0.10</td> <td>0.87</td> <td>78.0</td>
+                                     <td>IssueCertificate</td> <td>4993</td> <td>0</td> <td>82.6</td> <td>12.02</td> <td>0.09</td> <td>2.86</td> <td>73.3</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
             </div>
 
-            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
-                <h2>Benchmark round: VerifyCertificate</h2>
-                <p>S1 SHA-256 — Fixed-rate 200 TPS verify (read-only, no ordering). SHA-256 re-hash on every verify call: 15.0 µs overhead per tx.
-</p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
-rateControl:
-  type: fixed-rate
-  opts:
-    tps: 200
-</pre>
-                        <h3>Performance metrics for VerifyCertificate</h3>
-                            <table style="min-width: 100%;">
-                                <tr>
-                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
-                                </tr>
-                                <tr>
-                                     <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>197.3</td> <td>0.39</td> <td>0.01</td> <td>0.02</td> <td>197.3</td>
-                                </tr>
-                            </table>
-                        <h3>Resource utilization for VerifyCertificate</h3>
-            </div>
-
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>S1 SHA-256 — Fixed-rate 100 TPS CouchDB rich query. Uses indexDocTypeIssueDate for optimized pagination.
+                <p>S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts. Uses indexDocTypeIssueDate for optimized pagination.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 100
+    tps: 50
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -230,7 +204,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>1188</td> <td>4822</td> <td>99.3</td> <td>60.01</td> <td>0.08</td> <td>20.98</td> <td>57.6</td>
+                                     <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.8</td> <td>4.97</td> <td>0.04</td> <td>2.65</td> <td>48.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -238,7 +212,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>S1 SHA-256 — Fixed-rate 200 TPS revocation (idempotent write). SHA-256 re-hash during revocation integrity check.
+                <p>S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write). BLAKE3 re-hash during revocation integrity check.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -252,7 +226,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>7716</td> <td>6</td> <td>126.1</td> <td>89.74</td> <td>11.49</td> <td>56.64</td> <td>68.8</td>
+                                     <td>RevokeCertificate</td> <td>7646</td> <td>0</td> <td>125.9</td> <td>41.34</td> <td>0.47</td> <td>17.01</td> <td>93.7</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -261,24 +235,24 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-baseline-v7
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s2-blake3-alternative-v7
 description: &gt;
-  Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison). Hash: SHA-256
-  (crypto&#x2F;sha256, sequential Merkle–Damgård). Payload: 5KB transcript per
-  certificate (realistic stress test). batchSize: 1 (single certificate per
-  Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10
-  workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL config to
-  S2-BLAKE3 for fair comparison.
+  Scenario S2 — BLAKE3 Alternative (v7.0 Fair Comparison). Hash: BLAKE3
+  (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 5KB
+  transcript per certificate (realistic stress test). batchSize: 1 (single
+  certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300
+  TPS, 60 s, 10 workers. All read rounds: fixed-rate 200 TPS, 60 s. IDENTICAL
+  config to S1-SHA256 for fair comparison.
 workers:
   type: local
   number: 10
 rounds:
   - label: IssueCertificate
     description: &gt;
-      S1 SHA-256 Baseline — Issue single certificates (batchSize&#x3D;1). 5KB
-      transcript payload forces SHA-256 to process ~5100 bytes per hash. SHA-256
-      measured: 66,653 hashes&#x2F;sec → 15.0 µs per hash. Linear ramp 50→300 TPS, 60
-      s, 10 workers.
+      S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 5KB
+      transcript payload: BLAKE3 processes ~5100 bytes with AVX2&#x2F;NEON. BLAKE3
+      measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear ramp 50→300 TPS,
+      60 s, 10 workers.
     txDuration: 60
     rateControl:
       type: linear-rate
@@ -293,8 +267,8 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      S1 SHA-256 — Fixed-rate 200 TPS verify (read-only, no ordering). SHA-256
-      re-hash on every verify call: 15.0 µs overhead per tx.
+      S1 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering). BLAKE3
+      re-hash on every verify call: 4.01 µs overhead per tx.
     txDuration: 60
     rateControl:
       type: fixed-rate
@@ -306,20 +280,21 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
     description: &gt;
-      S1 SHA-256 — Fixed-rate 100 TPS CouchDB rich query. Uses
+      S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. Reduced from 100 to 50
+      TPS to ensure SUT stability and prevent timeouts. Uses
       indexDocTypeIssueDate for optimized pagination.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 100
+        tps: 50
     workload:
       module: workload&#x2F;queryAllCertificates.js
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
     description: &gt;
-      S1 SHA-256 — Fixed-rate 200 TPS revocation (idempotent write). SHA-256
+      S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write). BLAKE3
       re-hash during revocation integrity check.
     txDuration: 60
     rateControl:

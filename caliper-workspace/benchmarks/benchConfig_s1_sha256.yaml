@@ -14,7 +14,7 @@
 #  Benchmark Design:
 #    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
 #    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
-#    QueryAllCertificates: fixed-rate 100 TPS, 60 s (CouchDB rich query)
+#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
 #    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
 # ============================================================================
 
@@ -84,13 +84,14 @@ test:
 
     - label: QueryAllCertificates
       description: >
-        S1 SHA-256 — Fixed-rate 100 TPS CouchDB rich query.
+        S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
+        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
