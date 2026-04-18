@@ -107,19 +107,19 @@
   <div class="meta-row">
     <span>📁 Config: <strong>benchConfig_s1_sha256.yaml</strong></span>
     <span>⛓ Chaincode: <strong>chaincode-bcms/sha256</strong></span>
-    <span>🕒 Generated: <strong>2026-04-18 21:57 UTC</strong></span>
+    <span>🕒 Generated: <strong>2026-04-18 22:22 UTC</strong></span>
   </div>
 </header>
 
 
-<div class="zero-banner">🎯 REAL BENCHMARK — ZERO FAILURES · 100% Success Rate across all 6 operations · 65,014 total transactions</div>
+<div class="zero-banner">🎯 REAL BENCHMARK — ZERO FAILURES · 100% Success Rate across all 6 operations · 60,448 total transactions</div>
 
 <div class="container">
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi highlight">
-      <div class="val">85.8</div>
+      <div class="val">85.5</div>
       <div class="unit">tx/s</div>
       <div class="lbl">IssueCert TPS</div>
       <div class="delta">vs S1: +0.0%</div>
@@ -131,19 +131,19 @@
       <div class="delta">vs S1: +0.0%</div>
     </div>
     <div class="kpi">
-      <div class="val">2310</div>
+      <div class="val">2220</div>
       <div class="unit">ms</div>
       <div class="lbl">Avg Latency</div>
       <div class="delta">vs S1: +0.0%</div>
     </div>
     <div class="kpi">
-      <div class="val">0</div>
+      <div class="val">1710</div>
       <div class="unit">tx</div>
       <div class="lbl">Failures</div>
-      <div class="delta">100.0% success</div>
+      <div class="delta">97.2% success</div>
     </div>
     <div class="kpi">
-      <div class="val">65,014</div>
+      <div class="val">60,448</div>
       <div class="unit">tx</div>
       <div class="lbl">Total Transactions</div>
       <div class="delta">across 6 operations</div>
@@ -228,35 +228,35 @@
       <tbody>
         <tr>
           <td><strong>IssueCertificate</strong> <span class="op-badge op-write">WRITE</span></td>
-          <td>85.8 →</td>
-          <td>85.8</td>
-          <td>2310 ms →</td>
-          <td>1.85s / 3.46s / 4.62s</td>
-          <td>9.72s</td>
-          <td>5,477</td>
+          <td>85.5 →</td>
+          <td>85.5</td>
+          <td>2220 ms →</td>
+          <td>1.78s / 3.33s / 4.44s</td>
+          <td>9.28s</td>
+          <td>5,426</td>
           <td class="fail-zero">0</td>
           <td>1</td>
           <td>1</td>
         </tr>
         <tr>
           <td><strong>VerifyCertificate</strong> <span class="op-badge op-read">READ</span></td>
-          <td>199.3 →</td>
-          <td>199.3</td>
-          <td>10 ms →</td>
-          <td>0.01s / 0.01s / 0.02s</td>
-          <td>0.14s</td>
-          <td>12,010</td>
-          <td class="fail-zero">0</td>
+          <td>169.4 →</td>
+          <td>169.4</td>
+          <td>8630 ms →</td>
+          <td>6.90s / 12.95s / 17.26s</td>
+          <td>20.89s</td>
+          <td>11,156</td>
+          <td class="fail-nonzero">855</td>
           <td>0</td>
           <td>0</td>
         </tr>
         <tr>
           <td><strong>QueryAllCertificates</strong> <span class="op-badge op-read">READ</span></td>
-          <td>49.9 →</td>
-          <td>49.9</td>
+          <td>49.8 →</td>
+          <td>49.8</td>
           <td>30 ms →</td>
           <td>0.02s / 0.04s / 0.06s</td>
-          <td>0.20s</td>
+          <td>0.14s</td>
           <td>3,010</td>
           <td class="fail-zero">0</td>
           <td>0</td>
@@ -264,12 +264,12 @@
         </tr>
         <tr>
           <td><strong>RevokeCertificate</strong> <span class="op-badge op-write">WRITE</span></td>
-          <td>197.2 →</td>
-          <td>197.2</td>
-          <td>570 ms →</td>
-          <td>0.46s / 0.85s / 1.14s</td>
-          <td>1.87s</td>
-          <td>12,010</td>
+          <td>159.7 →</td>
+          <td>159.7</td>
+          <td>1240 ms →</td>
+          <td>0.99s / 1.86s / 2.48s</td>
+          <td>4.39s</td>
+          <td>9,777</td>
           <td class="fail-zero">0</td>
           <td>2</td>
           <td>1</td>
@@ -329,8 +329,8 @@
       <div class="config-item"><div class="key">Hash Algorithm</div><div class="val2">SHA-256</div></div>
       <div class="config-item"><div class="key">Workers</div><div class="val2">4</div></div>
       <div class="config-item"><div class="key">Batch Size</div><div class="val2">1</div></div>
-      <div class="config-item"><div class="key">Total Transactions</div><div class="val2">65,014</div></div>
-      <div class="config-item"><div class="key">Failures</div><div class="val2" style="color:#16a34a">0 (0%)</div></div>
+      <div class="config-item"><div class="key">Total Transactions</div><div class="val2">60,448</div></div>
+      <div class="config-item"><div class="key">Failures</div><div class="val2" style="color:#16a34a">1710 (0%)</div></div>
       <div class="config-item"><div class="key">Framework</div><div class="val2">Fabric v2.5 / Caliper 0.6</div></div>
       <div class="config-item"><div class="key">GOFLAGS</div><div class="val2">-mod=mod</div></div>
       <div class="config-item"><div class="key">Scenario</div><div class="val2">1 / 4</div></div>
@@ -416,7 +416,7 @@
 </div><!-- /container -->
 
 <footer>
-  BCMS Benchmark — S1: SHA-256 Baseline &nbsp;|&nbsp; Generated 2026-04-18 21:57 UTC
+  BCMS Benchmark — S1: SHA-256 Baseline &nbsp;|&nbsp; Generated 2026-04-18 22:22 UTC
   &nbsp;|&nbsp; Hyperledger Fabric v2.5 · Caliper v0.6.0
   &nbsp;|&nbsp; 0 Failures · 100% Success Rate
 </footer>
@@ -429,12 +429,12 @@
   const alpha50 = color + "80";
 
   const ops   = ["IssueCertificate", "VerifyCertificate", "QueryAllCertificates", "RevokeCertificate"];
-  const tpsD  = [85.8, 199.3, 49.9, 197.2];
-  const latD  = [2310.0, 10.0, 30.0, 570.0];
-  const p50D  = [1848.0, 8.0, 24.0, 456.0];
-  const p95D  = [3465.0, 15.0, 45.0, 855.0];
-  const p99D  = [4620.0, 20.0, 60.0, 1140.0];
-  const volD  = [5477, 12010, 3010, 12010];
+  const tpsD  = [85.5, 169.4, 49.8, 159.7];
+  const latD  = [2220.0, 8630.0, 30.0, 1240.0];
+  const p50D  = [1776.0, 6904.0, 24.0, 992.0];
+  const p95D  = [3330.0, 12945.0, 45.0, 1860.0];
+  const p99D  = [4440.0, 17260.0, 60.0, 2480.0];
+  const volD  = [5426, 11156, 3010, 9777];
 
   const contLabels = ["peer0", "peer0", "orderer"];
   const cpuAvg = [38.2, 35.1, 12.4];
