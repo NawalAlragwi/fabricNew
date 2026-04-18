@@ -362,6 +362,18 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+// VerifyCertificateByID is a specialized benchmark function that reads a certificate
+// and re-computes its hash on-chain. This is the recommended way to measure 
+// the performance difference between SHA-256 and BLAKE3 in a single gRPC call.
+func (s *SmartContract) VerifyCertificateByID(ctx contractapi.TransactionContextInterface, id string) (*VerificationResult, error) {
+	cert, err := s.GetCertificate(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Re-compute hash on-chain (this is the actual stress test)
+	return s.VerifyCertificate(ctx, id, cert.CertHash)
+}
+
 // GetCertificate returns the certificate stored in the world state with given id.
 // This matches the function name expected by some Caliper workloads.
 func (s *SmartContract) GetCertificate(ctx contractapi.TransactionContextInterface, id string) (*Certificate, error) {

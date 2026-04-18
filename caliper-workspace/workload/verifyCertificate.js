@@ -27,40 +27,22 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-        this.roundIndex = roundIndex;
         this.workerIndex = workerIndex;
-        this.totalWorkers = totalWorkers;
-
-        // Build a pool of certificate IDs this worker is responsible for
-        // Distributes load evenly across workers
-        const totalCerts = roundArguments.totalCerts || 1000;
-        const perWorker = Math.ceil(totalCerts / totalWorkers);
-        const start = workerIndex * perWorker;
-        const end = Math.min(start + perWorker, totalCerts);
-
-        this.certIDs = [];
-        for (let i = start; i < end; i++) {
-            // Matches the ID pattern used in issueCertificate.js
-            this.certIDs.push(`CERT_${String(i).padStart(6, '0')}`);
-        }
-
-        // Fallback: use seed certificates if no issued certs available
-        if (this.certIDs.length === 0) {
-            this.certIDs = ['CERT001', 'CERT002', 'CERT003', 'CERT004', 'CERT005'];
-        }
-
-        this.idxPtr = 0;
-        console.log(`Worker ${workerIndex}: VerifyCertificate pool = ${this.certIDs.length} IDs`);
+        this.txIndex = 0;
+        this.totalIssued = roundArguments.totalIssued || 1000; // Assume 1000 certs were issued
+        console.log(`Worker ${workerIndex}: Initialized for VerifyCertificate`);
     }
 
     async submitTransaction() {
-        // Round-robin over this worker's cert pool
-        const certID = this.certIDs[this.idxPtr % this.certIDs.length];
-        this.idxPtr++;
-
+        this.txIndex++;
+        // Cycle through possible certs issued by this worker or others
+        // Pattern: CERT_{worker}_{index}
+        const targetWorker = this.workerIndex; 
+        const certID = `CERT_${targetWorker}_${this.txIndex}`;
+        
         const request = {
             contractId: 'basic',
-            contractFunction: 'GetCertificate', // OPT-2: direct key lookup
+            contractFunction: 'VerifyCertificateByID', // Read + Re-hash stress test
             invokerIdentity: 'User1@org1.example.com',
             contractArguments: [certID],
             readOnly: true

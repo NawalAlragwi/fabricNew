@@ -176,16 +176,16 @@
 
         <div class="alert-success">
             &#x2705; <strong>Benchmark Complete — Zero Failures Achieved Across All 3 Rounds.</strong>
-            Total Transactions: <strong>17,562</strong> &nbsp;|&nbsp;
+            Total Transactions: <strong>16,753</strong> &nbsp;|&nbsp;
             Total Failures: <strong>0</strong> &nbsp;|&nbsp;
-            Peak Throughput: <strong>111.3 TPS</strong>
+            Peak Throughput: <strong>117.1 TPS</strong>
         </div>
 
         <!-- Overall Metric Cards -->
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">Total Successful Tx</div>
-                <div class="value succ-num">17,562</div>
+                <div class="value succ-num">16,753</div>
                 <div class="unit">transactions</div>
             </div>
             <div class="metric-card green">
@@ -195,12 +195,12 @@
             </div>
             <div class="metric-card purple">
                 <div class="label">Peak Throughput</div>
-                <div class="value tps-num">111.3</div>
+                <div class="value tps-num">117.1</div>
                 <div class="unit">TPS (RevokeCertificate)</div>
             </div>
             <div class="metric-card teal">
                 <div class="label">Avg Latency</div>
-                <div class="value lat-num">9.27 s</div>
+                <div class="value lat-num">5.52 s</div>
                 <div class="unit">across all rounds</div>
             </div>
         </div>
@@ -221,46 +221,46 @@
             <tr>
                 <td>1</td>
                 <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
-                <td class="succ-num">5,100</td>
+                <td class="succ-num">5,155</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">84.3</td>
-                <td class="lat-num">2.20</td>
-                <td class="lat-num">0.09</td>
-                <td class="lat-num">0.61</td>
-                <td class="tps-num">82.7</td>
+                <td class="tps-num">85.3</td>
+                <td class="lat-num">1.64</td>
+                <td class="lat-num">0.10</td>
+                <td class="lat-num">0.58</td>
+                <td class="tps-num">84.4</td>
             </tr>
             <tr>
                 <td>2</td>
                 <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
                 <td class="succ-num">3,010</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">49.6</td>
-                <td class="lat-num">0.64</td>
-                <td class="lat-num">0.02</td>
-                <td class="lat-num">0.10</td>
-                <td class="tps-num">49.6</td>
+                <td class="tps-num">49.5</td>
+                <td class="lat-num">1.59</td>
+                <td class="lat-num">0.03</td>
+                <td class="lat-num">0.37</td>
+                <td class="tps-num">49.3</td>
             </tr>
             <tr>
                 <td>3</td>
                 <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
-                <td class="succ-num">9,452</td>
+                <td class="succ-num">8,588</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">156.3</td>
-                <td class="lat-num">40.19</td>
-                <td class="lat-num">0.40</td>
-                <td class="lat-num">16.87</td>
-                <td class="tps-num">111.3</td>
+                <td class="tps-num">141.7</td>
+                <td class="lat-num">28.57</td>
+                <td class="lat-num">0.30</td>
+                <td class="lat-num">10.29</td>
+                <td class="tps-num">117.1</td>
             </tr>
             <tr style="background:#f0f8ff; font-weight:700;">
                 <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="succ-num"><strong>17,562</strong></td>
+                <td class="succ-num"><strong>16,753</strong></td>
                 <td class="fail-zero"><strong>0</strong></td>
                 <td colspan="4" style="color:#525252; font-size:11px;">3 rounds × 30s — 8 workers</td>
-                <td class="tps-num"><strong>avg 81.2</strong></td>
+                <td class="tps-num"><strong>avg 83.6</strong></td>
             </tr>
         </table>
         <p style="font-size:12px; color:#6f6f6f; margin-top:-8px;">
-            &#x2705; <strong>Total Success:</strong> 17,562 &nbsp;|&nbsp;
+            &#x2705; <strong>Total Success:</strong> 16,753 &nbsp;|&nbsp;
             &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
             &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span>
         </p>
@@ -281,7 +281,7 @@
             <code>blake3Hash = BLAKE3(fields)</code> stored as advisory integrity proof (off-chain computation).<br>
             <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
             when Caliper retries under load. Each worker uses unique key <code>CERT_{worker}_{index}</code> → zero MVCC conflicts.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 84 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 85 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -291,13 +291,13 @@
                 </tr>
                 <tr>
                     <td>IssueCertificate</td>
-                    <td class="succ-num">5,100</td>
+                    <td class="succ-num">5,155</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">84.3</td>
-                    <td class="lat-num">2.20</td>
-                    <td class="lat-num">0.09</td>
-                    <td class="lat-num">0.61</td>
-                    <td class="tps-num">82.7</td>
+                    <td class="tps-num">85.3</td>
+                    <td class="lat-num">1.64</td>
+                    <td class="lat-num">0.10</td>
+                    <td class="lat-num">0.58</td>
+                    <td class="tps-num">84.4</td>
                 </tr>
             </table>
             <div class="charting">
@@ -316,7 +316,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [83.52,84.65,81.04,82.38,84.82,84.4,82.39],
+                        data: [83.29,85.17,83.64,82.2,83.11,86.18,84.05],
                         backgroundColor: "rgba(105,41,196,0.7)",
                         borderColor: "rgba(105,41,196,1)",
                         borderWidth: 1
@@ -329,7 +329,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.56,0.65,0.56,0.67,0.53,0.62,0.54],
+                        data: [0.56,0.56,0.52,0.63,0.66,0.56,0.54],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.9)",
                         borderWidth: 2,
@@ -346,7 +346,7 @@ contractFunction: 'IssueCertificate'
 contractArguments: [id, studentId, studentName, degree, issuer, issueDate, certHash, blake3Hash, signature, batchId]
 readOnly:         false
 invokerIdentity:  User1@org1.example.com
-rateControl:      fixed-rate @ 84 TPS
+rateControl:      fixed-rate @ 85 TPS
 txDuration:       30 s
 workers:          8
                 </pre>
@@ -375,11 +375,11 @@ workers:          8
                     <td>QueryAllCertificates</td>
                     <td class="succ-num">3,010</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">49.6</td>
-                    <td class="lat-num">0.64</td>
-                    <td class="lat-num">0.02</td>
-                    <td class="lat-num">0.10</td>
-                    <td class="tps-num">49.6</td>
+                    <td class="tps-num">49.5</td>
+                    <td class="lat-num">1.59</td>
+                    <td class="lat-num">0.03</td>
+                    <td class="lat-num">0.37</td>
+                    <td class="tps-num">49.3</td>
                 </tr>
             </table>
             <div class="charting">
@@ -398,7 +398,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [50.18,50.51,49.9,49.16,50.47,50.55,48.85],
+                        data: [48.02,48.08,49.25,50.4,50.58,48.44,50.45],
                         backgroundColor: "rgba(0,98,255,0.7)",
                         borderColor: "rgba(0,98,255,1)",
                         borderWidth: 1
@@ -411,7 +411,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.1,0.1,0.11,0.11,0.09,0.1,0.09],
+                        data: [0.42,0.33,0.35,0.35,0.33,0.33,0.4],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.8)",
                         borderWidth: 2,
@@ -445,7 +445,7 @@ workers:          8
                 Org2 (or any authorised org) revokes a certificate, marking it <code>IsRevoked: true</code> on the ledger.<br>
             <strong>Zero-Failure Design:</strong> Idempotent — returns nil when cert not found OR already revoked.
             No spurious failures under concurrent load.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 156 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 142 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -455,13 +455,13 @@ workers:          8
                 </tr>
                 <tr>
                     <td>RevokeCertificate</td>
-                    <td class="succ-num">9,452</td>
+                    <td class="succ-num">8,588</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">156.3</td>
-                    <td class="lat-num">40.19</td>
-                    <td class="lat-num">0.40</td>
-                    <td class="lat-num">16.87</td>
-                    <td class="tps-num">111.3</td>
+                    <td class="tps-num">141.7</td>
+                    <td class="lat-num">28.57</td>
+                    <td class="lat-num">0.30</td>
+                    <td class="lat-num">10.29</td>
+                    <td class="tps-num">117.1</td>
                 </tr>
             </table>
             <div class="charting">
@@ -480,7 +480,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [113.55,109.75,108.54,107.98,109.92,110.19,112.73],
+                        data: [116.04,115.15,115.9,119.58,120.22,120.28,119.1],
                         backgroundColor: "rgba(36,161,72,0.7)",
                         borderColor: "rgba(36,161,72,1)",
                         borderWidth: 1
@@ -493,7 +493,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [17.25,15.8,18.37,17.8,16.03,16.33,15.32],
+                        data: [10.49,10.6,9.14,9.12,10.37,9.06,10.78],
                         backgroundColor: "rgba(36,161,72,0.1)",
                         borderColor: "rgba(36,161,72,0.9)",
                         borderWidth: 2,
@@ -510,7 +510,7 @@ contractFunction: 'RevokeCertificate'
 contractArguments: [certID]
 readOnly:         false
 invokerIdentity:  User1@org2.example.com
-rateControl:      fixed-rate @ 156 TPS
+rateControl:      fixed-rate @ 142 TPS
 txDuration:       30 s
 workers:          8
 postIterationWaitTime: 3000 ms
