@@ -64,6 +64,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           batchSize: 1
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com
 

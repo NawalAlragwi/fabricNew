@@ -36,40 +36,43 @@ const crypto = require('crypto');
 class IssueCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
-        this.txIndex   = 0;
-        this.batchId   = '';
+        this.txIndex = 0;
+        this.batchId = '';
         this.issueDate = '';
+        this.payloadSize = 5000;
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-        this.txIndex   = 0;
+        this.txIndex = 0;
         // Freeze issueDate per worker-round so all certs in a batch share the same date
         this.issueDate = new Date().toISOString().split('T')[0];
         // Unique batch ID per worker × round
-        this.batchId   = `BATCH_W${workerIndex}_R${roundIndex}_${Date.now()}`;
+        this.batchId = `BATCH_W${workerIndex}_R${roundIndex}_${Date.now()}`;
+        // Read payloadSize from YAML arguments (default to 5000 if not specified)
+        this.payloadSize = (roundArguments && roundArguments.payloadSize) ? parseInt(roundArguments.payloadSize, 10) : 5000;
     }
 
     async submitTransaction() {
         this.txIndex++;
 
-        const w           = this.workerIndex || 0;
-        const certID      = `CERT_${w}_${this.txIndex}`;
-        const studentID   = `STU_${w}_${this.txIndex}`;
+        const w = this.workerIndex || 0;
+        const certID = `CERT_${w}_${this.txIndex}`;
+        const studentID = `STU_${w}_${this.txIndex}`;
         const studentName = `Student_${w}_${this.txIndex}`;
-        const degree      = 'Bachelor of Computer Science';
-        const issuer      = 'Digital University';
-        const issueDate   = this.issueDate;
+        const degree = 'Bachelor of Computer Science';
+        const issuer = 'Digital University';
+        const issueDate = this.issueDate;
 
         // ── EDUCATIONAL PAYLOAD (Optimized Stress Test) ──────────────────
         // Large payloads force the CPU to work harder on hashing. 
-        // Increased from 5KB to 50KB for PhD stress test (SHA-256 bottleneck).
-        const transcriptPayload = 'X'.repeat(50000); 
+        // Read dynamically from benchConfig YAML (e.g., 5000 for 5KB, 50000 for 50KB).
+        const transcriptPayload = 'X'.repeat(this.payloadSize);
 
         // ── SHA-256 hash (primary, validated on-chain) ──────────────────
         // Formula: SHA256(studentId|studentName|degree|issuer|issueDate|payload)
-        const fields    = [studentID, studentName, degree, issuer, issueDate, transcriptPayload].join('|');
-        const certHash  = crypto.createHash('sha256').update(fields).digest('hex');
+        const fields = [studentID, studentName, degree, issuer, issueDate, transcriptPayload].join('|');
+        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
 
         // ── BLAKE3 advisory hash (stored, NOT validated on-chain) ────────
         // Real BLAKE3 is ~3-10x faster than SHA-256 for 50KB+ payloads.
@@ -79,11 +82,11 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const blake3Hash = crypto.createHash('sha256').update(certHash).digest('hex');
 
         // ── Digital signature placeholder ────────────────────────────────
-        const signature  = `SIG_${certID}_${certHash.substring(0, 16)}`;
+        const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
-            contractId:        'basic',
-            contractFunction:  'IssueCertificate',
+            contractId: 'basic',
+            contractFunction: 'IssueCertificate',
             // Args MUST match Go func signature order exactly:
             // (id, studentId, studentName, degree, issuer, issueDate,
             //  certHash, blake3Hash, signature, batchId)
