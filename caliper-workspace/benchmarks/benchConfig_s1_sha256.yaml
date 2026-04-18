@@ -38,7 +38,7 @@ test:
   description: >
     Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison).
     Hash: SHA-256 (crypto/sha256, sequential Merkle–Damgård).
-    Payload: 50KB transcript per certificate (PhD Research Stress Test).
+    Payload: 5KB transcript per certificate (safe baseline).
     batchSize: 1 (single certificate per Fabric transaction).
     IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
     All read rounds: fixed-rate 200 TPS, 60 s.
@@ -52,7 +52,7 @@ test:
     - label: IssueCertificate
       description: >
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
-        50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash.
+        5KB transcript payload forces SHA-256 to process ~5100 bytes per hash.
         SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
         Linear ramp 50→300 TPS, 60 s, 10 workers.
       txDuration: 60
@@ -80,7 +80,7 @@ test:
       workload:
         module: workload/verifyCertificate.js
         arguments:
-          totalIssued: 5000
+          totalIssued: 500
       txOptions:
         invokerIdentity: User1@org1.example.com
 

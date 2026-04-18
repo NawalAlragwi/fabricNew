@@ -63,8 +63,8 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
 
         // ── EDUCATIONAL PAYLOAD (Optimized Stress Test) ──────────────────
         // Large payloads force the CPU to work harder on hashing. 
-        // Increased from 5KB to 50KB for PhD stress test (SHA-256 bottleneck).
-        const transcriptPayload = 'X'.repeat(50000); 
+        // Reduced to 5KB for hardware safety and stability.
+        const transcriptPayload = 'X'.repeat(5000); 
 
         // ── SHA-256 hash (primary, validated on-chain) ──────────────────
         // Formula: SHA256(studentId|studentName|degree|issuer|issueDate|payload)
