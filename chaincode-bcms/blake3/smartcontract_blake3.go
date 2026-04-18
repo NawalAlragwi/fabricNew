@@ -362,6 +362,31 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+// GetCertificate returns the certificate stored in the world state with given id.
+// This matches the function name expected by some Caliper workloads.
+func (s *SmartContract) GetCertificate(ctx contractapi.TransactionContextInterface, id string) (*Certificate, error) {
+	certJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if certJSON == nil {
+		return nil, fmt.Errorf("the certificate %s does not exist", id)
+	}
+
+	var cert Certificate
+	err = json.Unmarshal(certJSON, &cert)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cert, nil
+}
+
+// ReadCertificate is a standard alias for GetCertificate
+func (s *SmartContract) ReadCertificate(ctx contractapi.TransactionContextInterface, id string) (*Certificate, error) {
+	return s.GetCertificate(ctx, id)
+}
+
 // RevokeCertificate marks a certificate as revoked (BLAKE3 mode)
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
