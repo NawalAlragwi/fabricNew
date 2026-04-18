@@ -1,0 +1,74 @@
+# ============================================================================
+# BCMS — Scenario S2: BLAKE3 Alternative (v8-optimized)
+# هدف: إبراز فرق الأداء الحقيقي تحت ضغط عالي باستخدام BLAKE3
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
+
+test:
+  name: bcms-s2-blake3-v8
+  description: >
+    High-performance benchmark to highlight BLAKE3 advantages under stress,
+    batching, and increased concurrency.
+  workers:
+    type: local
+    number: 10    # ⬅️ تقليل العمال لزيادة استقرار CouchDB
+
+  rounds:
+    # 🔹 Warm-up
+    - label: Warmup
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 60
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # 🔥 High Load
+    - label: IssueCertificate-HighLoad
+      description: Linear ramp stress test
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 50
+          finishingTps: 300
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # 🔥 Stress Test
+    - label: Stress-Test
+      description: Maximum throughput test
+      txDuration: 120
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 350
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+      txOptions:
+        invokerIdentity: User1@org1.example.com

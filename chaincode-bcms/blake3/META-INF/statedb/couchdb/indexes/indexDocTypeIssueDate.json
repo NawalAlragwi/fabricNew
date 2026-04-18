@@ -1,7 +1,11 @@
 {
-    "index": {
-        "fields": ["docType", "issueDate"]
-    },
-    "name": "indexDocTypeIssueDate",
-    "type": "json"
+  "index": {
+    "fields": [
+      "docType",
+      "issueDate"
+    ]
+  },
+  "ddoc": "indexDocTypeIssueDateDoc",
+  "name": "indexDocTypeIssueDate",
+  "type": "json"
 }

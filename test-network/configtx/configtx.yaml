@@ -185,27 +185,15 @@ Orderer: &OrdererDefaults
   Addresses:
     - orderer.example.com:7050
   # ── S4 HYBRID-BATCH ORDERER TUNING (Ph.D. Benchmark — mirage-batch) ──────────
-  # BatchTimeout: 500ms → blocks cut every 500 ms, keeps tail latency bounded
-  #   even when MaxMessageCount=1000 is not reached at moderate load.
-  #   Rationale: short timeout ensures the heavy 10-cert batch payloads are
-  #   committed promptly, preventing Caliper client queue build-up.
+  # BatchTimeout: 0.5s → blocks cut every 500 ms, keeps tail latency bounded.
   BatchTimeout: 500ms
   # Batch Size: Controls the number of messages (transactions) packed per block.
   BatchSize:
-    # MaxMessageCount: 1000 → allows up to 1000 TXs per block under the S4
-    #   linear-ramp 200→2000 TPS load.  Each TX carries 10 certs (batchSize=10),
-    #   so one block can atomically commit up to 10,000 certificates.
-    #   Previous value: 100 → bottleneck hit immediately at ~100 TPS.
-    MaxMessageCount: 1000
-    # AbsoluteMaxBytes: 99 MB → hard ceiling that prevents block-split failures
-    #   when batch payloads are large (10 certs × ~2 KB each × 1000 TXs ≈ 20 MB
-    #   per block in the worst case).  99 MB gives a 5× safety margin.
-    #   Previous value: 20 MB → could reject large batch blocks.
-    AbsoluteMaxBytes: 99 MB
-    # PreferredMaxBytes: 2 MB → soft target. Orderer starts a new block once the
-    #   accumulated TX bytes exceed 2 MB, keeping individual block sizes small
-    #   for fast block gossip delivery to peers and CouchDB indexing.
-    #   Previous value: 10 MB → blocks were too large, increasing commit latency.
+    # MaxMessageCount: 100 → allows up to 100 TXs per block.
+    MaxMessageCount: 100
+    # AbsoluteMaxBytes: 10 MB → ceiling for total block size.
+    AbsoluteMaxBytes: 10 MB
+    # PreferredMaxBytes: 2 MB → soft target for block size.
     PreferredMaxBytes: 2 MB
   # Organizations is the list of orgs which are defined as participants on
   # the orderer side of the network

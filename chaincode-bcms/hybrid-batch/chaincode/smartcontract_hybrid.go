@@ -164,7 +164,7 @@ type VerificationResult struct {
 // Used by IssueCertificateBatch for multi-cert atomic commit.
 type IssueBatchRequest struct {
 	ID          string `json:"id"`
-	StudentID   string `json:"studentID"`
+	StudentID   string `json:"studentId"`
 	StudentName string `json:"studentName"`
 	Degree      string `json:"degree"`
 	Issuer      string `json:"issuer"`
@@ -262,11 +262,11 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	seeds := []struct {
 		id, studentID, name, degree, issuer, date string
 	}{
-		{"CERT001", "STU001", "Alice Johnson", "Bachelor of Computer Science", "Digital University", "2024-01-15"},
-		{"CERT002", "STU002", "Bob Smith", "Master of Data Science", "Tech Institute", "2024-02-20"},
-		{"CERT003", "STU003", "Carol Williams", "PhD in Artificial Intelligence", "Research Academy", "2024-03-10"},
-		{"CERT004", "STU004", "David Brown", "Bachelor of Engineering", "Engineering College", "2024-04-05"},
-		{"CERT005", "STU005", "Eve Davis", "MBA in Business Administration", "Business School", "2024-05-12"},
+		{"CERT_SEED_001", "STU001", "Alice Johnson", "Bachelor of Computer Science", "Digital University", "2024-01-15"},
+		{"CERT_SEED_002", "STU002", "Bob Smith", "Master of Data Science", "Tech Institute", "2024-02-20"},
+		{"CERT_SEED_003", "STU003", "Carol Williams", "PhD in Artificial Intelligence", "Research Academy", "2024-03-10"},
+		{"CERT_SEED_004", "STU004", "David Brown", "Bachelor of Engineering", "Engineering College", "2024-04-05"},
+		{"CERT_SEED_005", "STU005", "Eve Davis", "MBA in Business Administration", "Business School", "2024-05-12"},
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)

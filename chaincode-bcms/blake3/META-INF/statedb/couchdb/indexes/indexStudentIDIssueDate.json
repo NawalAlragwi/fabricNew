@@ -1,7 +1,11 @@
 {
-    "index": {
-        "fields": ["docType", "studentID", "issueDate"]
-    },
-    "name": "indexStudentIDIssueDate",
-    "type": "json"
+  "index": {
+    "fields": [
+      "docType",
+      "timestamp"
+    ]
+  },
+  "ddoc": "indexAuditTimestampDoc",
+  "name": "indexAuditTimestamp",
+  "type": "json"
 }

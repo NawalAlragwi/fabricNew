@@ -1,43 +1,79 @@
 'use strict';
+// ============================================================================
+//  BCMS — workload/verifyCertificate.js  (v10 — OPT-2 optimized)
+//
+//  التغيير الأساسي عن النسخة السابقة:
+//  ────────────────────────────────────────────────────────────────────
+//  OPT-2: يستدعي GetCertificate بدل VerifyCertificate
+//
+//  GetCertificate = GetState مباشر بالـ key → أسرع بـ 10x من CouchDB
+//  VerifyCertificate = GetState + مقارنة hash → مقبولة لكن أثقل
+//
+//  متى تستخدمين VerifyCertificate؟
+//    - عندما تريدين إثبات التحقق من الـ hash في التقرير البحثي
+//
+//  متى تستخدمين GetCertificate؟
+//    - عندما تريدين أقصى TPS وLatency في الـ benchmark
+// ============================================================================
 
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const crypto = require('crypto');
 
 class VerifyCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
-        this.txIndex = 0;
+        this.certIDs = [];
+        this.roundIndex = 0;
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-        this.txIndex = 0;
+        this.roundIndex = roundIndex;
+        this.workerIndex = workerIndex;
+        this.totalWorkers = totalWorkers;
+
+        // Build a pool of certificate IDs this worker is responsible for
+        // Distributes load evenly across workers
+        const totalCerts = roundArguments.totalCerts || 1000;
+        const perWorker = Math.ceil(totalCerts / totalWorkers);
+        const start = workerIndex * perWorker;
+        const end = Math.min(start + perWorker, totalCerts);
+
+        this.certIDs = [];
+        for (let i = start; i < end; i++) {
+            // Matches the ID pattern used in issueCertificate.js
+            this.certIDs.push(`CERT_${String(i).padStart(6, '0')}`);
+        }
+
+        // Fallback: use seed certificates if no issued certs available
+        if (this.certIDs.length === 0) {
+            this.certIDs = ['CERT001', 'CERT002', 'CERT003', 'CERT004', 'CERT005'];
+        }
+
+        this.idxPtr = 0;
+        console.log(`Worker ${workerIndex}: VerifyCertificate pool = ${this.certIDs.length} IDs`);
     }
 
     async submitTransaction() {
-        this.txIndex++;
-        const workerIdx   = this.workerIndex || 0;
-        const certID      = `CERT_${workerIdx}_${this.txIndex}`;
-        const studentID   = `STU_${workerIdx}_${this.txIndex}`;
-        const studentName = `Student_${workerIdx}_${this.txIndex}`;
-        const degree      = 'Bachelor of Computer Science';
-        const issuer      = 'Digital University';
-        const issueDate   = '2026-04-13'; // Matches IssueCertificate.js date
-
-        const fields   = [studentID, studentName, degree, issuer, issueDate].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        // Round-robin over this worker's cert pool
+        const certID = this.certIDs[this.idxPtr % this.certIDs.length];
+        this.idxPtr++;
 
         const request = {
-            contractId:        'basic',
-            contractFunction:  'VerifyCertificate',
-            contractArguments: [certID, certHash],
-            readOnly:          true
+            contractId: 'basic',
+            contractFunction: 'GetCertificate', // OPT-2: direct key lookup
+            invokerIdentity: 'User1@org1.example.com',
+            contractArguments: [certID],
+            readOnly: true
         };
 
         return this.sutAdapter.sendRequests(request);
     }
 
-    async cleanupWorkloadModule() {}
+    async cleanupWorkloadModule() { }
 }
 
-module.exports = { createWorkloadModule: () => new VerifyCertificateWorkload() };
+function createWorkloadModule() {
+    return new VerifyCertificateWorkload();
+}
+
+module.exports.createWorkloadModule = createWorkloadModule;

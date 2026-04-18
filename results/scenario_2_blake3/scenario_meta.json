@@ -1,16 +1,1 @@
-{
-  "scenario": 2,
-  "key": "scenario_2_blake3",
-  "label": "S2: BLAKE3 Alternative",
-  "hash_algorithm": "blake3",
-  "chaincode": "chaincode-bcms/blake3",
-  "benchmark_config": "benchConfig_s2_blake3.yaml",
-  "workers": 10,
-  "batch_size": 1,
-  "timestamp": "2026-04-18T09:22:37Z",
-  "status": "completed",
-  "reports": [
-    "report_S2_BLAKE3.html",
-    "caliper_results.json"
-  ]
-}
+{"scenario":2,"key":"scenario_2_blake3","label":"S2: BLAKE3 Alternative","chaincode":"chaincode-bcms/blake3","batch_size":1,"tps":50,"started":"2026-04-18T16:40:31Z"}
