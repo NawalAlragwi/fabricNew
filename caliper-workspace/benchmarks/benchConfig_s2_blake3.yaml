@@ -67,6 +67,8 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+
+
     - label: VerifyCertificate
       description: >
         S1 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering).

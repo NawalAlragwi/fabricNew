@@ -323,21 +323,34 @@ func (s *SmartContract) VerifyCertificate(
 		return &VerificationResult{CertID: id, Valid: false, Message: "corrupt data", HashAlgo: "blake3", Timestamp: ts}, nil
 	}
 
-	// Re-compute BLAKE3 hash — 3.74x faster than SHA-256 for integrity check
+	// Re-compute BLAKE3 hash
 	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
-	hashMatch := cert.CertHash == computed
+	
+	isValid := (cert.CertHash == computed)
+	if certHash != "" && certHash != computed {
+		isValid = false
+	}
 
 	if cert.IsRevoked {
 		return &VerificationResult{
 			CertID:    id,
 			Valid:     false,
 			IsRevoked: true,
-			HashMatch: hashMatch,
+			HashMatch: isValid,
 			HashAlgo:  "blake3",
 			Message:   "certificate has been revoked",
 			Timestamp: ts,
 		}, nil
 	}
+
+	return &VerificationResult{
+		CertID:    id,
+		Valid:     isValid,
+		HashMatch: isValid,
+		HashAlgo:  "blake3",
+		Message:   "certificate integrity verified",
+		Timestamp: ts,
+	}, nil
 
 	if !hashMatch {
 		return &VerificationResult{
