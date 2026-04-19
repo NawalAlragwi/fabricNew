@@ -382,10 +382,7 @@ func (s *SmartContract) RevokeCertificate(
 		return nil // Already revoked — idempotent
 	}
 
-	// RESEARCH STRESS SIMULATION: 50KB hashing during revocation
-	simulatedTranscript := strings.Repeat("X", 50000)
-	_, _ = ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, simulatedTranscript)
-
+	// Removed redundant hashing overhead to resolve bottleneck at high TPS (requested fix)
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)

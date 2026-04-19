@@ -30,16 +30,20 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+        this.workerIndex = workerIndex;
+        this.totalWorkers = totalWorkers;
         this.txIndex = 0;
+        this.totalIssued = (roundArguments && roundArguments.totalIssued) ? roundArguments.totalIssued : 5000;
     }
 
     async submitTransaction() {
         this.txIndex++;
         // --- RESEARCH FIX #3: MVCC-Safe Revocation ---------------------------
-        // Instead of hammering the same 5 seed certificates (which causes 
-        // 90% MVCC conflicts), each worker revokes its own set of certs.
-        const issuedCount = 500; 
-        const idx = ((this.txIndex - 1) % issuedCount) + 1;
+        // Each worker revokes its own set of certs using workerIndex.
+        // We ensure the ID range exists by using totalIssued from the config.
+        const issuedPerWorker = Math.floor(this.totalIssued / this.totalWorkers);
+        const safeIssuedCount = Math.max(issuedPerWorker - 100, 10);
+        const idx = ((this.txIndex - 1) % safeIssuedCount) + 1;
         const certID = `CERT_${this.workerIndex}_${idx}`;
 
         const request = {
