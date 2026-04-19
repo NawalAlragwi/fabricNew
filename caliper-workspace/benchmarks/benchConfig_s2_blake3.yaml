@@ -112,5 +112,7 @@ test:
           tps: 200
       workload:
         module: workload/revokeCertificate.js
+        arguments:
+          totalIssued: 3000
       txOptions:
         invokerIdentity: User1@org1.example.com
