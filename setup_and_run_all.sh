@@ -295,6 +295,13 @@ setup_fabric_network() {
 
     cd "$ROOT_DIR"
 
+    # Determine which chaincode to deploy
+    local cc_to_deploy="chaincode-bcms/hybrid-batch"
+    if [ -n "${SCENARIO_NUM:-}" ]; then
+        cc_to_deploy="${SCENARIO_CHAINCODE[$SCENARIO_NUM]}"
+    fi
+    info "Selected chaincode for setup: ${cc_to_deploy}"
+
     if [ ! -d "bin" ] || [ ! -f "bin/peer" ]; then
         info "Downloading Hyperledger Fabric binaries v2.5.9..."
         curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.9 1.5.7 2>&1 | tee -a "$LOG_FILE" || {
@@ -347,16 +354,12 @@ setup_fabric_network() {
     log "  ✓ Orderer container is running"
 
     # Verify chaincode prerequisites
-    [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/go.mod" ] || {
-        error "go.mod not found at chaincode-bcms/hybrid-batch/go.mod"; exit 1; }
-    [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/main.go" ] || {
-        error "main.go not found at chaincode-bcms/hybrid-batch/main.go"; exit 1; }
-    [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/chaincode/smartcontract_hybrid.go" ] || \
-    [ -f "${ROOT_DIR}/chaincode-bcms/hybrid-batch/smartcontract_hybrid.go" ] || {
-        error "smartcontract_hybrid.go not found"; exit 1; }
-    log "✓ Chaincode source files verified"
+    [ -f "${ROOT_DIR}/${cc_to_deploy}/go.mod" ] || {
+        error "go.mod not found at ${cc_to_deploy}/go.mod"; exit 1; }
+    
+    log "✓ Chaincode source files verified at ${cc_to_deploy}"
 
-    info "Deploying BCMS Hybrid-Batch chaincode..."
+    info "Deploying chaincode: ${cc_to_deploy}..."
     rm -f "${ROOT_DIR}/test-network/basic.tar.gz" 2>/dev/null || true
 
     export GOFLAGS="-mod=mod"
@@ -365,12 +368,12 @@ setup_fabric_network() {
 
     ./network.sh deployCC \
         -ccn basic \
-        -ccp "${ROOT_DIR}/chaincode-bcms/hybrid-batch" \
+        -ccp "${ROOT_DIR}/${cc_to_deploy}" \
         -ccl go \
         -c mychannel \
         -ccep "OR('Org1MSP.peer','Org2MSP.peer')" \
         2>&1 | tee -a "$LOG_FILE" || {
-        error "Failed to deploy hybrid chaincode"; exit 1
+        error "Failed to deploy chaincode ${cc_to_deploy}"; exit 1
     }
 
     cd "${ROOT_DIR}"

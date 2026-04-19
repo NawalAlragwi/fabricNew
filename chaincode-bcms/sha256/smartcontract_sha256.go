@@ -115,9 +115,9 @@ func (s *SmartContract) writeAudit(
 // ComputeCertHashSHA256 computes H(C) = SHA256(studentID|name|degree|issuer|date|transcript)
 // SHA-256 Properties:
 //   - Output: 256 bits (32 bytes)
-//   - Algorithm: Merkle–Damgård construction, sequential processing
-//   - Performance: ~250–350 MB/s (software only, no SIMD acceleration)
-//   - For 5KB payload: ~15 µs per hash (measured: 66,653 hashes/sec)
+//   - Algorithm: Merkle-Damgard construction, sequential processing
+//   - Performance: ~250-350 MB/s (software only, no SIMD acceleration)
+//   - For 5KB payload: ~15 us per hash (measured: 66,653 hashes/sec)
 func ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, transcript string) string {
 	parts := []string{studentID, studentName, degree, issuer, issueDate}
 	if transcript != "" {
@@ -313,7 +313,7 @@ func (s *SmartContract) VerifyCertificate(
 		res.Message = "certificate has been revoked"
 	} else if !res.HashMatch {
 		res.Valid = false
-		res.Message = "hash mismatch — certificate may have been tampered"
+		res.Message = "hash mismatch - certificate may have been tampered"
 	} else {
 		res.Valid = true
 		res.Message = "certificate is valid and authentic (SHA-256 verified)"
@@ -390,7 +390,7 @@ func (s *SmartContract) RevokeCertificate(
 
 	updated, _ := json.Marshal(cert)
 	ctx.GetStub().PutState(id, updated)
-	s.writeAudit(ctx, id, "REVOKE", msp, "SHA-256 revoke — sequential hash computation")
+	s.writeAudit(ctx, id, "REVOKE", msp, "SHA-256 revoke - sequential hash computation")
 	return nil
 }
 

@@ -82,7 +82,7 @@ test:
       workload:
         module: workload/verifyCertificate.js
         arguments:
-          totalIssued: 5000
+          totalIssued: 3000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
