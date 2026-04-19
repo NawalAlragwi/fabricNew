@@ -55,7 +55,7 @@ test:
         5KB transcript payload forces SHA-256 to process ~5,100 bytes per hash.
         SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
         Linear ramp 50→300 TPS, 60 s, 10 workers.
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
@@ -66,6 +66,7 @@ test:
         arguments:
           batchSize: 1
           payloadSize: 5000
+          totalIssued: 7000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -81,7 +82,7 @@ test:
       workload:
         module: workload/verifyCertificate.js
         arguments:
-          totalIssued: 3000
+          totalIssued: 7000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -112,6 +113,6 @@ test:
       workload:
         module: workload/revokeCertificate.js
         arguments:
-          totalIssued: 3000
+          totalIssued: 7000
       txOptions:
         invokerIdentity: User1@org1.example.com
