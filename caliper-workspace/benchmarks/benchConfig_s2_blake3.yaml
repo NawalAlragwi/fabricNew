@@ -37,7 +37,7 @@ test:
   description: >
     Scenario S2 — BLAKE3 Alternative (v7.0 Fair Comparison).
     Hash: BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated).
-    Payload: 50KB transcript per certificate (PhD Research Stress Test).
+    Payload: 5KB transcript per certificate (Fair Comparison Stress Test).
     batchSize: 1 (single certificate per Fabric transaction).
     IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
     All read rounds: fixed-rate 200 TPS, 60 s.
@@ -51,8 +51,8 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
-        50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2/NEON.
-        BLAKE3 measured: 249,464 hashes/sec → 4.01 µs per hash.
+        5KB transcript payload: BLAKE3 processes ~5,100 bytes with AVX2/NEON.
+        BLAKE3 measured: 249,464 hashes/sec → 4.01 μs per hash.
         Linear ramp 50→300 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
@@ -64,7 +64,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           batchSize: 1
-          payloadSize: 50000
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -95,7 +95,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
