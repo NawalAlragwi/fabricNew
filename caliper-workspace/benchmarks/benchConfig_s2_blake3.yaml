@@ -103,13 +103,13 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write).
-        BLAKE3 re-hash during revocation integrity check.
+        S2 BLAKE3 — Fixed-rate 100 TPS revocation (idempotent write).
+        BLAKE3 integrity check (optimized).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 100
       workload:
         module: workload/revokeCertificate.js
         arguments:

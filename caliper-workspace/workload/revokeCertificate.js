@@ -40,10 +40,10 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         this.txIndex++;
         // --- RESEARCH FIX #3: MVCC-Safe Revocation ---------------------------
         // Each worker revokes its own set of certs using workerIndex.
-        // We ensure the ID range exists by using totalIssued from the config.
+        // We use the full range issued per worker to avoid collisions.
         const issuedPerWorker = Math.floor(this.totalIssued / this.totalWorkers);
-        const safeIssuedCount = Math.max(issuedPerWorker - 100, 10);
-        const idx = ((this.txIndex - 1) % safeIssuedCount) + 1;
+        // Use a modulo that doesn't repeat keys too quickly within a block
+        const idx = ((this.txIndex - 1) % issuedPerWorker) + 1;
         const certID = `CERT_${this.workerIndex}_${idx}`;
 
         const request = {
