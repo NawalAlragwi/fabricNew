@@ -54,13 +54,12 @@ test:
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
         50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash.
         SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
-        Linear ramp 50→300 TPS, 60 s, 10 workers.
+        Fixed-rate 50 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
-        type: linear-rate
+        type: fixed-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          tps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -71,13 +70,14 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 200 TPS verify (read-only, no ordering).
+        S1 SHA-256 — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
         SHA-256 re-hash on every verify call: 15.0 µs overhead per tx.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 200
+          startingTps: 100
+          finishingTps: 500
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -102,13 +102,13 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 100 TPS revocation (idempotent write).
+        S1 SHA-256 — Fixed-rate 50 TPS revocation (idempotent write).
         SHA-256 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
         arguments:

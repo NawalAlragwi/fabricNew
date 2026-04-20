@@ -53,13 +53,12 @@ test:
         S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
         50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2/NEON.
         BLAKE3 measured: 249,464 hashes/sec → 4.01 µs per hash.
-        Linear ramp 50→300 TPS, 60 s, 10 workers.
+        Fixed-rate 50 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
-        type: linear-rate
+        type: fixed-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          tps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -72,13 +71,14 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S2 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering).
+        S2 BLAKE3 — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
         BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 200
+          startingTps: 100
+          finishingTps: 500
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -103,13 +103,13 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S2 BLAKE3 — Fixed-rate 100 TPS revocation (idempotent write).
+        S2 BLAKE3 — Fixed-rate 50 TPS revocation (idempotent write).
         BLAKE3 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
         arguments:

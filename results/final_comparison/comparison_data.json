@@ -1,6 +1,6 @@
 {
   "title": "BCMS Four-Scenario Comparison",
-  "generated_at": "2026-04-21 00:59:49",
+  "generated_at": "2026-04-21 01:17:04",
   "framework": "Hyperledger Caliper 0.6.0",
   "fabric_version": "2.5.9",
   "data_warning": "Values may be SIMULATED if Docker/Fabric was unavailable. Check is_simulated and data_source fields in each scenario.",
@@ -104,7 +104,7 @@
       "chaincode": "chaincode-bcms/hybrid-batch",
       "hash_algorithm": "hybrid",
       "workers": 8,
-      "batch_size": 20,
+      "batch_size": 10,
       "is_simulated": false,
       "data_source": "real_caliper",
       "total_transactions": 44414,
@@ -112,7 +112,7 @@
       "total_failures": 156,
       "overall_success_rate": 99.6,
       "primary_tps": 37.8,
-      "effective_cert_tps": 756.0,
+      "effective_cert_tps": 378.0,
       "avg_latency_ms": 17320.0,
       "weighted_avg_latency_s": 17.32,
       "consensus_rounds_per100": 10.0,
@@ -123,11 +123,11 @@
       "cpu_orderer_pct": 24.1,
       "mem_orderer_mb": 238.9,
       "improvement_tps_vs_s1_pct": 0.0,
-      "improvement_eff_tps_vs_s1_pct": 1900.0,
+      "improvement_eff_tps_vs_s1_pct": 900.0,
       "improvement_latency_vs_s1_pct": 0.0,
       "improvement_consensus_vs_s1_pct": 90.0,
       "tps_multiplier": 1.0,
-      "eff_tps_multiplier": 20.0
+      "eff_tps_multiplier": 10.0
     }
   },
   "per_operation": {
@@ -458,7 +458,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 5.0
+        "consensus_per100": 10.0
       }
     },
     "GetAuditLogs": {
@@ -524,7 +524,7 @@
         "p95_s": 0.0,
         "p99_s": 0.0,
         "max_s": 0.0,
-        "consensus_per100": 5.0
+        "consensus_per100": 10.0
       }
     }
   },
@@ -592,20 +592,20 @@
     {
       "Scenario": "Hybrid + Batching \u00d710",
       "Hash Algorithm": "hybrid",
-      "Batch Size": 20,
+      "Batch Size": 10,
       "Workers": 8,
       "Total Tx": 44414,
       "Success": 44258,
       "Failures": 156,
       "Success Rate (%)": 99.6,
       "IssueCert TPS": 37.8,
-      "Eff. Cert TPS": 756.0,
+      "Eff. Cert TPS": 378.0,
       "Avg Latency (ms)": 17320.0,
       "Consensus/100 Certs": 10.0,
       "Peer CPU (%)": 68.4,
       "Peer MEM (MB)": 478.6,
       "TPS vs S1 (%)": 0.0,
-      "Eff.TPS vs S1 (%)": 1900.0,
+      "Eff.TPS vs S1 (%)": 900.0,
       "Lat vs S1 (%)": 0.0,
       "Is Simulated": false
     }

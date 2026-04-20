@@ -54,13 +54,12 @@ test:
       description: >
         S3 Hybrid Baseline — Issue single certificates (batchSize=1).
         Double-hash per tx: SHA-256(fields) + BLAKE3(fields).
-        Linear ramp 50→300 TPS, 60 s, 10 workers.
+        Fixed-rate 50 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
-        type: linear-rate
+        type: fixed-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          tps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -71,13 +70,14 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S3 Hybrid — Fixed-rate 200 TPS verify (read-only, no ordering).
+        S3 Hybrid — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
         SHA-256 re-hash on every verify call.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 200
+          startingTps: 100
+          finishingTps: 500
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -102,13 +102,13 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S3 Hybrid — Fixed-rate 100 TPS revocation (idempotent write).
+        S3 Hybrid — Fixed-rate 50 TPS revocation (idempotent write).
         SHA-256 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
         arguments:

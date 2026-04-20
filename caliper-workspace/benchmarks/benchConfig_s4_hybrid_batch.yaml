@@ -51,13 +51,12 @@ test:
     - label: IssueCertificate
       description: >
         S4 Hybrid-Batch — Issue batch certificates (batchSize=10).
-        Linear ramp 50→300 TPS, 60 s, 10 workers.
+        Fixed-rate 50 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
-        type: linear-rate
+        type: fixed-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          tps: 50
       workload:
         module: workload/issueCertificateBatch.js
         arguments:
@@ -68,12 +67,13 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S4 Hybrid-Batch — Fixed-rate 200 TPS verify (read-only, no ordering).
+        S4 Hybrid-Batch — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 200
+          startingTps: 100
+          finishingTps: 500
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -98,12 +98,12 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S4 Hybrid-Batch — Fixed-rate 100 TPS revocation (idempotent write).
+        S4 Hybrid-Batch — Fixed-rate 50 TPS revocation (idempotent write).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
         arguments:
