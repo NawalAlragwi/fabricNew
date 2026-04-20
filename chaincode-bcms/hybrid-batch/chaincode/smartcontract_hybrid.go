@@ -66,8 +66,7 @@ package chaincode
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"sort"
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
