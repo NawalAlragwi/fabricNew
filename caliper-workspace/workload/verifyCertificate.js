@@ -30,21 +30,33 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         this.workerIndex = workerIndex;
         this.totalWorkers = totalWorkers;
         this.txIndex = 0;
-        this.totalIssued = (roundArguments && roundArguments.totalIssued) ? roundArguments.totalIssued : 1000;
-        console.log(`Worker ${workerIndex}: Initialized for VerifyCertificate (Target: ${this.totalIssued} certs)`);
+        
+        this.totalIssued = (roundArguments && roundArguments.totalIssued) ? parseInt(roundArguments.totalIssued, 10) : 1000;
+        this.certPrefix  = (roundArguments && roundArguments.certPrefix) ? roundArguments.certPrefix : 'CERT';
+        this.batchSize   = (roundArguments && roundArguments.batchSize) ? parseInt(roundArguments.batchSize, 10) : 1;
+        
+        console.log(`Worker ${workerIndex}: Initialized for VerifyCertificate (Target: ${this.totalIssued} certs, Prefix: ${this.certPrefix}, BatchSize: ${this.batchSize})`);
     }
 
     async submitTransaction() {
         this.txIndex++;
         
-        // --- RESEARCH FIX #1: Worker-Specific Range + Race Condition Safety ---
-        // Each worker queries certificates it issued in the previous round.
-        // We use a safety buffer of 100 to avoid the race condition where the 
-        // last few certificates issued might still be in the ordering phase.
+        const w = this.workerIndex || 0;
         const issuedPerWorker = Math.floor(this.totalIssued / this.totalWorkers);
         const safeIssuedCount = Math.max(issuedPerWorker - 100, 10); 
-        const idx = ((this.txIndex - 1) % safeIssuedCount) + 1;
-        const certID = `CERT_${this.workerIndex}_${idx}`;
+        
+        let certID;
+
+        if (this.certPrefix === 'BCERT') {
+            // S4 key scheme: BCERT_{w}_{txIndex}_{certIndex}
+            const txIdx   = (Math.floor((this.txIndex - 1) / this.batchSize) % safeIssuedCount) + 1;
+            const certIdx = (this.txIndex - 1) % this.batchSize;
+            certID = `BCERT_${w}_${txIdx}_${certIdx}`;
+        } else {
+            // S1/S3 key scheme: CERT_{w}_{idx}
+            const idx = ((this.txIndex - 1) % safeIssuedCount) + 1;
+            certID = `CERT_${w}_${idx}`;
+        }
         
         const request = {
             contractId: 'basic',

@@ -685,7 +685,7 @@ run_caliper_benchmarks() {
     npx caliper launch manager \
         --caliper-workspace . \
         --caliper-networkconfig networks/networkConfig.yaml \
-        --caliper-benchconfig benchmarks/benchConfig.yaml \
+        --caliper-benchconfig benchmarks/benchConfig_s3_hybrid.yaml \
         --caliper-flow-only-test \
         2>&1 | tee -a "$LOG_FILE" || warn "Caliper benchmark may have encountered issues"
 
@@ -739,10 +739,10 @@ detect_runtime_environment() {
 }
 
 declare -A SCENARIO_CHAINCODE=([1]="chaincode-bcms/sha256" [2]="chaincode-bcms/blake3" [3]="chaincode-bcms/hybrid" [4]="chaincode-bcms/hybrid-batch")
-declare -A SCENARIO_LABEL=([1]="S1: SHA-256 Baseline" [2]="S2: BLAKE3 Alternative" [3]="S3: Hybrid SHA-256+BLAKE3" [4]="S4: Hybrid+Batch (batchSize=20)")
+declare -A SCENARIO_LABEL=([1]="S1: SHA-256 Baseline" [2]="S2: BLAKE3 Alternative" [3]="S3: Hybrid SHA-256+BLAKE3" [4]="S4: Hybrid+Batch (batchSize=10)")
 declare -A SCENARIO_KEY=([1]="scenario_1_sha256" [2]="scenario_2_blake3" [3]="scenario_3_merged" [4]="scenario_4_batching")
 declare -A SCENARIO_BENCHCONFIG=([1]="benchConfig_s1_sha256.yaml" [2]="benchConfig_s2_blake3.yaml" [3]="benchConfig_s3_hybrid.yaml" [4]="benchConfig_s4_hybrid_batch.yaml")
-declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="20")
+declare -A SCENARIO_BATCHSIZE=([1]="1" [2]="1" [3]="1" [4]="10")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # FIX-C: run_real_caliper_scenario() — added wait_for_chaincode_image()
