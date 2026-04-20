@@ -107,19 +107,19 @@
   <div class="meta-row">
     <span>📁 Config: <strong>benchConfig_s1_sha256.yaml</strong></span>
     <span>⛓ Chaincode: <strong>chaincode-bcms/sha256</strong></span>
-    <span>🕒 Generated: <strong>2026-04-20 08:49 UTC</strong></span>
+    <span>🕒 Generated: <strong>2026-04-20 09:01 UTC</strong></span>
   </div>
 </header>
 
 
-<div class="zero-banner">🎯 REAL BENCHMARK — ZERO FAILURES · 100% Success Rate across all 6 operations · 58,086 total transactions</div>
+<div class="zero-banner">🎯 REAL BENCHMARK — ZERO FAILURES · 100% Success Rate across all 6 operations · 58,254 total transactions</div>
 
 <div class="container">
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi highlight">
-      <div class="val">65.9</div>
+      <div class="val">65.5</div>
       <div class="unit">tx/s</div>
       <div class="lbl">IssueCert TPS</div>
       <div class="delta">vs S1: +0.0%</div>
@@ -131,7 +131,7 @@
       <div class="delta">vs S1: +0.0%</div>
     </div>
     <div class="kpi">
-      <div class="val">3510</div>
+      <div class="val">4250</div>
       <div class="unit">ms</div>
       <div class="lbl">Avg Latency</div>
       <div class="delta">vs S1: +0.0%</div>
@@ -143,7 +143,7 @@
       <div class="delta">100.0% success</div>
     </div>
     <div class="kpi">
-      <div class="val">58,086</div>
+      <div class="val">58,254</div>
       <div class="unit">tx</div>
       <div class="lbl">Total Transactions</div>
       <div class="delta">across 6 operations</div>
@@ -228,23 +228,23 @@
       <tbody>
         <tr>
           <td><strong>IssueCertificate</strong> <span class="op-badge op-write">WRITE</span></td>
-          <td>65.9 →</td>
-          <td>65.9</td>
-          <td>3510 ms →</td>
-          <td>2.81s / 5.26s / 7.02s</td>
-          <td>13.88s</td>
-          <td>4,247</td>
+          <td>65.5 →</td>
+          <td>65.5</td>
+          <td>4250 ms →</td>
+          <td>3.40s / 6.38s / 8.50s</td>
+          <td>16.04s</td>
+          <td>4,198</td>
           <td class="fail-zero">0</td>
           <td>1</td>
           <td>1</td>
         </tr>
         <tr>
           <td><strong>VerifyCertificate</strong> <span class="op-badge op-read">READ</span></td>
-          <td>199.0 →</td>
-          <td>199.0</td>
+          <td>198.4 →</td>
+          <td>198.4</td>
           <td>20 ms →</td>
           <td>0.02s / 0.03s / 0.04s</td>
-          <td>0.20s</td>
+          <td>0.24s</td>
           <td>12,010</td>
           <td class="fail-zero">0</td>
           <td>0</td>
@@ -252,11 +252,11 @@
         </tr>
         <tr>
           <td><strong>QueryAllCertificates</strong> <span class="op-badge op-read">READ</span></td>
-          <td>49.9 →</td>
-          <td>49.9</td>
-          <td>10 ms →</td>
-          <td>0.01s / 0.01s / 0.02s</td>
-          <td>0.06s</td>
+          <td>49.8 →</td>
+          <td>49.8</td>
+          <td>20 ms →</td>
+          <td>0.02s / 0.03s / 0.04s</td>
+          <td>0.09s</td>
           <td>3,010</td>
           <td class="fail-zero">0</td>
           <td>0</td>
@@ -264,12 +264,12 @@
         </tr>
         <tr>
           <td><strong>RevokeCertificate</strong> <span class="op-badge op-write">WRITE</span></td>
-          <td>160.4 →</td>
-          <td>160.4</td>
-          <td>1150 ms →</td>
-          <td>0.92s / 1.73s / 2.30s</td>
-          <td>3.61s</td>
-          <td>9,776</td>
+          <td>162.2 →</td>
+          <td>162.2</td>
+          <td>1000 ms →</td>
+          <td>0.80s / 1.50s / 2.00s</td>
+          <td>2.67s</td>
+          <td>9,909</td>
           <td class="fail-zero">0</td>
           <td>2</td>
           <td>1</td>
@@ -329,7 +329,7 @@
       <div class="config-item"><div class="key">Hash Algorithm</div><div class="val2">SHA-256</div></div>
       <div class="config-item"><div class="key">Workers</div><div class="val2">4</div></div>
       <div class="config-item"><div class="key">Batch Size</div><div class="val2">1</div></div>
-      <div class="config-item"><div class="key">Total Transactions</div><div class="val2">58,086</div></div>
+      <div class="config-item"><div class="key">Total Transactions</div><div class="val2">58,254</div></div>
       <div class="config-item"><div class="key">Failures</div><div class="val2" style="color:#16a34a">0 (0%)</div></div>
       <div class="config-item"><div class="key">Framework</div><div class="val2">Fabric v2.5 / Caliper 0.6</div></div>
       <div class="config-item"><div class="key">GOFLAGS</div><div class="val2">-mod=mod</div></div>
@@ -416,7 +416,7 @@
 </div><!-- /container -->
 
 <footer>
-  BCMS Benchmark — S1: SHA-256 Baseline &nbsp;|&nbsp; Generated 2026-04-20 08:49 UTC
+  BCMS Benchmark — S1: SHA-256 Baseline &nbsp;|&nbsp; Generated 2026-04-20 09:01 UTC
   &nbsp;|&nbsp; Hyperledger Fabric v2.5 · Caliper v0.6.0
   &nbsp;|&nbsp; 0 Failures · 100% Success Rate
 </footer>
@@ -429,12 +429,12 @@
   const alpha50 = color + "80";
 
   const ops   = ["IssueCertificate", "VerifyCertificate", "QueryAllCertificates", "RevokeCertificate"];
-  const tpsD  = [65.9, 199.0, 49.9, 160.4];
-  const latD  = [3510.0, 20.0, 10.0, 1150.0];
-  const p50D  = [2808.0, 16.0, 8.0, 920.0];
-  const p95D  = [5265.0, 30.0, 15.0, 1725.0];
-  const p99D  = [7020.0, 40.0, 20.0, 2300.0];
-  const volD  = [4247, 12010, 3010, 9776];
+  const tpsD  = [65.5, 198.4, 49.8, 162.2];
+  const latD  = [4250.0, 20.0, 20.0, 1000.0];
+  const p50D  = [3400.0, 16.0, 16.0, 800.0];
+  const p95D  = [6375.0, 30.0, 30.0, 1500.0];
+  const p99D  = [8500.0, 40.0, 40.0, 2000.0];
+  const volD  = [4198, 12010, 3010, 9909];
 
   const contLabels = ["peer0", "peer0", "orderer"];
   const cpuAvg = [38.2, 35.1, 12.4];
