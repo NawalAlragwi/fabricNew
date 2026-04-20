@@ -650,6 +650,18 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+// VerifyCertificateByID is a specialized benchmark function that reads a certificate
+// and delegates to VerifyCertificate for deep hash integrity verification.
+func (s *SmartContract) VerifyCertificateByID(ctx contractapi.TransactionContextInterface, id string) (*VerificationResult, error) {
+	cert, err := s.ReadCertificate(ctx, id)
+	if err != nil || cert == nil {
+		return &VerificationResult{
+			CertID: id, Valid: false, Message: "certificate not found", Timestamp: time.Now().UTC().Format(time.RFC3339),
+		}, nil
+	}
+	return s.VerifyCertificate(ctx, id, cert.CertHash)
+}
+
 // QueryAllCertificates returns a paginated list of certificates.
 //
 // --- PH.D. RESEARCH FEATURE: PAGINATION ----------------------------------

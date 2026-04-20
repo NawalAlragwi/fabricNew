@@ -23,11 +23,11 @@ digraph BenchmarkComparison {
         style=filled fillcolor="#E3F2FD" color="#1565C0"
         fontsize=13 fontname="Helvetica-Bold"
         
-        SHA_TPS [label="Throughput\n0.12M hashes/sec\n(120,943 h/s)"
+        SHA_TPS [label="Throughput\n0.15M hashes/sec\n(153,348 h/s)"
                  shape=rectangle style=filled fillcolor="#1565C0" fontcolor=white
                  width=2.5 height=1.0]
         
-        SHA_LAT [label="Mean Latency\n3.940 µs"
+        SHA_LAT [label="Mean Latency\n3.007 µs"
                  shape=rectangle style=filled fillcolor="#1976D2" fontcolor=white
                  width=2.5 height=0.9]
         
@@ -45,11 +45,11 @@ digraph BenchmarkComparison {
         style=filled fillcolor="#E8F5E9" color="#2E7D32"
         fontsize=13 fontname="Helvetica-Bold"
         
-        B3_TPS [label="Throughput\n0.11M hashes/sec\n(113,444 h/s)"
+        B3_TPS [label="Throughput\n0.12M hashes/sec\n(116,354 h/s)"
                 shape=rectangle style=filled fillcolor="#2E7D32" fontcolor=white
                 width=2.5 height=1.0]
         
-        B3_LAT [label="Mean Latency\n4.869 µs"
+        B3_LAT [label="Mean Latency\n4.764 µs"
                 shape=rectangle style=filled fillcolor="#388E3C" fontcolor=white
                 width=2.5 height=0.9]
         
@@ -64,7 +64,7 @@ digraph BenchmarkComparison {
     
     // ── COMPARISON NODES ─────────────────────────────────────────────────
     
-    WINNER [label="BLAKE3 Wins by\n0.94x Throughput\nSame Security Level"
+    WINNER [label="BLAKE3 Wins by\n0.76x Throughput\nSame Security Level"
             shape=diamond style=filled fillcolor="#FF6F00" fontcolor=white
             width=2.5 height=1.2]
     
@@ -75,7 +75,7 @@ digraph BenchmarkComparison {
     // ── CONNECTIONS ──────────────────────────────────────────────────────
     
     SHA_TPS -> WINNER [label="SHA-256 baseline" color="#1565C0"]
-    B3_TPS -> WINNER [label="BLAKE3 0.94x faster" color="#2E7D32" style=bold]
+    B3_TPS -> WINNER [label="BLAKE3 0.76x faster" color="#2E7D32" style=bold]
     SHA_LAT -> WINNER [label="Higher latency" color="#1565C0" style=dashed]
     B3_LAT -> WINNER [label="Lower latency" color="#2E7D32" style=bold]
     WINNER -> REC [label="Analysis result" color="#FF6F00" style=bold penwidth=2]

@@ -15,15 +15,15 @@
 <title>SHA_TPS</title>
 <polygon fill="#1565c0" stroke="black" points="180,-491.5 0,-491.5 0,-419.5 180,-419.5 180,-491.5"/>
 <text text-anchor="middle" x="90" y="-464.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Throughput</text>
-<text text-anchor="middle" x="90" y="-452.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.12M hashes/sec</text>
-<text text-anchor="middle" x="90" y="-440.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">(120,943 h/s)</text>
+<text text-anchor="middle" x="90" y="-452.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.15M hashes/sec</text>
+<text text-anchor="middle" x="90" y="-440.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">(153,348 h/s)</text>
 </g>
 <!-- WINNER -->
 <g id="node9" class="node">
 <title>WINNER</title>
 <polygon fill="#ff6f00" stroke="black" points="530.16,-286.5 423.84,-243.5 530.16,-200.5 636.49,-243.5 530.16,-286.5"/>
 <text text-anchor="middle" x="530.16" y="-252.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">BLAKE3 Wins by</text>
-<text text-anchor="middle" x="530.16" y="-240.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.94x Throughput</text>
+<text text-anchor="middle" x="530.16" y="-240.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.76x Throughput</text>
 <text text-anchor="middle" x="530.16" y="-228.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Same Security Level</text>
 </g>
 <!-- SHA_TPS&#45;&gt;WINNER -->
@@ -38,7 +38,7 @@
 <title>SHA_LAT</title>
 <polygon fill="#1976d2" stroke="black" points="180,-347 0,-347 0,-282 180,-282 180,-347"/>
 <text text-anchor="middle" x="90" y="-317.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Mean Latency</text>
-<text text-anchor="middle" x="90" y="-305.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">3.940 µs</text>
+<text text-anchor="middle" x="90" y="-305.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">3.007 µs</text>
 </g>
 <!-- SHA_LAT&#45;&gt;WINNER -->
 <g id="edge3" class="edge">
@@ -68,22 +68,22 @@
 <title>B3_TPS</title>
 <polygon fill="#2e7d32" stroke="black" points="180,-209.5 0,-209.5 0,-137.5 180,-137.5 180,-209.5"/>
 <text text-anchor="middle" x="90" y="-182.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Throughput</text>
-<text text-anchor="middle" x="90" y="-170.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.11M hashes/sec</text>
-<text text-anchor="middle" x="90" y="-158.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">(113,444 h/s)</text>
+<text text-anchor="middle" x="90" y="-170.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">0.12M hashes/sec</text>
+<text text-anchor="middle" x="90" y="-158.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">(116,354 h/s)</text>
 </g>
 <!-- B3_TPS&#45;&gt;WINNER -->
 <g id="edge2" class="edge">
 <title>B3_TPS&#45;&gt;WINNER</title>
 <path fill="none" stroke="#2e7d32" stroke-width="2" d="M180.25,-154.87C261.78,-142.02 307.1,-155.18 466.79,-218.3"/>
 <polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="2" points="465.89,-221.71 476.47,-222.13 468.46,-215.2 465.89,-221.71"/>
-<text text-anchor="middle" x="302" y="-176.5" font-family="Helvetica,sans-Serif" font-size="10.00">BLAKE3 0.94x faster</text>
+<text text-anchor="middle" x="302" y="-176.5" font-family="Helvetica,sans-Serif" font-size="10.00">BLAKE3 0.76x faster</text>
 </g>
 <!-- B3_LAT -->
 <g id="node6" class="node">
 <title>B3_LAT</title>
 <polygon fill="#388e3c" stroke="black" points="180,-65 0,-65 0,0 180,0 180,-65"/>
 <text text-anchor="middle" x="90" y="-35.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Mean Latency</text>
-<text text-anchor="middle" x="90" y="-23.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">4.869 µs</text>
+<text text-anchor="middle" x="90" y="-23.7" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">4.764 µs</text>
 </g>
 <!-- B3_LAT&#45;&gt;WINNER -->
 <g id="edge4" class="edge">

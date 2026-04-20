@@ -105,6 +105,9 @@ test:
           tps: 200
       workload:
         module: workload/revokeCertificate.js
+        arguments:
+          certPrefix: "BCERT"
+          batchSize: 20
       txOptions:
         invokerIdentity: User1@org2.example.com
 
