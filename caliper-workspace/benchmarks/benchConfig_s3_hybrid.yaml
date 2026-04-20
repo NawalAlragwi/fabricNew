@@ -1,9 +1,22 @@
 # ============================================================================
-#  BCMS — Scenario S3: Hybrid (SHA-256 + BLAKE3), No Batch  (v6.2)
-#  Hash algorithm : Hybrid — BLAKE3(SHA-256(data))
+#  BCMS — Scenario S3: Hybrid (SHA-256 + BLAKE3) Baseline  (v7.0 — FAIR COMPARISON)
+#  Hash algorithm : Hybrid (SHA-256 on-chain + BLAKE3 advisory)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 5 (local)
-#  TPS Target     : 200 (Standardized for fair comparison)
+#  Workers        : 10 (local)
+#  Transcript     : 5KB per certificate (realistic payload stress test)
+#
+#  FAIR COMPARISON POLICY:
+#  ─────────────────────────────────────────────────────────────────────────
+#  ALL parameters in benchConfig_s3_hybrid.yaml are IDENTICAL to
+#  benchConfig_s1_sha256.yaml and benchConfig_s2_blake3.yaml
+#  except for the chaincode deployed.
+#  This ensures any TPS/latency difference is due ONLY to the hash algorithm.
+#
+#  Benchmark Design:
+#    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
+#    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
+#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
+#    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
 # ============================================================================
 
 monitors:
@@ -17,37 +30,37 @@ monitors:
           - couchdb0
           - peer0.org2.example.com
           - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
 
 test:
-  name: bcms-s3-hybrid-fixed-200tps
+  name: bcms-s3-hybrid-baseline-v7
   description: >
-    Scenario S3 — Hybrid Hash, No Batching. Specialized for academic comparison.
-    TPS fixed at 200 for all rounds. Standardized for academic comparison.
+    Scenario S3 — Hybrid Baseline (v7.0 Fair Comparison).
+    Hash: Hybrid (SHA-256 on-chain, BLAKE3 advisory).
+    Payload: 50KB transcript per certificate (PhD Research Stress Test).
+    batchSize: 1 (single certificate per Fabric transaction).
+    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
+    All read rounds: fixed-rate 200 TPS, 60 s.
+    IDENTICAL config to S1/S2 for fair comparison.
   workers:
     type: local
-    number: 5
+    number: 10
 
   rounds:
 
-    - label: WarmupIndexing
-      description: Warm-up round to trigger CouchDB index building and container startup.
-      txDuration: 15
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-    # ── ROUND 1: ISSUANCE ──────────────────────────────────────────────────
     - label: IssueCertificate
-      description: Issue single certificates at fixed 150 TPS.
+      description: >
+        S3 Hybrid Baseline — Issue single certificates (batchSize=1).
+        Double-hash per tx: SHA-256(fields) + BLAKE3(fields).
+        Linear ramp 50→300 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 150
+          startingTps: 50
+          finishingTps: 300
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -56,22 +69,27 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 2: VERIFICATION ──────────────────────────────────────────────
     - label: VerifyCertificate
-      description: Read-only verification at 150 TPS.
+      description: >
+        S3 Hybrid — Fixed-rate 200 TPS verify (read-only, no ordering).
+        SHA-256 re-hash on every verify call.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 200
       workload:
         module: workload/verifyCertificate.js
+        arguments:
+          totalIssued: 3000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 3: FULL QUERY ────────────────────────────────────────────────
     - label: QueryAllCertificates
-      description: Query with 200 TPS (limited to 100 results per tx).
+      description: >
+        S3 Hybrid — Fixed-rate 50 TPS CouchDB rich query.
+        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
+        Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -82,9 +100,10 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 4: REVOCATION ────────────────────────────────────────────────
     - label: RevokeCertificate
-      description: Mark certificates as revoked at 200 TPS.
+      description: >
+        S3 Hybrid — Fixed-rate 200 TPS revocation (idempotent write).
+        SHA-256 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
