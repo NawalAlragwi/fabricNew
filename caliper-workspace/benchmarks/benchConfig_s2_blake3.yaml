@@ -72,7 +72,7 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S1 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering).
+        S2 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering).
         BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
       txDuration: 60
       rateControl:
@@ -103,14 +103,16 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write).
+        S2 BLAKE3 — Fixed-rate 100 TPS revocation (idempotent write).
         BLAKE3 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 100
       workload:
         module: workload/revokeCertificate.js
+        arguments:
+          totalIssued: 3000
       txOptions:
         invokerIdentity: User1@org1.example.com

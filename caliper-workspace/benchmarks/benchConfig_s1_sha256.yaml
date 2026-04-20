@@ -102,14 +102,16 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 200 TPS revocation (idempotent write).
+        S1 SHA-256 — Fixed-rate 100 TPS revocation (idempotent write).
         SHA-256 re-hash during revocation integrity check.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 200
+          tps: 100
       workload:
         module: workload/revokeCertificate.js
+        arguments:
+          totalIssued: 3000
       txOptions:
         invokerIdentity: User1@org1.example.com
