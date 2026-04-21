@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 1s
+  evaluation_interval: 1s
+
+scrape_configs:
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'fabric-peers'
+    static_configs:
+      - targets:
+          - 'peer0.org1.example.com:9443'
+          - 'peer0.org2.example.com:9443'
+
+  - job_name: 'fabric-orderer'
+    static_configs:
+      - targets:
+          - 'orderer.example.com:8443'
