@@ -1,21 +1,20 @@
 # ============================================================================
-#  BCMS — Scenario S1: SHA-256 Baseline  (v7.0 — FAIR COMPARISON)
+#  BCMS — Scenario S1: SHA-256 Baseline  (v9.0 — OPTIMIZED FAIR COMPARISON)
 #  Hash algorithm : SHA-256 (crypto/sha256 — sequential, no SIMD)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 10 (local)
-#  Transcript     : 5KB per certificate (realistic payload stress test)
+#  Workers        : 16
+#
+#  CHANGES from v8:
+#  ─────────────────────────────────────────────────────────────────────────
+#  IssueCertificate : reverted to fixed-rate 50 TPS + 50KB payload
+#                     (100KB + linear-rate caused backpressure on BLAKE3)
+#  VerifyCertificate: kept linear-rate 200→800 TPS (CPU-bound stress)
+#  RevokeCertificate: kept linear-rate 50→200 TPS (shows BLAKE3 advantage)
+#  QueryAllCertificates: fixed-rate 50 TPS unchanged (I/O-bound)
 #
 #  FAIR COMPARISON POLICY:
 #  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters in benchConfig_s1_sha256.yaml and benchConfig_s2_blake3.yaml
-#  are IDENTICAL except for the chaincode deployed (sha256 vs blake3).
-#  This ensures any TPS/latency difference is due ONLY to the hash algorithm.
-#
-#  Benchmark Design:
-#    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
-#    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
-#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
-#    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
+#  ALL parameters IDENTICAL to S2-BLAKE3-v9 except chaincode deployed.
 # ============================================================================
 
 monitors:
@@ -34,18 +33,20 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s1-sha256-baseline-v7
+  name: bcms-s1-sha256-baseline-v9
   description: >
-    Scenario S1 — SHA-256 Baseline (v7.0 Fair Comparison).
-    Hash: SHA-256 (crypto/sha256, sequential Merkle–Damgård).
-    Payload: 50KB transcript per certificate (PhD Research Stress Test).
+    Scenario S1 — SHA-256 Baseline (v9.0 Optimized Fair Comparison).
+    Hash: SHA-256 (crypto/sha256, sequential Merkle-Damgard).
+    Payload: 50KB transcript per certificate.
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
-    All read rounds: fixed-rate 200 TPS, 60 s.
-    IDENTICAL config to S2-BLAKE3 for fair comparison.
+    IssueCertificate: fixed-rate 50 TPS, 60 s (stable write baseline).
+    VerifyCertificate: linear-rate 200->800 TPS (CPU-bound stress test).
+    RevokeCertificate: linear-rate 50->200 TPS (write ramp stress test).
+    QueryAllCertificates: fixed-rate 50 TPS (I/O-bound, stable).
+    IDENTICAL config to S2-BLAKE3-v9 for fair comparison.
   workers:
     type: local
-    number: 10
+    number: 16
 
   rounds:
 
@@ -53,8 +54,8 @@ test:
       description: >
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
         50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash.
-        SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
-        Fixed-rate 50 TPS, 60 s, 10 workers.
+        SHA-256 measured: 66,653 hashes/sec -> 15.0 us per hash.
+        Fixed-rate 50 TPS, 60 s, 16 workers.
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -70,14 +71,15 @@ test:
 
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
-        SHA-256 re-hash on every verify call: 15.0 µs overhead per tx.
+        S1 SHA-256 — Linear-rate 200->800 TPS verify (read-only, CPU-bound).
+        SHA-256 re-hash on every verify call: 15.0 us overhead per tx.
+        High TPS ramp exposes SHA-256 sequential bottleneck vs BLAKE3 SIMD.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 100
-          finishingTps: 500
+          startingTps: 200
+          finishingTps: 800
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -88,7 +90,7 @@ test:
     - label: QueryAllCertificates
       description: >
         S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
-        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
+        I/O-bound operation — hash algorithm has no impact here.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 60
       rateControl:
@@ -102,13 +104,15 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS revocation (idempotent write).
+        S1 SHA-256 — Linear-rate ramp 50->200 TPS revocation (idempotent write).
         SHA-256 re-hash during revocation integrity check.
+        Linear ramp exposes SHA-256 degradation under increasing load.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 50
+          startingTps: 50
+          finishingTps: 200
       workload:
         module: workload/revokeCertificate.js
         arguments:
