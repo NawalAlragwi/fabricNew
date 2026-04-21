@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s2-blake3-alternative-v8</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v8.0 Optimized Comparison). Hash: BLAKE3 (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 100KB transcript per certificate (High CPU Stress Test). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 16 workers. VerifyCertificate: linear-rate ramp 200→800 TPS, 60 s (CPU-bound). RevokeCertificate: linear-rate ramp 50→200 TPS, 60 s. QueryAllCertificates: fixed-rate 50 TPS, 60 s (I&#x2F;O-bound, stable). IDENTICAL config to S1-SHA256 for fair comparison.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s2-blake3-alternative-v10</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v10.0 Optimized Fair Comparison). Hash: BLAKE3 (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 50KB transcript per certificate. batchSize: 1 (single certificate per Fabric transaction). Workers reduced to 8 to prevent Fabric queue buildup in IssueCertificate. IssueCertificate: fixed-rate 50 TPS, 60 s. VerifyCertificate: linear-rate 200-&gt;800 TPS (CPU-bound stress test). RevokeCertificate: linear-rate 50-&gt;200 TPS (write ramp stress test). QueryAllCertificates: fixed-rate 50 TPS (I&#x2F;O-bound, stable). IDENTICAL config to S1-SHA256-v10 for fair comparison.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -156,29 +156,28 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>3872</td> <td>0</td> <td>64.0</td> <td>65.89</td> <td>1.19</td> <td>47.04</td> <td>32.0</td>
+                         <td>IssueCertificate</td> <td>3008</td> <td>0</td> <td>49.7</td> <td>2.04</td> <td>0.11</td> <td>0.51</td> <td>49.4</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>14887</td> <td>0</td> <td>245.4</td> <td>0.86</td> <td>0.00</td> <td>0.04</td> <td>245.4</td>
+                         <td>VerifyCertificate</td> <td>15535</td> <td>0</td> <td>257.7</td> <td>0.29</td> <td>0.01</td> <td>0.02</td> <td>257.7</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>3024</td> <td>0</td> <td>49.4</td> <td>0.68</td> <td>0.02</td> <td>0.09</td> <td>49.3</td>
+                         <td>QueryAllCertificates</td> <td>3008</td> <td>0</td> <td>49.8</td> <td>0.60</td> <td>0.02</td> <td>0.07</td> <td>49.8</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>5045</td> <td>0</td> <td>83.4</td> <td>1.21</td> <td>0.10</td> <td>0.48</td> <td>82.9</td>
+                         <td>RevokeCertificate</td> <td>4964</td> <td>0</td> <td>82.6</td> <td>0.81</td> <td>0.09</td> <td>0.43</td> <td>82.0</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 100KB transcript payload: BLAKE3 processes ~102,000 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear-rate ramp 50→300 TPS, 60 s, 16 workers.
+                <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec -&gt; 4.01 us per hash. Fixed-rate 50 TPS, 60 s, 8 workers.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
-  type: linear-rate
+  type: fixed-rate
   opts:
-    startingTps: 50
-    finishingTps: 300
+    tps: 50
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -186,7 +185,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>3872</td> <td>0</td> <td>64.0</td> <td>65.89</td> <td>1.19</td> <td>47.04</td> <td>32.0</td>
+                                     <td>IssueCertificate</td> <td>3008</td> <td>0</td> <td>49.7</td> <td>2.04</td> <td>0.11</td> <td>0.51</td> <td>49.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -194,7 +193,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>S2 BLAKE3 — Linear-rate 200→800 TPS verify (read-only, CPU-bound). BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx. SIMD acceleration (AVX2&#x2F;NEON) gives BLAKE3 clear advantage at high TPS.
+                <p>S2 BLAKE3 — Linear-rate 200-&gt;800 TPS verify (read-only, CPU-bound). BLAKE3 re-hash on every verify call: 4.01 us overhead per tx. SIMD acceleration (AVX2&#x2F;NEON) gives BLAKE3 clear advantage at high TPS.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -209,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>14887</td> <td>0</td> <td>245.4</td> <td>0.86</td> <td>0.00</td> <td>0.04</td> <td>245.4</td>
+                                     <td>VerifyCertificate</td> <td>15535</td> <td>0</td> <td>257.7</td> <td>0.29</td> <td>0.01</td> <td>0.02</td> <td>257.7</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -217,7 +216,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. Kept at 50 TPS — this round is I&#x2F;O-bound not CPU-bound. Uses indexDocTypeIssueDate for optimized pagination.
+                <p>S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. I&#x2F;O-bound operation — hash algorithm has no impact here. Uses indexDocTypeIssueDate for optimized pagination.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -231,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>3024</td> <td>0</td> <td>49.4</td> <td>0.68</td> <td>0.02</td> <td>0.09</td> <td>49.3</td>
+                                     <td>QueryAllCertificates</td> <td>3008</td> <td>0</td> <td>49.8</td> <td>0.60</td> <td>0.02</td> <td>0.07</td> <td>49.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -239,7 +238,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>S2 BLAKE3 — Linear-rate ramp 50→200 TPS revocation (idempotent write). BLAKE3 re-hash during revocation integrity check. BLAKE3 tree-based parallelism maintains lower latency under ramp load.
+                <p>S2 BLAKE3 — Linear-rate ramp 50-&gt;200 TPS revocation (idempotent write). BLAKE3 re-hash during revocation integrity check. BLAKE3 tree-based parallelism maintains lower latency under ramp load.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
@@ -254,7 +253,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>5045</td> <td>0</td> <td>83.4</td> <td>1.21</td> <td>0.10</td> <td>0.48</td> <td>82.9</td>
+                                     <td>RevokeCertificate</td> <td>4964</td> <td>0</td> <td>82.6</td> <td>0.81</td> <td>0.09</td> <td>0.43</td> <td>82.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -263,43 +262,43 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s2-blake3-alternative-v8
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s2-blake3-alternative-v10
 description: &gt;
-  Scenario S2 — BLAKE3 Alternative (v8.0 Optimized Comparison). Hash: BLAKE3
-  (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 100KB
-  transcript per certificate (High CPU Stress Test). batchSize: 1 (single
-  certificate per Fabric transaction). IssueCertificate: linear-rate ramp 50→300
-  TPS, 60 s, 16 workers. VerifyCertificate: linear-rate ramp 200→800 TPS, 60 s
-  (CPU-bound). RevokeCertificate: linear-rate ramp 50→200 TPS, 60 s.
-  QueryAllCertificates: fixed-rate 50 TPS, 60 s (I&#x2F;O-bound, stable). IDENTICAL
-  config to S1-SHA256 for fair comparison.
+  Scenario S2 — BLAKE3 Alternative (v10.0 Optimized Fair Comparison). Hash:
+  BLAKE3 (lukechampine.com&#x2F;blake3, tree-based, SIMD-accelerated). Payload: 50KB
+  transcript per certificate. batchSize: 1 (single certificate per Fabric
+  transaction). Workers reduced to 8 to prevent Fabric queue buildup in
+  IssueCertificate. IssueCertificate: fixed-rate 50 TPS, 60 s.
+  VerifyCertificate: linear-rate 200-&gt;800 TPS (CPU-bound stress test).
+  RevokeCertificate: linear-rate 50-&gt;200 TPS (write ramp stress test).
+  QueryAllCertificates: fixed-rate 50 TPS (I&#x2F;O-bound, stable). IDENTICAL config
+  to S1-SHA256-v10 for fair comparison.
 workers:
   type: local
-  number: 16
+  number: 8
 rounds:
   - label: IssueCertificate
     description: &gt;
-      S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 100KB
-      transcript payload: BLAKE3 processes ~102,000 bytes with AVX2&#x2F;NEON. BLAKE3
-      measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear-rate ramp 50→300
-      TPS, 60 s, 16 workers.
+      S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB
+      transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3
+      measured: 249,464 hashes&#x2F;sec -&gt; 4.01 us per hash. Fixed-rate 50 TPS, 60 s,
+      8 workers.
     txDuration: 60
     rateControl:
-      type: linear-rate
+      type: fixed-rate
       opts:
-        startingTps: 50
-        finishingTps: 300
+        tps: 50
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
         batchSize: 1
-        payloadSize: 100000
+        payloadSize: 50000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      S2 BLAKE3 — Linear-rate 200→800 TPS verify (read-only, CPU-bound). BLAKE3
-      re-hash on every verify call: 4.01 µs overhead per tx. SIMD acceleration
+      S2 BLAKE3 — Linear-rate 200-&gt;800 TPS verify (read-only, CPU-bound). BLAKE3
+      re-hash on every verify call: 4.01 us overhead per tx. SIMD acceleration
       (AVX2&#x2F;NEON) gives BLAKE3 clear advantage at high TPS.
     txDuration: 60
     rateControl:
@@ -315,9 +314,9 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
     description: &gt;
-      S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. Kept at 50 TPS — this
-      round is I&#x2F;O-bound not CPU-bound. Uses indexDocTypeIssueDate for optimized
-      pagination.
+      S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query. I&#x2F;O-bound operation —
+      hash algorithm has no impact here. Uses indexDocTypeIssueDate for
+      optimized pagination.
     txDuration: 60
     rateControl:
       type: fixed-rate
@@ -329,7 +328,7 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
     description: &gt;
-      S2 BLAKE3 — Linear-rate ramp 50→200 TPS revocation (idempotent write).
+      S2 BLAKE3 — Linear-rate ramp 50-&gt;200 TPS revocation (idempotent write).
       BLAKE3 re-hash during revocation integrity check. BLAKE3 tree-based
       parallelism maintains lower latency under ramp load.
     txDuration: 60
