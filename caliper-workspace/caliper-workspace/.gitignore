@@ -1,0 +1,24 @@
+# Node modules
+node_modules/
+package-lock.json
+
+# Caliper generated files
+report.html
+caliper.log
+*.log
+
+# Generated network configs (created dynamically by script)
+networks/networkConfig.yaml
+networks/connection-org1.yaml
+networks/connection-org2.yaml
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

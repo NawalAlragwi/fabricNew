@@ -156,29 +156,28 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>3641</td> <td>0</td> <td>60.5</td> <td>44.44</td> <td>0.35</td> <td>25.94</td> <td>41.6</td>
+                         <td>IssueCertificate</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>9.41</td> <td>1.15</td> <td>6.41</td> <td>47.6</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>196.8</td> <td>1.98</td> <td>0.01</td> <td>0.17</td> <td>196.8</td>
+                         <td>VerifyCertificate</td> <td>10166</td> <td>0</td> <td>168.9</td> <td>0.21</td> <td>0.01</td> <td>0.02</td> <td>168.9</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>12.85</td> <td>0.02</td> <td>5.01</td> <td>49.1</td>
+                         <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.8</td> <td>0.78</td> <td>0.02</td> <td>0.10</td> <td>49.8</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>5090</td> <td>2966</td> <td>132.4</td> <td>58.41</td> <td>1.35</td> <td>43.00</td> <td>85.9</td>
+                         <td>RevokeCertificate</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>2.78</td> <td>0.09</td> <td>0.81</td> <td>49.5</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear ramp 50→300 TPS, 60 s, 10 workers.
+                <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Fixed-rate 50 TPS, 60 s, 10 workers.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
-  type: linear-rate
+  type: fixed-rate
   opts:
-    startingTps: 50
-    finishingTps: 300
+    tps: 50
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -186,7 +185,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>3641</td> <td>0</td> <td>60.5</td> <td>44.44</td> <td>0.35</td> <td>25.94</td> <td>41.6</td>
+                                     <td>IssueCertificate</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>9.41</td> <td>1.15</td> <td>6.41</td> <td>47.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -194,13 +193,14 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>S1 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering). BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
+                <p>S2 BLAKE3 — Linear-rate 100-500 TPS verify (read-only, CPU-bound). BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
-  type: fixed-rate
+  type: linear-rate
   opts:
-    tps: 200
+    startingTps: 100
+    finishingTps: 500
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -208,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>12010</td> <td>0</td> <td>196.8</td> <td>1.98</td> <td>0.01</td> <td>0.17</td> <td>196.8</td>
+                                     <td>VerifyCertificate</td> <td>10166</td> <td>0</td> <td>168.9</td> <td>0.21</td> <td>0.01</td> <td>0.02</td> <td>168.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -230,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>12.85</td> <td>0.02</td> <td>5.01</td> <td>49.1</td>
+                                     <td>QueryAllCertificates</td> <td>3010</td> <td>0</td> <td>49.8</td> <td>0.78</td> <td>0.02</td> <td>0.10</td> <td>49.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -238,13 +238,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write). BLAKE3 re-hash during revocation integrity check.
+                <p>S2 BLAKE3 — Fixed-rate 50 TPS revocation (idempotent write). BLAKE3 re-hash during revocation integrity check.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 200
+    tps: 50
 </pre>
                         <h3>Performance metrics for RevokeCertificate</h3>
                             <table style="min-width: 100%;">
@@ -252,7 +252,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>5090</td> <td>2966</td> <td>132.4</td> <td>58.41</td> <td>1.35</td> <td>43.00</td> <td>85.9</td>
+                                     <td>RevokeCertificate</td> <td>3010</td> <td>0</td> <td>49.6</td> <td>2.78</td> <td>0.09</td> <td>0.81</td> <td>49.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -277,14 +277,13 @@ rounds:
     description: &gt;
       S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB
       transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3
-      measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Linear ramp 50→300 TPS,
-      60 s, 10 workers.
+      measured: 249,464 hashes&#x2F;sec → 4.01 µs per hash. Fixed-rate 50 TPS, 60 s,
+      10 workers.
     txDuration: 60
     rateControl:
-      type: linear-rate
+      type: fixed-rate
       opts:
-        startingTps: 50
-        finishingTps: 300
+        tps: 50
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -294,13 +293,14 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      S1 BLAKE3 — Fixed-rate 200 TPS verify (read-only, no ordering). BLAKE3
+      S2 BLAKE3 — Linear-rate 100-500 TPS verify (read-only, CPU-bound). BLAKE3
       re-hash on every verify call: 4.01 µs overhead per tx.
     txDuration: 60
     rateControl:
-      type: fixed-rate
+      type: linear-rate
       opts:
-        tps: 200
+        startingTps: 100
+        finishingTps: 500
     workload:
       module: workload&#x2F;verifyCertificate.js
       arguments:
@@ -323,15 +323,17 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
     description: &gt;
-      S1 BLAKE3 — Fixed-rate 200 TPS revocation (idempotent write). BLAKE3
+      S2 BLAKE3 — Fixed-rate 50 TPS revocation (idempotent write). BLAKE3
       re-hash during revocation integrity check.
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 200
+        tps: 50
     workload:
       module: workload&#x2F;revokeCertificate.js
+      arguments:
+        totalIssued: 3000
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>

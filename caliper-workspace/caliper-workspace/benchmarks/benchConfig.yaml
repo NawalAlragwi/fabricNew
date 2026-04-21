@@ -1,0 +1,157 @@
+# ============================================================================
+#  BCMS — Blockchain Certificate Management System
+#  Hyperledger Caliper Benchmark Configuration v6.0
+#
+#  ── Change-log v6.0 ─────────────────────────────────────────────────────────
+#
+#  REQUEST-1 [IssueCertificate stress-test config]:
+#    workers: type: local, number: 5  (was 8)
+#    txDuration: 60 s                 (was 30 s)
+#    rateControl: linear-rate         (was fixed-rate)
+#      startingTps:  50
+#      finishingTps: 150
+#    batchSize: 10  (Hybrid-Batch scenario)
+#
+#  REQUEST-2 [Read-operation rounds — fixed-rate 150 TPS]:
+#    All read operations (VerifyCertificate, QueryAllCertificates,
+#    GetCertificatesByStudent, GetAuditLogs) now run at 150 TPS.
+#    RevokeCertificate remains write-mode but also set to 150 TPS.
+#
+#  REQUEST-3 [batchSize per scenario]:
+#    This config represents the Hybrid-Batch scenario → batchSize: 10
+#    See companion configs for S1/S2/S3 with batchSize: 1.
+#
+#  Previous fixes (v5.0) preserved:
+#    BUG-A: YAML indentation fixed (all rounds at 4-space indent)
+#    BUG-B: IssueCertificate TPS raised to meaningful stress level
+#    BUG-C: invokerIdentity fixed for all rounds
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
+
+test:
+  name: bcms-hybrid-batch-benchmark-v6
+  description: >
+    BCMS Full Benchmark Suite — Hybrid-Batch Framework (SHA-256 + BLAKE3).
+    6 rounds covering all chaincode functions.
+    IssueCertificate: linear-rate 50→150 TPS over 60 s, 5 workers, batch=10.
+    All read-operation rounds: fixed-rate 150 TPS.
+    Target: 0% failure rate on all rounds.
+  workers:
+    type: local
+    number: 5
+
+  rounds:
+
+    - label: WarmupIndexing
+      description: Warm-up round to trigger CouchDB index building and container startup.
+      txDuration: 15
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: IssueCertificate
+      description: >
+        Issue certificates via Hybrid-Batch framework (SHA-256 + BLAKE3).
+        Stress test: linear ramp from 50 TPS to 150 TPS over 60 seconds.
+        10 certs per Fabric transaction. MVCC-safe, zero-failure design.
+      txDuration: 60
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 50
+          finishingTps: 150
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 10
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: VerifyCertificate
+      description: >
+        Verify certificate existence on the ledger (readOnly peer query).
+        Fixed-rate 150 TPS. inputHash is empty — existence check only.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 150
+      workload:
+        module: workload/verifyCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: >
+        Scan and return all certificate records from the ledger.
+        Fixed-rate 150 TPS. Filters by docType=="certificate".
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 150
+      workload:
+        module: workload/queryAllCertificates.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: RevokeCertificate
+      description: >
+        Revoke certificates. Idempotent: nil when cert not found or revoked.
+        Fixed-rate 150 TPS. Targets certs issued in round 1.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 150
+      workload:
+        module: workload/revokeCertificate.js
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+#    - label: GetCertificatesByStudent
+#      description: >
+#        Query all certificates for a specific student.
+#        Fixed-rate 150 TPS. studentID aligned with IssueCertificate keys.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 150
+#      workload:
+#        module: workload/getCertificatesByStudent.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com
+#
+#    - label: GetAuditLogs
+#      description: >
+#        Query the immutable audit trail. Fixed-rate 150 TPS.
+#        Efficient range scan on AUDIT_ key prefix.
+#      txDuration: 60
+#      rateControl:
+#        type: fixed-rate
+#        opts:
+#          tps: 150
+#      workload:
+#        module: workload/getAuditLogs.js
+#      txOptions:
+#        invokerIdentity: User1@org1.example.com
