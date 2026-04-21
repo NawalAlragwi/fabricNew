@@ -16,7 +16,20 @@
 #  ─────────────────────────────────────────────────────────────────────────
 #  ALL parameters IDENTICAL to S2-BLAKE3-v10 except chaincode deployed.
 # ============================================================================
-
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
 
 test:
   name: bcms-s1-sha256-baseline-v10
