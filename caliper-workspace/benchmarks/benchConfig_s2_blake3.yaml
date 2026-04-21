@@ -1,8 +1,9 @@
-#  BCMS — Scenario S2: BLAKE3 Alternative  (v7.0 — FAIR COMPARISON)
-#  Hash algorithm : BLAKE3 (lukechampine.com/blake3 — parallel, SIMD-accelerated)
+# ============================================================================
+#  BCMS — Scenario S2: BLAKE3 Alternative  (v8.0 — OPTIMIZED COMPARISON)
+#  Hash algorithm : BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 10 (local)
-#  Transcript     : 5KB per certificate (realistic payload stress test)
+#  Workers        : 16 (increased for parallelism stress test)
+#  Transcript     : 100KB per certificate (high CPU stress test)
 #
 #  FAIR COMPARISON POLICY:
 #  ─────────────────────────────────────────────────────────────────────────
@@ -11,10 +12,10 @@
 #  This ensures any TPS/latency difference is due ONLY to the hash algorithm.
 #
 #  Benchmark Design:
-#    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
-#    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
-#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
-#    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
+#    IssueCertificate   : linear-rate ramp 50→300 TPS, 60 s, 16 workers
+#    VerifyCertificate  : linear-rate ramp 200→800 TPS, 60 s (CPU-bound stress)
+#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB — I/O-bound, stable)
+#    RevokeCertificate  : linear-rate ramp 50→200 TPS, 60 s (write, idempotent)
 # ============================================================================
 
 monitors:
@@ -33,52 +34,54 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s2-blake3-alternative-v7
+  name: bcms-s2-blake3-alternative-v8
   description: >
-    Scenario S2 — BLAKE3 Alternative (v7.0 Fair Comparison).
+    Scenario S2 — BLAKE3 Alternative (v8.0 Optimized Comparison).
     Hash: BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated).
-    Payload: 50KB transcript per certificate (PhD Research Stress Test).
+    Payload: 100KB transcript per certificate (High CPU Stress Test).
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
-    All read rounds: fixed-rate 200 TPS, 60 s.
+    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 16 workers.
+    VerifyCertificate: linear-rate ramp 200→800 TPS, 60 s (CPU-bound).
+    RevokeCertificate: linear-rate ramp 50→200 TPS, 60 s.
+    QueryAllCertificates: fixed-rate 50 TPS, 60 s (I/O-bound, stable).
     IDENTICAL config to S1-SHA256 for fair comparison.
   workers:
     type: local
-    number: 10
+    number: 16
 
   rounds:
 
     - label: IssueCertificate
       description: >
         S2 BLAKE3 Alternative — Issue single certificates (batchSize=1).
-        50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2/NEON.
+        100KB transcript payload: BLAKE3 processes ~102,000 bytes with AVX2/NEON.
         BLAKE3 measured: 249,464 hashes/sec → 4.01 µs per hash.
-        Fixed-rate 50 TPS, 60 s, 10 workers.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/issueCertificate.js
-        arguments:
-          batchSize: 1
-          payloadSize: 50000
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-
-
-    - label: VerifyCertificate
-      description: >
-        S2 BLAKE3 — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
-        BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
+        Linear-rate ramp 50→300 TPS, 60 s, 16 workers.
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 100
-          finishingTps: 500
+          startingTps: 50
+          finishingTps: 300
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          batchSize: 1
+          payloadSize: 100000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: VerifyCertificate
+      description: >
+        S2 BLAKE3 — Linear-rate 200→800 TPS verify (read-only, CPU-bound).
+        BLAKE3 re-hash on every verify call: 4.01 µs overhead per tx.
+        SIMD acceleration (AVX2/NEON) gives BLAKE3 clear advantage at high TPS.
+      txDuration: 60
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 200
+          finishingTps: 800
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -89,7 +92,7 @@ test:
     - label: QueryAllCertificates
       description: >
         S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query.
-        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
+        Kept at 50 TPS — this round is I/O-bound not CPU-bound.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 60
       rateControl:
@@ -103,13 +106,15 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S2 BLAKE3 — Fixed-rate 50 TPS revocation (idempotent write).
+        S2 BLAKE3 — Linear-rate ramp 50→200 TPS revocation (idempotent write).
         BLAKE3 re-hash during revocation integrity check.
+        BLAKE3 tree-based parallelism maintains lower latency under ramp load.
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 50
+          startingTps: 50
+          finishingTps: 200
       workload:
         module: workload/revokeCertificate.js
         arguments:

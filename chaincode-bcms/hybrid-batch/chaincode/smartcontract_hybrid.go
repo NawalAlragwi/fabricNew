@@ -67,6 +67,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -551,15 +552,23 @@ func (s *SmartContract) QueryAllCertificates(
 	pageSize string,
 	bookmark string,
 ) (string, error) {
+	ps, err := strconv.ParseInt(pageSize, 10, 32)
+	if err != nil {
+		ps = 20
+	}
+
+	paginatedRes, err := s.QueryAllCertificatesPaginated(ctx, int32(ps), bookmark)
+	if err == nil {
+		resJSON, _ := json.Marshal(paginatedRes)
+		return string(resJSON), nil
+	}
+
+	// Fallback to range query if CouchDB rich query fails
 	all, err := s.rangeAllCertificates(ctx)
 	if err != nil {
 		return "", err
 	}
-	res := struct {
-		Certificates []*Certificate `json:"certificates"`
-		Bookmark     string         `json:"bookmark"`
-		Count        int            `json:"count"`
-	}{
+	res := &PaginatedQueryResult{
 		Certificates: all,
 		Bookmark:     "",
 		Count:        len(all),
