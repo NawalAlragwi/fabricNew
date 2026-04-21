@@ -1209,6 +1209,13 @@ function main() {
     
     // Auto-detect scenario from report name
     autoDetectScenario(results.name);
+
+    // Temporarily disable generation of report_S1_SHA256.html
+    if (OUTPUT_REPORT.includes('report_S1_SHA256.html')) {
+        console.log('[DISABLED] report_S1_SHA256.html generation is temporarily disabled based on user request.');
+        process.exit(0);
+    }
+
     console.log(`[SCENARIO] Output will be saved to: ${path.basename(OUTPUT_REPORT)}`);
 
     console.log(`[2/5] Parsed ${rounds.length} benchmark rounds from ${results.name}:`);
