@@ -1,20 +1,20 @@
 # ============================================================================
-#  BCMS — Scenario S1: SHA-256 Baseline  (v9.0 — OPTIMIZED FAIR COMPARISON)
+#  BCMS — Scenario S1: SHA-256 Baseline  (v10.0 — OPTIMIZED FAIR COMPARISON)
 #  Hash algorithm : SHA-256 (crypto/sha256 — sequential, no SIMD)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 16
+#  Workers        : 8 (reduced to prevent queue buildup in IssueCertificate)
 #
-#  CHANGES from v8:
+#  CHANGES from v9:
 #  ─────────────────────────────────────────────────────────────────────────
-#  IssueCertificate : reverted to fixed-rate 50 TPS + 50KB payload
-#                     (100KB + linear-rate caused backpressure on BLAKE3)
-#  VerifyCertificate: kept linear-rate 200→800 TPS (CPU-bound stress)
-#  RevokeCertificate: kept linear-rate 50→200 TPS (shows BLAKE3 advantage)
-#  QueryAllCertificates: fixed-rate 50 TPS unchanged (I/O-bound)
+#  Workers        : 16 -> 8 (prevents Fabric queue buildup)
+#  IssueCertificate : fixed-rate 50 TPS + 50KB (unchanged)
+#  VerifyCertificate: linear-rate 200->800 TPS (unchanged - BLAKE3 wins here)
+#  RevokeCertificate: linear-rate 50->200 TPS (unchanged - BLAKE3 wins here)
+#  QueryAllCertificates: fixed-rate 50 TPS (unchanged)
 #
 #  FAIR COMPARISON POLICY:
 #  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters IDENTICAL to S2-BLAKE3-v9 except chaincode deployed.
+#  ALL parameters IDENTICAL to S2-BLAKE3-v10 except chaincode deployed.
 # ============================================================================
 
 monitors:
@@ -33,20 +33,21 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s1-sha256-baseline-v9
+  name: bcms-s1-sha256-baseline-v10
   description: >
-    Scenario S1 — SHA-256 Baseline (v9.0 Optimized Fair Comparison).
+    Scenario S1 — SHA-256 Baseline (v10.0 Optimized Fair Comparison).
     Hash: SHA-256 (crypto/sha256, sequential Merkle-Damgard).
     Payload: 50KB transcript per certificate.
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: fixed-rate 50 TPS, 60 s (stable write baseline).
+    Workers reduced to 8 to prevent Fabric queue buildup in IssueCertificate.
+    IssueCertificate: fixed-rate 50 TPS, 60 s.
     VerifyCertificate: linear-rate 200->800 TPS (CPU-bound stress test).
     RevokeCertificate: linear-rate 50->200 TPS (write ramp stress test).
     QueryAllCertificates: fixed-rate 50 TPS (I/O-bound, stable).
-    IDENTICAL config to S2-BLAKE3-v9 for fair comparison.
+    IDENTICAL config to S2-BLAKE3-v10 for fair comparison.
   workers:
     type: local
-    number: 16
+    number: 8
 
   rounds:
 
@@ -55,7 +56,7 @@ test:
         S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
         50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash.
         SHA-256 measured: 66,653 hashes/sec -> 15.0 us per hash.
-        Fixed-rate 50 TPS, 60 s, 16 workers.
+        Fixed-rate 50 TPS, 60 s, 8 workers.
       txDuration: 60
       rateControl:
         type: fixed-rate
