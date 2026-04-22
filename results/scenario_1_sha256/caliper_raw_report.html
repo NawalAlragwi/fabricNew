@@ -156,16 +156,16 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>3008</td> <td>0</td> <td>49.8</td> <td>43.61</td> <td>1.28</td> <td>29.87</td> <td>37.4</td>
+                         <td>IssueCertificate</td> <td>6008</td> <td>0</td> <td>49.8</td> <td>2.96</td> <td>0.22</td> <td>0.78</td> <td>49.5</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>29063</td> <td>0</td> <td>240.6</td> <td>0.43</td> <td>0.01</td> <td>0.06</td> <td>240.6</td>
+                         <td>VerifyCertificate</td> <td>28646</td> <td>0</td> <td>238.2</td> <td>1.18</td> <td>0.01</td> <td>0.04</td> <td>238.2</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>6008</td> <td>0</td> <td>49.9</td> <td>2.39</td> <td>0.02</td> <td>0.51</td> <td>49.9</td>
+                         <td>QueryAllCertificates</td> <td>6008</td> <td>0</td> <td>50.0</td> <td>1.50</td> <td>0.03</td> <td>0.25</td> <td>50.0</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>9571</td> <td>0</td> <td>79.6</td> <td>1.56</td> <td>0.10</td> <td>0.59</td> <td>79.3</td>
+                         <td>RevokeCertificate</td> <td>9910</td> <td>0</td> <td>82.5</td> <td>1.59</td> <td>0.09</td> <td>0.55</td> <td>82.1</td>
                     </tr>
                 </table>
             </div>
@@ -185,7 +185,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>3008</td> <td>0</td> <td>49.8</td> <td>43.61</td> <td>1.28</td> <td>29.87</td> <td>37.4</td>
+                                     <td>IssueCertificate</td> <td>6008</td> <td>0</td> <td>49.8</td> <td>2.96</td> <td>0.22</td> <td>0.78</td> <td>49.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -208,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>29063</td> <td>0</td> <td>240.6</td> <td>0.43</td> <td>0.01</td> <td>0.06</td> <td>240.6</td>
+                                     <td>VerifyCertificate</td> <td>28646</td> <td>0</td> <td>238.2</td> <td>1.18</td> <td>0.01</td> <td>0.04</td> <td>238.2</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -230,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>6008</td> <td>0</td> <td>49.9</td> <td>2.39</td> <td>0.02</td> <td>0.51</td> <td>49.9</td>
+                                     <td>QueryAllCertificates</td> <td>6008</td> <td>0</td> <td>50.0</td> <td>1.50</td> <td>0.03</td> <td>0.25</td> <td>50.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -253,7 +253,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>9571</td> <td>0</td> <td>79.6</td> <td>1.56</td> <td>0.10</td> <td>0.59</td> <td>79.3</td>
+                                     <td>RevokeCertificate</td> <td>9910</td> <td>0</td> <td>82.5</td> <td>1.59</td> <td>0.09</td> <td>0.55</td> <td>82.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -282,7 +282,8 @@ rounds:
       transcript payload forces SHA-256 to process ~51,000 bytes per hash.
       SHA-256 measured: 66,653 hashes&#x2F;sec -&gt; 15.0 us per hash. Fixed-rate 50
       TPS, 60 s, 8 workers.
-    txDuration: 60
+    txDuration: 120
+    postIterationWaitTime: 10000
     rateControl:
       type: fixed-rate
       opts:
@@ -301,6 +302,7 @@ rounds:
       SHA-256 re-hash on every verify call: 15.0 us overhead per tx. High TPS
       ramp exposes SHA-256 sequential bottleneck vs BLAKE3 SIMD.
     txDuration: 120
+    postIterationWaitTime: 10000
     rateControl:
       type: linear-rate
       opts:
@@ -318,6 +320,7 @@ rounds:
       hash algorithm has no impact here. Uses indexDocTypeIssueDate for
       optimized pagination.
     txDuration: 120
+    postIterationWaitTime: 10000
     rateControl:
       type: fixed-rate
       opts:
@@ -332,6 +335,7 @@ rounds:
       SHA-256 re-hash during revocation integrity check. Linear ramp exposes
       SHA-256 degradation under increasing load.
     txDuration: 120
+    postIterationWaitTime: 10000
     rateControl:
       type: linear-rate
       opts:
