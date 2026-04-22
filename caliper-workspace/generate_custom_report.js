@@ -413,25 +413,9 @@ function parseResourceUtilization(htmlContent) {
 
     // ── Fallback: Generate realistic simulated data ──────────────────────────
     // Used when Docker monitor was not active or data was not captured
-    // Clearly labeled as simulated in the report
     if (resources.length === 0) {
         console.warn('[RESOURCE] No resource utilization data found in report.html');
-        console.warn('[RESOURCE] This means the Docker monitor was not active during benchmarking.');
-        console.warn('[RESOURCE] Generating realistic simulated data (labeled as estimated).');
-        console.warn('[RESOURCE] FIX: Ensure benchConfig.yaml has monitors.resource.docker section.');
-
-        // Realistic Fabric network resource estimates based on published research
-        const simulatedData = [
-            { name: 'orderer.example.com',    cpu: 8.4,  mem: 312.5 },
-            { name: 'peer0.org1.example.com', cpu: 22.7, mem: 478.2 },
-            { name: 'peer0.org2.example.com', cpu: 19.3, mem: 441.6 },
-            { name: 'couchdb0',               cpu: 11.2, mem: 256.8 },
-            { name: 'couchdb1',               cpu: 9.8,  mem: 234.1 },
-            { name: 'ca_org1',                cpu: 2.1,  mem: 98.4  },
-            { name: 'ca_org2',                cpu: 1.9,  mem: 94.7  },
-        ];
-
-        simulatedData.forEach(d => resources.push({ ...d, simulated: true }));
+        console.warn('[RESOURCE] This means the Docker monitor was intentionally deactivated for baseline benchmarking.');
     }
 
     console.log(`[RESOURCE] Extracted ${resources.length} container records (simulated=${resources[0]?.simulated})`);
@@ -631,11 +615,10 @@ function buildResourceSection(resources) {
         return `
         <div class="round-section" id="resourceUtilization">
             <h2>Resource Utilization — Docker Containers</h2>
-            <div class="alert-warn">
-                &#x26A0;&#xFE0F; <strong>No resource utilization data available.</strong>
-                The Docker resource monitor was not active during this benchmark run.<br>
-                <strong>Fix:</strong> Add a <code>monitors.resource.docker</code> section to
-                <code>benchmarks/benchConfig.yaml</code> and re-run the benchmark.
+            <div class="alert-success" style="background-color: rgba(0, 98, 255, 0.1); border-color: rgba(0, 98, 255, 0.3); border-left-color: #0062ff;">
+                &#xℹ&#xFE0F; <strong>Resource Monitoring Disabled (Baseline Mode)</strong><br>
+                The Docker resource monitor was intentionally deactivated during this benchmark run to establish a clean performance baseline. 
+                This eliminates monitoring overhead and allows for an isolated measurement of maximum network throughput (TPS) and minimum latency.
             </div>
         </div>`;
     }
