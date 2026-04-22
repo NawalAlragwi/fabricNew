@@ -80,7 +80,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 200
-          finishingTps: 800
+          finishingTps: 1500
       workload:
         module: workload/verifyCertificate.js
         arguments:
