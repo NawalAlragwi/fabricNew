@@ -46,7 +46,7 @@ test:
     IDENTICAL config to S2-BLAKE3-v10 for fair comparison.
   workers:
     type: local
-    number: 8
+    number: 16
 
   rounds:
 
@@ -65,7 +65,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           batchSize: 1
-          payloadSize: 50000
+          payloadSize: 500000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
