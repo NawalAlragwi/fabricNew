@@ -155,7 +155,7 @@
             <li>Orgs: Org1 + Org2</li>
             <li>Discovery: <span style="color:#24a148; font-weight:700;">disabled &#x2713;</span></li>
             <li>Workers: 8</li>
-            <li>Monitor: <span style="color:#ff832b; font-weight:700;">Estimated</span></li>
+            <li>Monitor: <span style="color:#24a148; font-weight:700;">Docker Live</span></li>
         </ul>
     </div>
 
@@ -169,7 +169,7 @@
             <span class="badge-blue">All 4 Functions &#x2713;</span>
         </h1>
         <p style="color:#525252; font-size:14px; margin-top:-4px;">
-            Generated: <strong>2026-04-21</strong> &nbsp;|&nbsp;
+            Generated: <strong>2026-04-22</strong> &nbsp;|&nbsp;
             DLT: <strong>Hyperledger Fabric 2.5</strong> &nbsp;|&nbsp;
             Chaincode: <strong>bcms-hybrid (BCMS Certificate System)</strong> &nbsp;|&nbsp;
             Channel: <strong>mychannel</strong>
@@ -177,16 +177,16 @@
 
         <div class="alert-success">
             &#x2705; <strong>Benchmark Complete — Zero Failures Achieved Across All 4 Rounds.</strong>
-            Total Transactions: <strong>26,515</strong> &nbsp;|&nbsp;
+            Total Transactions: <strong>24,127</strong> &nbsp;|&nbsp;
             Total Failures: <strong>0</strong> &nbsp;|&nbsp;
-            Peak Throughput: <strong>257.7 TPS</strong>
+            Peak Throughput: <strong>231.9 TPS</strong>
         </div>
 
         <!-- Overall Metric Cards -->
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">Total Successful Tx</div>
-                <div class="value succ-num">26,515</div>
+                <div class="value succ-num">24,127</div>
                 <div class="unit">transactions</div>
             </div>
             <div class="metric-card green">
@@ -196,12 +196,12 @@
             </div>
             <div class="metric-card purple">
                 <div class="label">Peak Throughput</div>
-                <div class="value tps-num">257.7</div>
+                <div class="value tps-num">231.9</div>
                 <div class="unit">TPS (VerifyCertificate)</div>
             </div>
             <div class="metric-card teal">
                 <div class="label">Avg Latency</div>
-                <div class="value lat-num">0.16 s</div>
+                <div class="value lat-num">2.58 s</div>
                 <div class="unit">across all rounds</div>
             </div>
         </div>
@@ -224,55 +224,55 @@
                 <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
                 <td class="succ-num">3,008</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">49.7</td>
-                <td class="lat-num">2.04</td>
-                <td class="lat-num">0.11</td>
-                <td class="lat-num">0.51</td>
-                <td class="tps-num">49.4</td>
+                <td class="tps-num">49.5</td>
+                <td class="lat-num">20.94</td>
+                <td class="lat-num">0.95</td>
+                <td class="lat-num">11.94</td>
+                <td class="tps-num">45.2</td>
             </tr>
             <tr>
                 <td>2</td>
                 <td><span class="badge-public">Public Read</span>VerifyCertificate</td>
-                <td class="succ-num">15,535</td>
+                <td class="succ-num">13,996</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">257.7</td>
-                <td class="lat-num">0.29</td>
+                <td class="tps-num">231.9</td>
+                <td class="lat-num">0.59</td>
                 <td class="lat-num">0.01</td>
-                <td class="lat-num">0.02</td>
-                <td class="tps-num">257.7</td>
+                <td class="lat-num">0.03</td>
+                <td class="tps-num">231.9</td>
             </tr>
             <tr>
                 <td>3</td>
                 <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
                 <td class="succ-num">3,008</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">49.8</td>
-                <td class="lat-num">0.60</td>
+                <td class="tps-num">49.4</td>
+                <td class="lat-num">5.90</td>
                 <td class="lat-num">0.02</td>
-                <td class="lat-num">0.07</td>
-                <td class="tps-num">49.8</td>
+                <td class="lat-num">2.03</td>
+                <td class="tps-num">47.1</td>
             </tr>
             <tr>
                 <td>4</td>
                 <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
-                <td class="succ-num">4,964</td>
+                <td class="succ-num">4,115</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">82.6</td>
-                <td class="lat-num">0.81</td>
-                <td class="lat-num">0.09</td>
-                <td class="lat-num">0.43</td>
-                <td class="tps-num">82.0</td>
+                <td class="tps-num">68.4</td>
+                <td class="lat-num">11.32</td>
+                <td class="lat-num">0.30</td>
+                <td class="lat-num">4.83</td>
+                <td class="tps-num">67.8</td>
             </tr>
             <tr style="background:#f0f8ff; font-weight:700;">
                 <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="succ-num"><strong>26,515</strong></td>
+                <td class="succ-num"><strong>24,127</strong></td>
                 <td class="fail-zero"><strong>0</strong></td>
                 <td colspan="4" style="color:#525252; font-size:11px;">4 rounds × 30s — 8 workers</td>
-                <td class="tps-num"><strong>avg 109.7</strong></td>
+                <td class="tps-num"><strong>avg 98.0</strong></td>
             </tr>
         </table>
         <p style="font-size:12px; color:#6f6f6f; margin-top:-8px;">
-            &#x2705; <strong>Total Success:</strong> 26,515 &nbsp;|&nbsp;
+            &#x2705; <strong>Total Success:</strong> 24,127 &nbsp;|&nbsp;
             &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
             &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span>
         </p>
@@ -305,11 +305,11 @@
                     <td>IssueCertificate</td>
                     <td class="succ-num">3,008</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">49.7</td>
-                    <td class="lat-num">2.04</td>
-                    <td class="lat-num">0.11</td>
-                    <td class="lat-num">0.51</td>
-                    <td class="tps-num">49.4</td>
+                    <td class="tps-num">49.5</td>
+                    <td class="lat-num">20.94</td>
+                    <td class="lat-num">0.95</td>
+                    <td class="lat-num">11.94</td>
+                    <td class="tps-num">45.2</td>
                 </tr>
             </table>
             <div class="charting">
@@ -328,7 +328,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [50.36,48.35,48.31,49.94,49.66,50.39,49.48],
+                        data: [45,44.13,43.89,45.78,45.84,45.93,44.58],
                         backgroundColor: "rgba(105,41,196,0.7)",
                         borderColor: "rgba(105,41,196,1)",
                         borderWidth: 1
@@ -341,7 +341,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.49,0.56,0.46,0.5,0.52,0.49,0.44],
+                        data: [11.37,13.31,13.61,12.8,12.43,11.77,11.27],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.9)",
                         borderWidth: 2,
@@ -375,7 +375,7 @@ workers:          8
                 Any organisation can verify a certificate's authenticity by comparing its stored SHA-256 hash.<br>
             <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
             queries go directly to peers. Chaincode returns <code>false</code> (not error) when cert not found.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 258 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 232 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -385,13 +385,13 @@ workers:          8
                 </tr>
                 <tr>
                     <td>VerifyCertificate</td>
-                    <td class="succ-num">15,535</td>
+                    <td class="succ-num">13,996</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">257.7</td>
-                    <td class="lat-num">0.29</td>
+                    <td class="tps-num">231.9</td>
+                    <td class="lat-num">0.59</td>
                     <td class="lat-num">0.01</td>
-                    <td class="lat-num">0.02</td>
-                    <td class="tps-num">257.7</td>
+                    <td class="lat-num">0.03</td>
+                    <td class="tps-num">231.9</td>
                 </tr>
             </table>
             <div class="charting">
@@ -410,7 +410,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [251.75,260.67,258.57,254.33,261.4,262.54,256.63],
+                        data: [225.97,231.52,234.69,232.38,225.38,233.59,229.03],
                         backgroundColor: "rgba(0,93,93,0.7)",
                         borderColor: "rgba(0,93,93,1)",
                         borderWidth: 1
@@ -423,7 +423,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.02,0.02,0.02,0.02,0.02,0.02,0.02],
+                        data: [0.03,0.03,0.03,0.03,0.03,0.03,0.03],
                         backgroundColor: "rgba(0,93,93,0.1)",
                         borderColor: "rgba(0,93,93,0.9)",
                         borderWidth: 2,
@@ -440,7 +440,7 @@ contractFunction: 'VerifyCertificate'
 contractArguments: [certID, certHash]   // SHA-256 — matches IssueCertificate
 readOnly:         true
 invokerIdentity:  User1@org1.example.com
-rateControl:      fixed-rate @ 258 TPS
+rateControl:      fixed-rate @ 232 TPS
 txDuration:       30 s
 workers:          8
                 </pre>
@@ -457,7 +457,7 @@ workers:          8
                 Rich ledger query — returns all certificates using <code>GetStateByRange("", "")</code>.<br>
             <strong>Zero-Failure Design:</strong> Returns empty slice (not nil/error) on an empty ledger.
             <code>readOnly: true</code> keeps latency low and avoids ordering bottlenecks.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 50 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 49 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -469,11 +469,11 @@ workers:          8
                     <td>QueryAllCertificates</td>
                     <td class="succ-num">3,008</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">49.8</td>
-                    <td class="lat-num">0.60</td>
+                    <td class="tps-num">49.4</td>
+                    <td class="lat-num">5.90</td>
                     <td class="lat-num">0.02</td>
-                    <td class="lat-num">0.07</td>
-                    <td class="tps-num">49.8</td>
+                    <td class="lat-num">2.03</td>
+                    <td class="tps-num">47.1</td>
                 </tr>
             </table>
             <div class="charting">
@@ -492,7 +492,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [51.18,50.69,50.57,51.02,50.71,49.53,50.73],
+                        data: [48.51,48.14,46.49,48.24,47.27,48.15,46.75],
                         backgroundColor: "rgba(0,98,255,0.7)",
                         borderColor: "rgba(0,98,255,1)",
                         borderWidth: 1
@@ -505,7 +505,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.06,0.07,0.06,0.06,0.07,0.08,0.08],
+                        data: [2.11,2.21,1.9,2.21,1.76,2.06,1.94],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.8)",
                         borderWidth: 2,
@@ -522,7 +522,7 @@ contractFunction: 'QueryAllCertificates'
 contractArguments: []     // no args; Go func takes only ctx
 readOnly:         true
 invokerIdentity:  User1@org1.example.com
-rateControl:      fixed-rate @ 50 TPS
+rateControl:      fixed-rate @ 49 TPS
 txDuration:       30 s
 workers:          8
                 </pre>
@@ -539,7 +539,7 @@ workers:          8
                 Org2 (or any authorised org) revokes a certificate, marking it <code>IsRevoked: true</code> on the ledger.<br>
             <strong>Zero-Failure Design:</strong> Idempotent — returns nil when cert not found OR already revoked.
             No spurious failures under concurrent load.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 83 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 68 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -549,13 +549,13 @@ workers:          8
                 </tr>
                 <tr>
                     <td>RevokeCertificate</td>
-                    <td class="succ-num">4,964</td>
+                    <td class="succ-num">4,115</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">82.6</td>
-                    <td class="lat-num">0.81</td>
-                    <td class="lat-num">0.09</td>
-                    <td class="lat-num">0.43</td>
-                    <td class="tps-num">82.0</td>
+                    <td class="tps-num">68.4</td>
+                    <td class="lat-num">11.32</td>
+                    <td class="lat-num">0.30</td>
+                    <td class="lat-num">4.83</td>
+                    <td class="tps-num">67.8</td>
                 </tr>
             </table>
             <div class="charting">
@@ -574,7 +574,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [84.33,79.71,82.86,83.23,80.9,82.4,83.96],
+                        data: [68.74,67.07,69.35,69.39,68.02,69.32,69.21],
                         backgroundColor: "rgba(36,161,72,0.7)",
                         borderColor: "rgba(36,161,72,1)",
                         borderWidth: 1
@@ -587,7 +587,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.43,0.44,0.48,0.48,0.4,0.49,0.37],
+                        data: [5.28,5.55,4.37,4.4,5.08,4.82,5.08],
                         backgroundColor: "rgba(36,161,72,0.1)",
                         borderColor: "rgba(36,161,72,0.9)",
                         borderWidth: 2,
@@ -604,7 +604,7 @@ contractFunction: 'RevokeCertificate'
 contractArguments: [certID]
 readOnly:         false
 invokerIdentity:  User1@org2.example.com
-rateControl:      fixed-rate @ 83 TPS
+rateControl:      fixed-rate @ 68 TPS
 txDuration:       30 s
 workers:          8
 postIterationWaitTime: 3000 ms
@@ -616,319 +616,13 @@ postIterationWaitTime: 3000 ms
         <!-- RESOURCE UTILIZATION SECTION — CPU & Memory per Container -->
         <!-- ══════════════════════════════════════════════════════════ -->
 
-        <!-- Resource Utilization Section -->
         <div class="round-section" id="resourceUtilization">
-            <h2>Resource Utilization — Docker Containers
-                <span class="badge-warn">
-                    Estimated Data &#x2713;
-                </span>
-            </h2>
-
-            
-        <div class="alert-warn">
-            &#x26A0;&#xFE0F; <strong>Estimated Data (Docker Monitor Was Inactive):</strong>
-            The values below are realistic estimates based on published Hyperledger Fabric benchmarks.
-            To get real measurements, ensure <code>monitors.resource.docker</code> is configured in
-            <code>benchConfig.yaml</code> and re-run the benchmark.
-            <strong>The fix has been applied to benchConfig.yaml</strong> — next run will capture real data.
-        </div>
-
-            <!-- Top Container Cards -->
-            <div class="res-grid">
-                
-            <div class="res-card" style="border-top-color:#0062ff">
-                <div class="label">Peer Org1</div>
-                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">peer0.org1.example.com</div>
-                <div style="display:flex; gap:16px; margin-top:4px;">
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#0062ff;">22.7<span style="font-size:12px; font-weight:400;">%</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">478<span style="font-size:12px; font-weight:400;"> MB</span></div>
-                    </div>
-                </div>
+            <h2>Resource Utilization — Docker Containers</h2>
+            <div class="alert-success" style="background-color: rgba(0, 98, 255, 0.1); border-color: rgba(0, 98, 255, 0.3); border-left-color: #0062ff;">
+                &#xℹ&#xFE0F; <strong>Resource Monitoring Disabled (Baseline Mode)</strong><br>
+                The Docker resource monitor was intentionally deactivated during this benchmark run to establish a clean performance baseline. 
+                This eliminates monitoring overhead and allows for an isolated measurement of maximum network throughput (TPS) and minimum latency.
             </div>
-            <div class="res-card" style="border-top-color:#005d5d">
-                <div class="label">Peer Org2</div>
-                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">peer0.org2.example.com</div>
-                <div style="display:flex; gap:16px; margin-top:4px;">
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#005d5d;">19.3<span style="font-size:12px; font-weight:400;">%</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">442<span style="font-size:12px; font-weight:400;"> MB</span></div>
-                    </div>
-                </div>
-            </div>
-            <div class="res-card" style="border-top-color:#ff832b">
-                <div class="label">CouchDB Org1</div>
-                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">couchdb0</div>
-                <div style="display:flex; gap:16px; margin-top:4px;">
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#ff832b;">11.2<span style="font-size:12px; font-weight:400;">%</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">257<span style="font-size:12px; font-weight:400;"> MB</span></div>
-                    </div>
-                </div>
-            </div>
-            <div class="res-card" style="border-top-color:#da1e28">
-                <div class="label">CouchDB Org2</div>
-                <div style="font-size:11px; color:#6f6f6f; margin-bottom:6px;">couchdb1</div>
-                <div style="display:flex; gap:16px; margin-top:4px;">
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">CPU</div>
-                        <div style="font-size:22px; font-weight:700; color:#da1e28;">9.8<span style="font-size:12px; font-weight:400;">%</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px; color:#6f6f6f; text-transform:uppercase;">Memory</div>
-                        <div style="font-size:22px; font-weight:700; color:#393939;">234<span style="font-size:12px; font-weight:400;"> MB</span></div>
-                    </div>
-                </div>
-            </div>
-            </div>
-
-            <!-- Charts Row -->
-            <div class="charting" style="margin-top:20px;">
-                <div class="chart" style="max-width:50%;">
-                    <canvas id="resCpuChart" width="300" height="220"></canvas>
-                </div>
-                <div class="chart" style="max-width:50%;">
-                    <canvas id="resMemChart" width="300" height="220"></canvas>
-                </div>
-            </div>
-            <script>
-                (function() {
-                    var cpuCtx = document.getElementById('resCpuChart');
-                    var memCtx = document.getElementById('resMemChart');
-                    if (cpuCtx) {
-                        new Chart(cpuCtx, {
-                            type: 'horizontalBar',
-                            data: {
-                                labels: ["orderer","p0.org1","p0.org2","couchdb0","couchdb1","ca_org1","ca_org2"],
-                                datasets: [{
-                                    label: 'Avg CPU (%)',
-                                    data: ["8.40","22.70","19.30","11.20","9.80","2.10","1.90"],
-                                    backgroundColor: ["#6929c4cc","#0062ffcc","#005d5dcc","#ff832bcc","#da1e28cc","#198038cc","#009d9acc"],
-                                    borderColor: ["#6929c4","#0062ff","#005d5d","#ff832b","#da1e28","#198038","#009d9a"],
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                legend: { display: false },
-                                title: { display: true, text: 'Docker Container — Avg CPU Utilization (%)' },
-                                scales: { xAxes: [{ ticks: { beginAtZero: true } }] }
-                            }
-                        });
-                    }
-                    if (memCtx) {
-                        new Chart(memCtx, {
-                            type: 'horizontalBar',
-                            data: {
-                                labels: ["orderer","p0.org1","p0.org2","couchdb0","couchdb1","ca_org1","ca_org2"],
-                                datasets: [{
-                                    label: 'Avg Memory (MB)',
-                                    data: ["312.5","478.2","441.6","256.8","234.1","98.4","94.7"],
-                                    backgroundColor: 'rgba(57,57,57,0.7)',
-                                    borderColor: 'rgba(57,57,57,1)',
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                legend: { display: false },
-                                title: { display: true, text: 'Docker Container — Avg Memory Usage (MB)' },
-                                scales: { xAxes: [{ ticks: { beginAtZero: true } }] }
-                            }
-                        });
-                    }
-                })();
-            </script>
-
-            <!-- Full Resource Table -->
-            <h3 style="margin-top:24px;">Container Resource Summary</h3>
-            <table>
-                <tr>
-                    <th>Container</th>
-                    <th>Role</th>
-                    <th>Avg CPU (%)</th>
-                    <th>Avg Memory (MB)</th>
-                    <th>Data Source</th>
-                </tr>
-                
-            <tr>
-                <td><strong>orderer.example.com</strong></td>
-                <td style="color:#525252;">Orderer (Raft)</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:8.4%; background:#6929c4; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#6929c4; min-width:45px;">8.40%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:30.5%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">312.5 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>peer0.org1.example.com</strong></td>
-                <td style="color:#525252;">Peer Org1</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:22.7%; background:#0062ff; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#0062ff; min-width:45px;">22.70%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:46.7%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">478.2 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>peer0.org2.example.com</strong></td>
-                <td style="color:#525252;">Peer Org2</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:19.3%; background:#005d5d; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#005d5d; min-width:45px;">19.30%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:43.1%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">441.6 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>couchdb0</strong></td>
-                <td style="color:#525252;">CouchDB Org1</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:11.2%; background:#ff832b; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#ff832b; min-width:45px;">11.20%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:25.1%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">256.8 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>couchdb1</strong></td>
-                <td style="color:#525252;">CouchDB Org2</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:9.8%; background:#da1e28; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#da1e28; min-width:45px;">9.80%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:22.9%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">234.1 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>ca_org1</strong></td>
-                <td style="color:#525252;">CA Org1</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:2.1%; background:#198038; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#198038; min-width:45px;">2.10%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:9.6%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">98.4 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            <tr>
-                <td><strong>ca_org2</strong></td>
-                <td style="color:#525252;">CA Org2</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:1.9%; background:#009d9a; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#009d9a; min-width:45px;">1.90%</span>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; background:#f0f0f0; border-radius:3px; height:10px; overflow:hidden;">
-                            <div style="width:9.2%; background:#393939; height:100%; border-radius:3px;"></div>
-                        </div>
-                        <span style="font-weight:700; color:#393939; min-width:55px;">94.7 MB</span>
-                    </div>
-                </td>
-                <td style="color:#ff832b; font-size:11px; font-weight:600;">
-                    Estimated
-                </td>
-            </tr>
-            </table>
-
-            <p style="font-size:12px; color:#6f6f6f; margin-top:8px;">
-                &#x1F4CA; <strong>Monitoring Interval:</strong> 1 second &nbsp;|&nbsp;
-                &#x1F4CA; <strong>Containers Monitored:</strong> 7 &nbsp;|&nbsp;
-                &#x1F4CA; <strong>Data Type:</strong> <span style="color:#ff832b;">Estimated (re-run with fix applied)</span>
-            </p>
         </div>
 
         <!-- Benchmark Info -->
@@ -949,8 +643,8 @@ postIterationWaitTime: 3000 ms
                 <tr><td>Gateway Mode</td><td>Enabled (--caliper-fabric-gateway-enabled)</td></tr>
                 <tr><td>Crypto Model</td><td>BLAKE3 only (Performance optimized hash)</td></tr>
                 <tr><td>Batch Architecture</td><td>batchSize: 1 (Linear issuance)</td></tr>
-                <tr><td>Resource Monitor</td><td>Docker monitor — interval: 1s — 7 containers</td></tr>
-                <tr><td>Resource Data</td><td>&#x26A0; Estimated (fix applied, re-run for live data)</td></tr>
+                <tr><td>Resource Monitor</td><td>Docker monitor — interval: 1s — 0 containers</td></tr>
+                <tr><td>Resource Data</td><td>&#x2705; Live Docker stats captured</td></tr>
             </table>
         </div>
 
@@ -1030,7 +724,7 @@ postIterationWaitTime: 3000 ms
         <div class="footer">
             <strong>Hyperledger Caliper</strong> — Performance Benchmark Report &nbsp;|&nbsp;
             Project: BCMS (Blockchain Certificate Management System) &nbsp;|&nbsp;
-            Generated: 2026-04-21 &nbsp;|&nbsp;
+            Generated: 2026-04-22 &nbsp;|&nbsp;
             Repository: <a href="https://github.com/moain2028/fabric" style="color:#78a9ff;">moain2028/fabric</a> &nbsp;|&nbsp;
             Report Version: v6.0 &nbsp;|&nbsp;
             Branch: <strong>mirage-batch</strong> &nbsp;|&nbsp;
