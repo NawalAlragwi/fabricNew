@@ -1,30 +1,15 @@
 'use strict';
-
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
-/**
- * ══════════════════════════════════════════════════════════════════════════
- *  QueryAllCertificates Workload — BCMS Hybrid-Batch Benchmark (mirage-batch)
- * ══════════════════════════════════════════════════════════════════════════
- *
- *  Function signature (smartcontract_hybrid.go):
- *    QueryAllCertificates() ([]*Certificate, error)
- *
- *  readOnly:true — CouchDB rich query direct to peer, no orderer.
- *  Returns empty slice [] on empty ledger — NEVER returns Go error.
- *  Caliper counts SUCCESS for any non-error response (including empty []).
- * ══════════════════════════════════════════════════════════════════════════
- */
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         return this.sutAdapter.sendRequests({
-            contractId:        'basic',
+            contractId:        'bcms-hybrid',    // ✅ إصلاح contractId
             contractFunction:  'QueryAllCertificates',
-            contractArguments: ['20', ''], // PageSize: "20" (String for Go), Bookmark: ""
+            contractArguments: ['20', ''],        // ✅ pageSize + bookmark مطلوبان
             readOnly:          true,
         });
     }
-
     async cleanupWorkloadModule() {}
 }
 
