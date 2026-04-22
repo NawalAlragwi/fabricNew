@@ -57,7 +57,8 @@ test:
         50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2/NEON.
         BLAKE3 measured: 249,464 hashes/sec -> 4.01 us per hash.
         Fixed-rate 50 TPS, 60 s, 8 workers.
-      txDuration: 60
+      txDuration: 120
+      postIterationWaitTime: 10000
       rateControl:
         type: fixed-rate
         opts:
@@ -77,6 +78,7 @@ test:
         BLAKE3 re-hash on every verify call: 4.01 us overhead per tx.
         SIMD acceleration (AVX2/NEON) gives BLAKE3 clear advantage at high TPS.
       txDuration: 120
+      postIterationWaitTime: 10000
       rateControl:
         type: linear-rate
         opts:
@@ -95,6 +97,7 @@ test:
         I/O-bound operation — hash algorithm has no impact here.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 120
+      postIterationWaitTime: 10000
       rateControl:
         type: fixed-rate
         opts:
@@ -110,6 +113,7 @@ test:
         BLAKE3 re-hash during revocation integrity check.
         BLAKE3 tree-based parallelism maintains lower latency under ramp load.
       txDuration: 120
+      postIterationWaitTime: 10000
       rateControl:
         type: linear-rate
         opts:
