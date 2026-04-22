@@ -1,23 +1,23 @@
 # BCMS Four-Scenario Academic Benchmark Comparison
 
-> Generated: 2026-04-22 11:55:00  |  Caliper 0.6.0  |  Fabric 2.5.9
+> Generated: 2026-04-22 12:48:03  |  Caliper 0.6.0  |  Fabric 2.5.9
 
 **All 4 scenarios: 0% failure rate (100% success rate)**
 
 | Scenario | Hash | Batch | Workers | IssueCert TPS | Eff. TPS | Lat (ms) | Tx | Fail | Success% | TPS vs S1 |
 |:--|:--|:--:|:--:|--:|--:|--:|--:|--:|--:|--:|
-| **SHA-256 Baseline** | `sha256` | 1 | 4 | 46.5 | 46.5 | 7990 | 51,702 | **0** | **100.0%** | **+0.0%** |
-| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 46.5 | 46.5 | 7990 | 51,702 | **0** | **100.0%** | **+0.0%** |
-| **Hybrid SHA-256 + BLAKE3** | `hybrid` | 1 | 4 | 46.5 | 46.5 | 7990 | 51,702 | **0** | **100.0%** | **+0.0%** |
-| **Hybrid + Batching ×10** | `hybrid` | 10 | 8 | 46.5 | 465.0 | 7990 | 51,702 | **0** | **100.0%** | **+0.0%** |
+| **SHA-256 Baseline** | `sha256` | 1 | 4 | 37.4 | 37.4 | 29870 | 95,300 | **0** | **100.0%** | **+0.0%** |
+| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 37.4 | 37.4 | 29870 | 95,300 | **0** | **100.0%** | **+0.0%** |
+| **Hybrid SHA-256 + BLAKE3** | `hybrid` | 1 | 4 | 37.4 | 37.4 | 29870 | 95,300 | **0** | **100.0%** | **+0.0%** |
+| **Hybrid + Batching ×10** | `hybrid` | 10 | 8 | 37.4 | 374.0 | 29870 | 95,300 | **0** | **100.0%** | **+0.0%** |
 
 ## Key Improvement: S1 → S4
 
 | Metric | S1 | S4 | Change |
 |:--|--:|--:|--:|
-| IssueCert TPS | 46.5 | 46.5 | **+0.0%** |
-| Eff. Cert TPS | 46.5 | 465.0 | **+900.0%** |
-| Avg Latency (ms) | 7990 | 7990 | **-0.0%** |
+| IssueCert TPS | 37.4 | 37.4 | **+0.0%** |
+| Eff. Cert TPS | 37.4 | 374.0 | **+900.0%** |
+| Avg Latency (ms) | 29870 | 29870 | **-0.0%** |
 | Consensus/100 | 100 | 10 | **-90.0%** |
 | Failures | 0 | 0 | **0% maintained** |
 

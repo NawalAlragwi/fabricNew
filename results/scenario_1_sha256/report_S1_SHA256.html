@@ -177,16 +177,16 @@
 
         <div class="alert-success">
             &#x2705; <strong>Benchmark Complete — Zero Failures Achieved Across All 4 Rounds.</strong>
-            Total Transactions: <strong>25,851</strong> &nbsp;|&nbsp;
+            Total Transactions: <strong>47,650</strong> &nbsp;|&nbsp;
             Total Failures: <strong>0</strong> &nbsp;|&nbsp;
-            Peak Throughput: <strong>241.2 TPS</strong>
+            Peak Throughput: <strong>240.6 TPS</strong>
         </div>
 
         <!-- Overall Metric Cards -->
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">Total Successful Tx</div>
-                <div class="value succ-num">25,851</div>
+                <div class="value succ-num">47,650</div>
                 <div class="unit">transactions</div>
             </div>
             <div class="metric-card green">
@@ -196,12 +196,12 @@
             </div>
             <div class="metric-card purple">
                 <div class="label">Peak Throughput</div>
-                <div class="value tps-num">241.2</div>
+                <div class="value tps-num">240.6</div>
                 <div class="unit">TPS (VerifyCertificate)</div>
             </div>
             <div class="metric-card teal">
                 <div class="label">Avg Latency</div>
-                <div class="value lat-num">1.03 s</div>
+                <div class="value lat-num">2.11 s</div>
                 <div class="unit">across all rounds</div>
             </div>
         </div>
@@ -224,55 +224,55 @@
                 <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
                 <td class="succ-num">3,008</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">50.0</td>
-                <td class="lat-num">14.58</td>
-                <td class="lat-num">0.97</td>
-                <td class="lat-num">7.99</td>
-                <td class="tps-num">46.5</td>
+                <td class="tps-num">49.8</td>
+                <td class="lat-num">43.61</td>
+                <td class="lat-num">1.28</td>
+                <td class="lat-num">29.87</td>
+                <td class="tps-num">37.4</td>
             </tr>
             <tr>
                 <td>2</td>
                 <td><span class="badge-public">Public Read</span>VerifyCertificate</td>
-                <td class="succ-num">14,510</td>
+                <td class="succ-num">29,063</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">241.3</td>
-                <td class="lat-num">0.17</td>
-                <td class="lat-num">0.00</td>
-                <td class="lat-num">0.02</td>
-                <td class="tps-num">241.2</td>
+                <td class="tps-num">240.6</td>
+                <td class="lat-num">0.43</td>
+                <td class="lat-num">0.01</td>
+                <td class="lat-num">0.06</td>
+                <td class="tps-num">240.6</td>
             </tr>
             <tr>
                 <td>3</td>
                 <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
-                <td class="succ-num">3,008</td>
+                <td class="succ-num">6,008</td>
                 <td class="fail-zero">0</td>
                 <td class="tps-num">49.9</td>
-                <td class="lat-num">0.22</td>
+                <td class="lat-num">2.39</td>
                 <td class="lat-num">0.02</td>
-                <td class="lat-num">0.06</td>
+                <td class="lat-num">0.51</td>
                 <td class="tps-num">49.9</td>
             </tr>
             <tr>
                 <td>4</td>
                 <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
-                <td class="succ-num">5,325</td>
+                <td class="succ-num">9,571</td>
                 <td class="fail-zero">0</td>
-                <td class="tps-num">88.5</td>
-                <td class="lat-num">0.79</td>
-                <td class="lat-num">0.07</td>
-                <td class="lat-num">0.38</td>
-                <td class="tps-num">88.0</td>
+                <td class="tps-num">79.6</td>
+                <td class="lat-num">1.56</td>
+                <td class="lat-num">0.10</td>
+                <td class="lat-num">0.59</td>
+                <td class="tps-num">79.3</td>
             </tr>
             <tr style="background:#f0f8ff; font-weight:700;">
                 <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="succ-num"><strong>25,851</strong></td>
+                <td class="succ-num"><strong>47,650</strong></td>
                 <td class="fail-zero"><strong>0</strong></td>
                 <td colspan="4" style="color:#525252; font-size:11px;">4 rounds × 30s — 8 workers</td>
-                <td class="tps-num"><strong>avg 106.4</strong></td>
+                <td class="tps-num"><strong>avg 101.8</strong></td>
             </tr>
         </table>
         <p style="font-size:12px; color:#6f6f6f; margin-top:-8px;">
-            &#x2705; <strong>Total Success:</strong> 25,851 &nbsp;|&nbsp;
+            &#x2705; <strong>Total Success:</strong> 47,650 &nbsp;|&nbsp;
             &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
             &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span>
         </p>
@@ -305,11 +305,11 @@
                     <td>IssueCertificate</td>
                     <td class="succ-num">3,008</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">50.0</td>
-                    <td class="lat-num">14.58</td>
-                    <td class="lat-num">0.97</td>
-                    <td class="lat-num">7.99</td>
-                    <td class="tps-num">46.5</td>
+                    <td class="tps-num">49.8</td>
+                    <td class="lat-num">43.61</td>
+                    <td class="lat-num">1.28</td>
+                    <td class="lat-num">29.87</td>
+                    <td class="tps-num">37.4</td>
                 </tr>
             </table>
             <div class="charting">
@@ -328,7 +328,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [47.09,45.89,46.89,47.58,45.33,47.84,47.55],
+                        data: [38.07,36.78,36.58,37.43,37.07,37.47,37.48],
                         backgroundColor: "rgba(105,41,196,0.7)",
                         borderColor: "rgba(105,41,196,1)",
                         borderWidth: 1
@@ -341,7 +341,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [7.23,7.48,7.63,9,6.79,7.44,8.34],
+                        data: [28.96,27.25,31.78,28.68,30.94,33.43,25.41],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.9)",
                         borderWidth: 2,
@@ -385,13 +385,13 @@ workers:          8
                 </tr>
                 <tr>
                     <td>VerifyCertificate</td>
-                    <td class="succ-num">14,510</td>
+                    <td class="succ-num">29,063</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">241.3</td>
-                    <td class="lat-num">0.17</td>
-                    <td class="lat-num">0.00</td>
-                    <td class="lat-num">0.02</td>
-                    <td class="tps-num">241.2</td>
+                    <td class="tps-num">240.6</td>
+                    <td class="lat-num">0.43</td>
+                    <td class="lat-num">0.01</td>
+                    <td class="lat-num">0.06</td>
+                    <td class="tps-num">240.6</td>
                 </tr>
             </table>
             <div class="charting">
@@ -410,7 +410,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [239.74,247.15,241.89,244.89,246,237.44,234.42],
+                        data: [241.46,235.43,240.98,246.8,240.44,237.08,242.03],
                         backgroundColor: "rgba(0,93,93,0.7)",
                         borderColor: "rgba(0,93,93,1)",
                         borderWidth: 1
@@ -423,7 +423,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.02,0.02,0.02,0.02,0.02,0.02,0.02],
+                        data: [0.07,0.06,0.07,0.07,0.06,0.06,0.07],
                         backgroundColor: "rgba(0,93,93,0.1)",
                         borderColor: "rgba(0,93,93,0.9)",
                         borderWidth: 2,
@@ -467,12 +467,12 @@ workers:          8
                 </tr>
                 <tr>
                     <td>QueryAllCertificates</td>
-                    <td class="succ-num">3,008</td>
+                    <td class="succ-num">6,008</td>
                     <td class="fail-zero">0</td>
                     <td class="tps-num">49.9</td>
-                    <td class="lat-num">0.22</td>
+                    <td class="lat-num">2.39</td>
                     <td class="lat-num">0.02</td>
-                    <td class="lat-num">0.06</td>
+                    <td class="lat-num">0.51</td>
                     <td class="tps-num">49.9</td>
                 </tr>
             </table>
@@ -492,7 +492,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [49.28,51.16,48.82,48.51,51.07,50.62,48.9],
+                        data: [49.1,51.29,50.38,50.79,48.93,51.31,49.91],
                         backgroundColor: "rgba(0,98,255,0.7)",
                         borderColor: "rgba(0,98,255,1)",
                         borderWidth: 1
@@ -505,7 +505,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.05,0.05,0.06,0.06,0.05,0.06,0.05],
+                        data: [0.46,0.5,0.49,0.49,0.57,0.55,0.52],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.8)",
                         borderWidth: 2,
@@ -539,7 +539,7 @@ workers:          8
                 Org2 (or any authorised org) revokes a certificate, marking it <code>IsRevoked: true</code> on the ledger.<br>
             <strong>Zero-Failure Design:</strong> Idempotent — returns nil when cert not found OR already revoked.
             No spurious failures under concurrent load.<br>
-                <strong>Rate Control:</strong> fixed-rate @ 89 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+                <strong>Rate Control:</strong> fixed-rate @ 80 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
                 <tr>
@@ -549,13 +549,13 @@ workers:          8
                 </tr>
                 <tr>
                     <td>RevokeCertificate</td>
-                    <td class="succ-num">5,325</td>
+                    <td class="succ-num">9,571</td>
                     <td class="fail-zero">0</td>
-                    <td class="tps-num">88.5</td>
-                    <td class="lat-num">0.79</td>
-                    <td class="lat-num">0.07</td>
-                    <td class="lat-num">0.38</td>
-                    <td class="tps-num">88.0</td>
+                    <td class="tps-num">79.6</td>
+                    <td class="lat-num">1.56</td>
+                    <td class="lat-num">0.10</td>
+                    <td class="lat-num">0.59</td>
+                    <td class="tps-num">79.3</td>
                 </tr>
             </table>
             <div class="charting">
@@ -574,7 +574,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [86.1,89.38,85.6,90.19,89.06,85.62,85.48],
+                        data: [77,77.82,77.13,79.94,79.36,77.81,78.63],
                         backgroundColor: "rgba(36,161,72,0.7)",
                         borderColor: "rgba(36,161,72,1)",
                         borderWidth: 1
@@ -587,7 +587,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.37,0.32,0.4,0.4,0.35,0.32,0.32],
+                        data: [0.57,0.56,0.52,0.51,0.54,0.53,0.62],
                         backgroundColor: "rgba(36,161,72,0.1)",
                         borderColor: "rgba(36,161,72,0.9)",
                         borderWidth: 2,
@@ -604,7 +604,7 @@ contractFunction: 'RevokeCertificate'
 contractArguments: [certID]
 readOnly:         false
 invokerIdentity:  User1@org2.example.com
-rateControl:      fixed-rate @ 89 TPS
+rateControl:      fixed-rate @ 80 TPS
 txDuration:       30 s
 workers:          8
 postIterationWaitTime: 3000 ms

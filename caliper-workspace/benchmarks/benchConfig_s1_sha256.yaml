@@ -65,7 +65,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           batchSize: 1
-          payloadSize: 200000
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -74,12 +74,12 @@ test:
         S1 SHA-256 — Linear-rate 200->800 TPS verify (read-only, CPU-bound).
         SHA-256 re-hash on every verify call: 15.0 us overhead per tx.
         High TPS ramp exposes SHA-256 sequential bottleneck vs BLAKE3 SIMD.
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
           startingTps: 200
-          finishingTps: 400
+          finishingTps: 800
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -92,7 +92,7 @@ test:
         S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
         I/O-bound operation — hash algorithm has no impact here.
         Uses indexDocTypeIssueDate for optimized pagination.
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: fixed-rate
         opts:
@@ -107,7 +107,7 @@ test:
         S1 SHA-256 — Linear-rate ramp 50->200 TPS revocation (idempotent write).
         SHA-256 re-hash during revocation integrity check.
         Linear ramp exposes SHA-256 degradation under increasing load.
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
