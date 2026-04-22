@@ -255,6 +255,15 @@ verify_peers_healthy() {
     export CORE_PEER_MSPCONFIGPATH="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
     export CORE_PEER_ADDRESS=localhost:7051
 
+    # Check if containers are even running first
+    local exited_peers
+    exited_peers=$(docker ps -a --filter "status=exited" --format "{{.Names}}" | grep -E "peer0.org1|peer0.org2" || true)
+    if [ -n "$exited_peers" ]; then
+        warn "  Detected exited peers: ${exited_peers//$'\n'/ }. Starting them..."
+        docker start peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
+        sleep 10
+    fi
+
     local result
     result=$(peer chaincode query -C mychannel -n basic \
         -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>&1) && {
@@ -273,6 +282,12 @@ verify_peers_healthy() {
             return 0
         }
         warn "  Peer still not healthy — Caliper may see errors"
+    elif echo "$result" | grep -q "connection refused"; then
+        error "  Peer connection refused on 7051. Peer is likely down or starting."
+        info "  Attempting one-time peer start..."
+        docker start peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
+        sleep 15
+        return 0 # Try to proceed, Caliper has its own retries
     else
         warn "  Peer query failed: ${result:0:120}"
         warn "  Proceeding anyway — Caliper will report errors if peer is down"
@@ -725,11 +740,22 @@ detect_runtime_environment() {
     else
         warn "  Docker daemon not reachable — will use simulation"
     fi
-    if $DOCKER_OK && docker ps --format '{{.Names}}' 2>/dev/null | grep -q orderer; then
-        FABRIC_NETWORK_OK=true; log "  ✓ Fabric network running (orderer detected)"
+
+    # Check for both orderer and peers being RUNNING
+    local running_containers
+    running_containers=$(docker ps --format '{{.Names}}' 2>/dev/null || echo "")
+    
+    if $DOCKER_OK && echo "$running_containers" | grep -q "orderer" && \
+       echo "$running_containers" | grep -q "peer0.org1" && \
+       echo "$running_containers" | grep -q "peer0.org2"; then
+        FABRIC_NETWORK_OK=true; log "  ✓ Fabric network running (orderer and peers detected)"
+    elif $DOCKER_OK && docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "peer0.org1"; then
+        warn "  Fabric containers exist but peers are NOT running — will trigger setup/restart"
+        FABRIC_NETWORK_OK=false
     else
-        warn "  Fabric network not running — will use simulation"
+        warn "  Fabric network not running or incomplete — will use simulation"
     fi
+
     if [ -f "${ROOT_DIR}/caliper-workspace/node_modules/.bin/caliper" ]; then
         CALIPER_INSTALLED=true; log "  ✓ Caliper binary found"
     else
