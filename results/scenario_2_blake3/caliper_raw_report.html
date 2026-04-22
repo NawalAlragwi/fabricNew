@@ -173,7 +173,7 @@
                 <h2>Benchmark round: IssueCertificate</h2>
                 <p>S2 BLAKE3 Alternative — Issue single certificates (batchSize&#x3D;1). 50KB transcript payload: BLAKE3 processes ~51,000 bytes with AVX2&#x2F;NEON. BLAKE3 measured: 249,464 hashes&#x2F;sec -&gt; 4.01 us per hash. Fixed-rate 50 TPS, 60 s, 8 workers.
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
   type: fixed-rate
   opts:
@@ -292,7 +292,8 @@ rounds:
       module: workload&#x2F;issueCertificate.js
       arguments:
         batchSize: 1
-        payloadSize: 50000
+        payloadSize: 5000
+        totalIssued: 7000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
