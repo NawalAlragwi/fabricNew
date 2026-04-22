@@ -326,7 +326,7 @@ func (s *SmartContract) VerifyCertificate(
 	// RESEARCH STRESS SIMULATION: Since transcript is not stored in ledger (to avoid I/O bottleneck),
 	// we simulate the 50KB hashing overhead here to ensure the CPU-bound performance delta
 	// between SHA-256 and BLAKE3 remains visible during read rounds.
-	simulatedTranscript := strings.Repeat("X", 500000)
+	simulatedTranscript := strings.Repeat("X", 200000)
 	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, simulatedTranscript)
 	
 	isValid := (cert.CertHash == computed)
@@ -431,7 +431,7 @@ func (s *SmartContract) RevokeCertificate(
 	}
 
 	// RESEARCH STRESS SIMULATION: 50KB hashing during revocation
-	simulatedTranscript := strings.Repeat("X", 500000)
+	simulatedTranscript := strings.Repeat("X", 200000)
 	_, _ = ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, simulatedTranscript)
 
 	cert.IsRevoked = true

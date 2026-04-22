@@ -47,7 +47,7 @@ test:
     IDENTICAL config to S1-SHA256-v10 for fair comparison.
   workers:
     type: local
-    number: 16
+    number: 8
 
   rounds:
 
@@ -66,7 +66,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           batchSize: 1
-          payloadSize: 500000
+          payloadSize: 200000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -80,7 +80,7 @@ test:
         type: linear-rate
         opts:
           startingTps: 200
-          finishingTps: 1500
+          finishingTps: 400
       workload:
         module: workload/verifyCertificate.js
         arguments:
