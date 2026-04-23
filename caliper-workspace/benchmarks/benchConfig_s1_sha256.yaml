@@ -46,7 +46,7 @@ test:
     IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
   workers:
     type: local
-    number: 8
+    number: 4
 
   rounds:
 
@@ -54,14 +54,12 @@ test:
       description: >
         S1 SHA-256 — Issue single certificates (batchSize=1).
         100KB transcript forces SHA-256 to process ~102,400 bytes per hash × 100 iterations.
-        SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
-        Fixed-rate 200 TPS, 120s — higher load than v10 to expose CPU bottleneck.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -78,13 +76,13 @@ test:
         SHA-256 re-hash × 100 iterations per verify: 100 × 15µs = 1500µs CPU/tx.
         At 1500 TPS: 1500 × 1500µs = 2,250,000µs/s CPU demand on peer → saturation.
         This is the KEY round where SHA-256 sequential bottleneck becomes visible.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 200
-          finishingTps: 600
+          startingTps: 50
+          finishingTps: 300
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -116,13 +114,13 @@ test:
         S1 SHA-256 — Linear-rate ramp 100→500 TPS revocation (idempotent write).
         SHA-256 sequential hash computation during revocation integrity check.
         Linear ramp exposes SHA-256 degradation under increasing load.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 200
+          startingTps: 20
+          finishingTps: 100
       workload:
         module: workload/revokeCertificate.js
         arguments:

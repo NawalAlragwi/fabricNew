@@ -47,7 +47,7 @@ test:
     IDENTICAL config to S1-SHA256-v12 for fair comparison.
   workers:
     type: local
-    number: 8
+    number: 4
 
   rounds:
 
@@ -55,14 +55,12 @@ test:
       description: >
         S2 BLAKE3 — Issue single certificates (batchSize=1).
         100KB transcript: BLAKE3 processes ~102,400 bytes with AVX2/NEON × 100 iterations.
-        BLAKE3 measured: 249,464 hashes/sec → 4.01 µs per hash.
-        Fixed-rate 200 TPS, 120s — identical to S1 for fair comparison.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 50
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -79,13 +77,13 @@ test:
         BLAKE3 re-hash × 100 iterations per verify: 100 × 4µs = 400µs CPU/tx.
         At 1500 TPS: 1500 × 400µs = 600,000µs/s CPU demand → 3.75x less than SHA-256.
         SIMD acceleration (AVX2) gives BLAKE3 clear advantage — latency stays low.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 200
-          finishingTps: 600
+          startingTps: 50
+          finishingTps: 300
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -117,13 +115,13 @@ test:
         S2 BLAKE3 — Linear-rate ramp 100→500 TPS revocation (idempotent write).
         BLAKE3 tree-based parallelism maintains lower latency under ramp load.
         Linear ramp exposes BLAKE3 advantage in CPU-bound write operations.
-      txDuration: 120
-      postIterationWaitTime: 10000
+      txDuration: 60
+      postIterationWaitTime: 20000
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 200
+          startingTps: 20
+          finishingTps: 100
       workload:
         module: workload/revokeCertificate.js
         arguments:

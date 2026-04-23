@@ -102,8 +102,10 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org1"}
       - CORE_CHAINCODE_EXECUTETIMEOUT=300s
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
       - ../organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/etc/hyperledger/fabric
+      - ./docker/peercfg:/etc/hyperledger/peercfg
       - peer0.org1.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
@@ -147,8 +149,10 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org2"}
       - CORE_CHAINCODE_EXECUTETIMEOUT=300s
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
       - ../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com:/etc/hyperledger/fabric
+      - ./docker/peercfg:/etc/hyperledger/peercfg
       - peer0.org2.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start

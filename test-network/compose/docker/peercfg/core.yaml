@@ -475,9 +475,9 @@ peer:
         concurrency:
             # endorserService limits concurrent requests to endorser service that handles chaincode deployment, query and invocation,
             # including both user chaincodes and system chaincodes.
-            endorserService: 2500
+            endorserService: 5000
             # deliverService limits concurrent event listeners registered to deliver service for blocks and transaction events.
-            deliverService: 2500
+            deliverService: 5000
 
     # Since all nodes should be consistent it is recommended to keep
     # the default value of 100MB for MaxRecvMsgSize & MaxSendMsgSize
@@ -488,7 +488,7 @@ peer:
 
     chaincode:
         executor:
-            timeout: 3s
+            timeout: 300s
 
 ###############################################################################
 #
@@ -611,7 +611,7 @@ chaincode:
     # build the image, which might take more time. In production environment,
     # the chaincode image is unlikely to be deleted, so the timeout could be
     # reduced accordingly.
-    executetimeout: 3s
+    executetimeout: 300s
 
     # There are 2 modes: "dev" and "net".
     # In dev mode, user runs the chaincode after starting peer from

@@ -190,7 +190,7 @@ wait_for_chaincode_image() {
     local attempt=1
 
     while [ $attempt -le $MAX_RETRIES ]; do
-        log "  Warm-up attempt ${attempt}/${MAX_RETRIES} — querying QueryAllCertificates..."
+        log "  Warm-up attempt ${attempt}/${MAX_RETRIES} — querying QueryAllCertificates on ${CC_NAME:-basic}..."
 
         # Run query; capture output and exit code
         local result
@@ -211,7 +211,7 @@ wait_for_chaincode_image() {
             sleep 15
         else
             # Normal failure (image not built yet or peer starting up)
-            info "  Chaincode not ready yet: ${result:0:120}"
+            info "  Chaincode not ready yet (querying ${CC_NAME:-bcms-s1}): ${result:0:120}"
             sleep 10
         fi
 
@@ -265,7 +265,7 @@ verify_peers_healthy() {
     fi
 
     local result
-    result=$(peer chaincode query -C mychannel -n basic \
+    result=$(peer chaincode query -C mychannel -n "${CC_NAME:-basic}" \
         -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>&1) && {
         log "  ✓ Peer healthy — chaincode responds"
         return 0
@@ -276,7 +276,7 @@ verify_peers_healthy() {
         docker restart peer0.org1.example.com peer0.org2.example.com
         sleep 15
         # Retry once after restart
-        peer chaincode query -C mychannel -n basic \
+        peer chaincode query -C mychannel -n "${CC_NAME:-basic}" \
             -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>/dev/null && {
             log "  ✓ Peer healthy after restart"
             return 0
@@ -508,8 +508,10 @@ client:
   connection:
     timeout:
       peer:
-        endorser: '600'
-      orderer: '600'
+        endorser: '300'
+        eventHub: '300'
+        eventReg: '300'
+      orderer: '300'
 channels:
   mychannel:
     orderers:
@@ -564,6 +566,8 @@ client:
     timeout:
       peer:
         endorser: '300'
+        eventHub: '300'
+        eventReg: '300'
       orderer: '300'
 channels:
   mychannel:
@@ -602,7 +606,7 @@ CONN2EOF
 }
 
 generate_caliper_network_config() {
-    local PEER1_TLS_CERT="$1"; local PEER2_TLS_CERT="$2"; local ORDERER_TLS_CERT="$3"
+    local PEER1_TLS_CERT="$1"; local PEER2_TLS_CERT="$2"; local ORDERER_TLS_CERT="$3"; local CC_NAME="$4"
     mkdir -p "${ROOT_DIR}/caliper-workspace/networks"
 
     local ORG1_USER1_KEY ORG1_USER1_CERT ORG2_USER1_KEY ORG2_USER1_CERT
@@ -627,7 +631,8 @@ caliper:
 channels:
   - channelName: mychannel
     contracts:
-      - id: \${CC_NAME:-basic}
+      - id: ${CC_NAME:-basic}
+    eventWaitTime: 90
 
 organizations:
   - mspid: Org1MSP
@@ -818,14 +823,14 @@ run_real_caliper_scenario() {
         wait_for_chaincode_image
         # ── End FIX-C ──────────────────────────────────────────────────────
     else
-        warn "  SKIP_DEPLOY: skipping chaincode deployment, using existing 'basic' CC"
+        warn "  SKIP_DEPLOY: skipping chaincode deployment, using existing ${CC_NAME:-bcms-s1} CC"
     fi
 
     local PEER1_TLS_CERT PEER2_TLS_CERT ORDERER_TLS_CERT
     PEER1_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" -name "ca.crt" | grep "peer0.org1" | head -1)
     PEER2_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com" -name "ca.crt" | grep "peer0.org2" | head -1)
     ORDERER_TLS_CERT=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" -name "*.pem" | grep "tlsca" | head -1)
-    generate_caliper_network_config "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
+    generate_caliper_network_config "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}" "${cc_name}"
 
     cd "${ROOT_DIR}/caliper-workspace"
     [ -d "node_modules/@hyperledger/fabric-gateway" ] && \
