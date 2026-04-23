@@ -96,11 +96,11 @@ test:
         I/O-bound operation — hash algorithm has no impact here.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 120
-      postIterationWaitTime: 10000
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/queryAllCertificates.js
       txOptions:

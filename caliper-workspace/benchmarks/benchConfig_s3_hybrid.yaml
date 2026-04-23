@@ -55,11 +55,12 @@ test:
         S3 Hybrid Baseline — Issue single certificates (batchSize=1).
         Double-hash per tx: SHA-256(fields) + BLAKE3(fields).
         Fixed-rate 50 TPS, 60 s, 10 workers.
-      txDuration: 60
+      txDuration: 120
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 80
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -90,11 +91,12 @@ test:
         S3 Hybrid — Fixed-rate 50 TPS CouchDB rich query.
         Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
         Uses indexDocTypeIssueDate for optimized pagination.
-      txDuration: 60
+      txDuration: 120
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/queryAllCertificates.js
       txOptions:

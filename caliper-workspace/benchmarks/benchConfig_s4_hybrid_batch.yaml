@@ -52,11 +52,12 @@ test:
       description: >
         S4 Hybrid-Batch — Issue batch certificates (batchSize=10).
         Fixed-rate 50 TPS, 60 s, 10 workers.
-      txDuration: 60
+      txDuration: 120
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 80
       workload:
         module: workload/issueCertificateBatch.js
         arguments:
@@ -86,11 +87,12 @@ test:
     - label: QueryAllCertificates
       description: >
         S4 Hybrid-Batch — Fixed-rate 50 TPS CouchDB rich query.
-      txDuration: 60
+      txDuration: 120
+      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/queryAllCertificates.js
       txOptions:
