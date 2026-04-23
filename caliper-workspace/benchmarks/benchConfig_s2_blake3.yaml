@@ -8,9 +8,9 @@
 #  FIXES v12:
 #  ─────────────────────────────────────────────────────────────────────────
 #  FIX-#2: contractId: bcms-blake3 في كل round (بدل 'basic' المشترك)
-#  FIX-#3: IssueCertificate رُفع إلى 200 TPS fixed-rate
-#           VerifyCertificate: linear 500→1500 TPS (CPU saturation zone)
-#           RevokeCertificate: linear 100→500 TPS
+#  FIX-#3: IssueCertificate fixed-rate 80 TPS (Stabilized)
+#           VerifyCertificate: linear 50→600 TPS
+#           RevokeCertificate: linear 20→100 TPS
 #
 #  FAIR COMPARISON POLICY:
 #  ─────────────────────────────────────────────────────────────────────────
@@ -40,10 +40,10 @@ test:
     Chaincode: bcms-blake3 (deployed independently from S1).
     Payload: 100KB transcript per certificate.
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: fixed-rate 200 TPS, 120s.
-    VerifyCertificate: linear-rate 500→1500 TPS (CPU saturation stress test).
-    RevokeCertificate: linear-rate 100→500 TPS (write ramp stress test).
-    QueryAllCertificates: fixed-rate 20 TPS (I/O-bound, stable).
+    IssueCertificate: fixed-rate 80 TPS, 60s.
+    VerifyCertificate: linear-rate 50→600 TPS.
+    RevokeCertificate: linear-rate 20→100 TPS.
+    QueryAllCertificates: fixed-rate 20 TPS.
     IDENTICAL config to S1-SHA256-v12 for fair comparison.
   workers:
     type: local
@@ -60,7 +60,7 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 80
       workload:
         module: workload/issueCertificate.js
         arguments:

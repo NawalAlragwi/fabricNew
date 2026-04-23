@@ -6,7 +6,7 @@
 services:
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     environment:
@@ -15,12 +15,12 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_test
       - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
-      - ./peercfg:/etc/hyperledger/peercfg
+      - ../../../config:/etc/hyperledger/peercfg
       - ${DOCKER_SOCK}:/host/var/run/docker.sock
 
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     environment:
@@ -29,5 +29,5 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_test
       - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
-      - ./peercfg:/etc/hyperledger/peercfg
+      - ../../../config:/etc/hyperledger/peercfg
       - ${DOCKER_SOCK}:/host/var/run/docker.sock

@@ -304,6 +304,11 @@ function networkUp() {
     createOrgs
   fi
 
+  # Ensure core.yaml is present in the Peer's config path
+  infoln "Injecting core.yaml into peer directories..."
+  cp ../config/core.yaml organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/core.yaml
+  cp ../config/core.yaml organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/core.yaml
+
   COMPOSE_FILES="-f compose/${COMPOSE_FILE_BASE} -f compose/${CONTAINER_CLI}/${CONTAINER_CLI}-${COMPOSE_FILE_BASE}"
 
   if [ "${DATABASE}" == "couchdb" ]; then

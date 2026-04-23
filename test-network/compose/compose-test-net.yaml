@@ -16,7 +16,7 @@ services:
 
   orderer.example.com:
     container_name: orderer.example.com
-    image: hyperledger/fabric-orderer:latest
+    image: hyperledger/fabric-orderer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
@@ -67,7 +67,7 @@ services:
 
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
@@ -76,7 +76,7 @@ services:
     # Full CPU access is MANDATORY: any cpu_quota would cap hash throughput,
     # making infrastructure — not the hash algorithm — the bottleneck.
     environment:
-      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
       - FABRIC_LOGGING_SPEC=INFO
       # GOMAXPROCS=0 → Go runtime auto-detects ALL host CPUs.
       # Endorsement of 10-cert batch TX requires parallel SHA-256/BLAKE3
@@ -105,7 +105,6 @@ services:
       - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
       - ../organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/etc/hyperledger/fabric
-      - ./docker/peercfg:/etc/hyperledger/peercfg
       - peer0.org1.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
@@ -117,14 +116,14 @@ services:
 
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
     # peer0.org2 handles Org2MSP RevokeCertificate (write) and all read queries.
     # Under S4 1000-TPS read rounds, CouchDB-backed queries require full CPU.
     environment:
-      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
       - FABRIC_LOGGING_SPEC=INFO
       # GOMAXPROCS=0 → auto-detect all host CPUs.
       # Revocation writes at 1000 TPS need full goroutine scheduling capacity.
@@ -152,7 +151,6 @@ services:
       - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
     volumes:
       - ../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com:/etc/hyperledger/fabric
-      - ./docker/peercfg:/etc/hyperledger/peercfg
       - peer0.org2.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
