@@ -127,7 +127,7 @@
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v12</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle-Damgard). Chaincode: bcms-sha256 (deployed independently from S2). Payload: 100KB transcript per certificate. batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: fixed-rate 200 TPS, 120s. VerifyCertificate: linear-rate 500→1500 TPS (CPU saturation stress test). RevokeCertificate: linear-rate 100→500 TPS (write ramp stress test). QueryAllCertificates: fixed-rate 20 TPS (I&#x2F;O-bound, stable). IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle-Damgard). Chaincode: bcms-sha256 (deployed independently from S2). Payload: 100KB transcript per certificate. batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: fixed-rate 80 TPS, 60s. VerifyCertificate: linear-rate 50→600 TPS. RevokeCertificate: linear-rate 20→100 TPS. QueryAllCertificates: fixed-rate 20 TPS. IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -156,16 +156,16 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>3004</td> <td>0</td> <td>50.0</td> <td>3.40</td> <td>0.19</td> <td>0.92</td> <td>49.8</td>
+                         <td>IssueCertificate</td> <td>7</td> <td>2969</td> <td>49.4</td> <td>58.32</td> <td>8.78</td> <td>33.99</td> <td>23.5</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>5744</td> <td>609</td> <td>106.0</td> <td>60.08</td> <td>0.08</td> <td>39.94</td> <td>55.8</td>
+                         <td>VerifyCertificate</td> <td>3691</td> <td>0</td> <td>61.3</td> <td>18.09</td> <td>0.03</td> <td>1.61</td> <td>61.2</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>2404</td> <td>0</td> <td>20.0</td> <td>0.99</td> <td>0.11</td> <td>0.22</td> <td>20.0</td>
+                         <td>QueryAllCertificates</td> <td>1425</td> <td>979</td> <td>20.0</td> <td>59.59</td> <td>0.27</td> <td>23.10</td> <td>15.8</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>1165</td> <td>0</td> <td>4.2</td> <td>240.60</td> <td>0.11</td> <td>17.48</td> <td>4.2</td>
+                         <td>RevokeCertificate</td> <td>2140</td> <td>0</td> <td>35.7</td> <td>2.68</td> <td>0.12</td> <td>0.63</td> <td>35.4</td>
                     </tr>
                 </table>
             </div>
@@ -185,7 +185,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>3004</td> <td>0</td> <td>50.0</td> <td>3.40</td> <td>0.19</td> <td>0.92</td> <td>49.8</td>
+                                     <td>IssueCertificate</td> <td>7</td> <td>2969</td> <td>49.4</td> <td>58.32</td> <td>8.78</td> <td>33.99</td> <td>23.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -208,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>5744</td> <td>609</td> <td>106.0</td> <td>60.08</td> <td>0.08</td> <td>39.94</td> <td>55.8</td>
+                                     <td>VerifyCertificate</td> <td>3691</td> <td>0</td> <td>61.3</td> <td>18.09</td> <td>0.03</td> <td>1.61</td> <td>61.2</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -230,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>2404</td> <td>0</td> <td>20.0</td> <td>0.99</td> <td>0.11</td> <td>0.22</td> <td>20.0</td>
+                                     <td>QueryAllCertificates</td> <td>1425</td> <td>979</td> <td>20.0</td> <td>59.59</td> <td>0.27</td> <td>23.10</td> <td>15.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -253,7 +253,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>1165</td> <td>0</td> <td>4.2</td> <td>240.60</td> <td>0.11</td> <td>17.48</td> <td>4.2</td>
+                                     <td>RevokeCertificate</td> <td>2140</td> <td>0</td> <td>35.7</td> <td>2.68</td> <td>0.12</td> <td>0.63</td> <td>35.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -268,10 +268,9 @@ description: &gt;
   SHA-256 (crypto&#x2F;sha256, sequential Merkle-Damgard). Chaincode: bcms-sha256
   (deployed independently from S2). Payload: 100KB transcript per certificate.
   batchSize: 1 (single certificate per Fabric transaction). IssueCertificate:
-  fixed-rate 200 TPS, 120s. VerifyCertificate: linear-rate 500→1500 TPS (CPU
-  saturation stress test). RevokeCertificate: linear-rate 100→500 TPS (write
-  ramp stress test). QueryAllCertificates: fixed-rate 20 TPS (I&#x2F;O-bound,
-  stable). IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
+  fixed-rate 80 TPS, 60s. VerifyCertificate: linear-rate 50→600 TPS.
+  RevokeCertificate: linear-rate 20→100 TPS. QueryAllCertificates: fixed-rate 20
+  TPS. IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
 workers:
   type: local
   number: 4
