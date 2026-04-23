@@ -100,7 +100,7 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         }
 
         const request = {
-            contractId:        'basic',
+            contractId:        this.roundArguments.contractId || 'bcms-sha256',
             contractFunction:  'RevokeCertificate',
             contractArguments: [certID],
             readOnly:          false,

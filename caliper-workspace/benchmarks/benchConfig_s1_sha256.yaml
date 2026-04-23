@@ -1,20 +1,20 @@
 # ============================================================================
-#  BCMS — Scenario S1: SHA-256 Baseline  (v10.0 — OPTIMIZED FAIR COMPARISON)
+#  BCMS — Scenario S1: SHA-256 Baseline  (v12.0 — FIXED ISOLATED CHAINCODE)
 #  Hash algorithm : SHA-256 (crypto/sha256 — sequential, no SIMD)
+#  Chaincode ID   : bcms-sha256  ← مستقل عن S2 تماماً
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 8 (reduced to prevent queue buildup in IssueCertificate)
+#  Workers        : 8
 #
-#  CHANGES from v9:
+#  FIXES v12:
 #  ─────────────────────────────────────────────────────────────────────────
-#  Workers        : 16 -> 8 (prevents Fabric queue buildup)
-#  IssueCertificate : fixed-rate 50 TPS + 50KB (unchanged)
-#  VerifyCertificate: linear-rate 200->800 TPS (unchanged - BLAKE3 wins here)
-#  RevokeCertificate: linear-rate 50->200 TPS (unchanged - BLAKE3 wins here)
-#  QueryAllCertificates: fixed-rate 50 TPS (unchanged)
+#  FIX-#2: contractId: bcms-sha256 في كل round (بدل 'basic' المشترك)
+#  FIX-#3: IssueCertificate رُفع إلى 200 TPS fixed-rate
+#           VerifyCertificate: linear 500→1500 TPS (CPU saturation zone)
+#           RevokeCertificate: linear 100→500 TPS
 #
 #  FAIR COMPARISON POLICY:
 #  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters IDENTICAL to S2-BLAKE3-v10 except chaincode deployed.
+#  ALL parameters IDENTICAL to S2-BLAKE3-v12 except chaincode ID.
 # ============================================================================
 monitors:
   resource:
@@ -32,18 +32,18 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s1-sha256-baseline-v10
+  name: bcms-s1-sha256-baseline-v12
   description: >
-    Scenario S1 — SHA-256 Baseline (v10.0 Optimized Fair Comparison).
+    Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS).
     Hash: SHA-256 (crypto/sha256, sequential Merkle-Damgard).
-    Payload: 50KB transcript per certificate.
+    Chaincode: bcms-sha256 (deployed independently from S2).
+    Payload: 100KB transcript per certificate.
     batchSize: 1 (single certificate per Fabric transaction).
-    Workers reduced to 8 to prevent Fabric queue buildup in IssueCertificate.
-    IssueCertificate: fixed-rate 50 TPS, 60 s.
-    VerifyCertificate: linear-rate 200->800 TPS (CPU-bound stress test).
-    RevokeCertificate: linear-rate 50->200 TPS (write ramp stress test).
-    QueryAllCertificates: fixed-rate 50 TPS (I/O-bound, stable).
-    IDENTICAL config to S2-BLAKE3-v10 for fair comparison.
+    IssueCertificate: fixed-rate 200 TPS, 120s.
+    VerifyCertificate: linear-rate 500→1500 TPS (CPU saturation stress test).
+    RevokeCertificate: linear-rate 100→500 TPS (write ramp stress test).
+    QueryAllCertificates: fixed-rate 20 TPS (I/O-bound, stable).
+    IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
   workers:
     type: local
     number: 8
@@ -52,47 +52,50 @@ test:
 
     - label: IssueCertificate
       description: >
-        S1 SHA-256 Baseline — Issue single certificates (batchSize=1).
-        50KB transcript payload forces SHA-256 to process ~51,000 bytes per hash.
-        SHA-256 measured: 66,653 hashes/sec -> 15.0 us per hash.
-        Fixed-rate 50 TPS, 60 s, 8 workers.
+        S1 SHA-256 — Issue single certificates (batchSize=1).
+        100KB transcript forces SHA-256 to process ~102,400 bytes per hash × 100 iterations.
+        SHA-256 measured: 66,653 hashes/sec → 15.0 µs per hash.
+        Fixed-rate 200 TPS, 120s — higher load than v10 to expose CPU bottleneck.
       txDuration: 120
       postIterationWaitTime: 10000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 100
       workload:
         module: workload/issueCertificate.js
         arguments:
+          contractId: bcms-s1
           batchSize: 1
-          payloadSize: 5000
-          totalIssued: 7000
+          payloadSize: 100000
+          totalIssued: 25000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — Linear-rate 200->800 TPS verify (read-only, CPU-bound).
-        SHA-256 re-hash on every verify call: 15.0 us overhead per tx.
-        High TPS ramp exposes SHA-256 sequential bottleneck vs BLAKE3 SIMD.
+        S1 SHA-256 — Linear-rate 500→1500 TPS verify (CPU-bound stress test).
+        SHA-256 re-hash × 100 iterations per verify: 100 × 15µs = 1500µs CPU/tx.
+        At 1500 TPS: 1500 × 1500µs = 2,250,000µs/s CPU demand on peer → saturation.
+        This is the KEY round where SHA-256 sequential bottleneck becomes visible.
       txDuration: 120
       postIterationWaitTime: 10000
       rateControl:
         type: linear-rate
         opts:
           startingTps: 200
-          finishingTps: 800
+          finishingTps: 600
       workload:
         module: workload/verifyCertificate.js
         arguments:
-          totalIssued: 7000
+          contractId: bcms-s1
+          totalIssued: 25000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
+        S1 SHA-256 — Fixed-rate 20 TPS CouchDB rich query.
         I/O-bound operation — hash algorithm has no impact here.
         Uses indexDocTypeIssueDate for optimized pagination.
       txDuration: 120
@@ -103,13 +106,15 @@ test:
           tps: 20
       workload:
         module: workload/queryAllCertificates.js
+        arguments:
+          contractId: bcms-s1
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Linear-rate ramp 50->200 TPS revocation (idempotent write).
-        SHA-256 re-hash during revocation integrity check.
+        S1 SHA-256 — Linear-rate ramp 100→500 TPS revocation (idempotent write).
+        SHA-256 sequential hash computation during revocation integrity check.
         Linear ramp exposes SHA-256 degradation under increasing load.
       txDuration: 120
       postIterationWaitTime: 10000
@@ -121,6 +126,7 @@ test:
       workload:
         module: workload/revokeCertificate.js
         arguments:
-          totalIssued: 3000
+          contractId: bcms-s1
+          totalIssued: 10000
       txOptions:
         invokerIdentity: User1@org1.example.com

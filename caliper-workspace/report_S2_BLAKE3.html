@@ -149,7 +149,7 @@
         <ul>
             <h3>&nbsp;Network Config</h3>
             <li>Channel: mychannel</li>
-            <li>Chaincode: <strong>bcms-hybrid</strong></li>
+            <li>Chaincode: <strong>basic</strong></li>
             <li>Branch: <strong style="color:#8a3ffc;">blake3-optimization</strong></li>
             <li>Crypto: <span style="font-size:11px;">SHA-256 + BLAKE3</span></li>
             <li>Orgs: Org1 + Org2</li>
@@ -171,7 +171,7 @@
         <p style="color:#525252; font-size:14px; margin-top:-4px;">
             Generated: <strong>2026-04-23</strong> &nbsp;|&nbsp;
             DLT: <strong>Hyperledger Fabric 2.5</strong> &nbsp;|&nbsp;
-            Chaincode: <strong>bcms-hybrid (BCMS Certificate System)</strong> &nbsp;|&nbsp;
+            Chaincode: <strong>basic (BCMS Certificate System)</strong> &nbsp;|&nbsp;
             Channel: <strong>mychannel</strong>
         </p>
 
@@ -287,12 +287,8 @@
                 <span class="badge-success">Fail = 0 ✓</span>
             </div>
             <div class="round-desc">
-                Org1 issues a new certificate to the blockchain ledger with hybrid crypto.
-            The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
-            <strong>Hybrid Crypto:</strong> <code>certHash = SHA-256(fields)</code> stored on-chain as primary validator.
-            <code>blake3Hash = BLAKE3(fields)</code> stored as advisory integrity proof (off-chain computation).<br>
-            <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
-            when Caliper retries under load. Each worker uses unique key <code>CERT_{worker}_{index}</code> → zero MVCC conflicts.<br>
+                Org1 issues a new certificate using <strong>BLAKE3</strong> (SIMD-accelerated).<br>
+                <strong>Crypto:</strong> <code>certHash = BLAKE3(fields)</code> validated on-chain (100x magnification loop).<br>
                 <strong>Rate Control:</strong> fixed-rate @ 50 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
@@ -328,7 +324,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [49.23,49.43,48.42,49.92,51.25,49.05,50.84],
+                        data: [50.29,50.86,50.31,48.87,48.61,48.34,50.59],
                         backgroundColor: "rgba(105,41,196,0.7)",
                         borderColor: "rgba(105,41,196,1)",
                         borderWidth: 1
@@ -341,7 +337,7 @@
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.31,0.38,0.33,0.3,0.33,0.38,0.33],
+                        data: [0.33,0.36,0.37,0.37,0.3,0.32,0.31],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.9)",
                         borderWidth: 2,
@@ -372,9 +368,8 @@ workers:          8
                 <span class="badge-success">Fail = 0 ✓</span>
             </div>
             <div class="round-desc">
-                Any organisation can verify a certificate's authenticity by comparing its stored SHA-256 hash.<br>
-            <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
-            queries go directly to peers. Chaincode returns <code>false</code> (not error) when cert not found.<br>
+                Authenticity verification using <strong>BLAKE3</strong> re-hash on-chain.<br>
+                This stress test measures the CPU overhead of BLAKE3 during read-only queries at high TPS.<br>
                 <strong>Rate Control:</strong> fixed-rate @ 301 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
             </div>
             <table>
@@ -410,7 +405,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [293.07,294.83,304.09,295.73,298.77,308.16,292.86],
+                        data: [309.98,306.05,307.82,301,300.4,307.86,298.64],
                         backgroundColor: "rgba(0,93,93,0.7)",
                         borderColor: "rgba(0,93,93,1)",
                         borderWidth: 1
@@ -423,7 +418,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.12,0.1,0.1,0.13,0.12,0.1,0.13],
+                        data: [0.09,0.09,0.1,0.12,0.1,0.1,0.12],
                         backgroundColor: "rgba(0,93,93,0.1)",
                         borderColor: "rgba(0,93,93,0.9)",
                         borderWidth: 2,
@@ -437,7 +432,7 @@ workers:          8
                 <pre>
 contractId:       'bcms-hybrid'
 contractFunction: 'VerifyCertificate'
-contractArguments: [certID, certHash]   // SHA-256 — matches IssueCertificate
+contractArguments: [certID, certHash]
 readOnly:         true
 invokerIdentity:  User1@org1.example.com
 rateControl:      fixed-rate @ 301 TPS
@@ -492,7 +487,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [19.93,19.41,20.27,19.82,20.36,20.41,19.7],
+                        data: [20.42,20.09,19.74,19.47,19.45,19.88,20.38],
                         backgroundColor: "rgba(0,98,255,0.7)",
                         borderColor: "rgba(0,98,255,1)",
                         borderWidth: 1
@@ -505,7 +500,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.05,0.05,0.05,0.05,0.05,0.05,0.06],
+                        data: [0.05,0.05,0.05,0.05,0.05,0.05,0.04],
                         backgroundColor: "rgba(0,98,255,0.1)",
                         borderColor: "rgba(0,98,255,0.8)",
                         borderWidth: 2,
@@ -574,7 +569,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Throughput (TPS)",
-                        data: [89,86.41,89.83,90.44,90.09,85.87,86.04],
+                        data: [87.24,85.49,85.66,88.35,90.66,86.52,85.92],
                         backgroundColor: "rgba(36,161,72,0.7)",
                         borderColor: "rgba(36,161,72,1)",
                         borderWidth: 1
@@ -587,7 +582,7 @@ workers:          8
                     labels: ["0s","5s","10s","15s","20s","25s","30s"],
                     datasets: [{
                         label: "Avg Latency (s)",
-                        data: [0.36,0.37,0.43,0.44,0.35,0.36,0.43],
+                        data: [0.39,0.43,0.41,0.39,0.4,0.33,0.41],
                         backgroundColor: "rgba(36,161,72,0.1)",
                         borderColor: "rgba(36,161,72,0.9)",
                         borderWidth: 2,
@@ -633,7 +628,7 @@ postIterationWaitTime: 3000 ms
                 <tr><td>Benchmark Name</td><td>bcms-hybrid-batch-benchmark-v5</td></tr>
                 <tr><td>DLT</td><td>Hyperledger Fabric 2.5</td></tr>
                 <tr><td>Channel</td><td>mychannel</td></tr>
-                <tr><td>Chaincode ID</td><td>bcms-hybrid</td></tr>
+                <tr><td>Chaincode ID</td><td>basic</td></tr>
                 <tr><td>Chaincode Language</td><td>Go (fabric-contract-api-go v2)</td></tr>
                 <tr><td>Workers</td><td>8 (local)</td></tr>
                 <tr><td>Total Rounds</td><td>4</td></tr>

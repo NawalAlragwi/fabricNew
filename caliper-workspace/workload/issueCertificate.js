@@ -5,15 +5,17 @@ const crypto = require('crypto');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  IssueCertificate Workload — BCMS Hybrid-Batch Benchmark  (mirage-batch)
+ *  IssueCertificate Workload — BCMS S1/S2 Benchmark (SHA-256 & BLAKE3)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Target chaincode: chaincode-bcms/hybrid-batch (deployed as bcms-hybrid)
+ *  Target chaincode: bcms-sha256 (S1) or bcms-blake3 (S2)
+ *  Chaincode ID is injected dynamically via roundArguments.contractId.
  *
- *  Function signature (smartcontract_hybrid.go):
+ *  Function signature (smartcontract_sha256.go / smartcontract_blake3.go):
  *    IssueCertificate(
- *      id, studentId, studentName, degree, issuer, issueDate,
- *      certHash, blake3Hash, signature, batchId
+ *      id, studentID, studentName, degree, issuer, issueDate,   // 6
+ *      certHash, blake3Hash, signature, batchID,               // 4
+ *      transcript                                               // 1 ← 11th arg
  *    ) error
  *
  *  MVCC Safety:
@@ -21,16 +23,16 @@ const crypto = require('crypto');
  *    - No two workers ever share a key → zero phantom-read conflicts
  *    - Idempotent: duplicate ID returns nil (not error)
  *
- *  Hybrid Crypto (client-side):
- *    certHash   = SHA-256(studentId|studentName|degree|issuer|issueDate)
- *    blake3Hash = simulated BLAKE3 via SHA-256(SHA-256(fields)) as placeholder
- *                 In production, use a real BLAKE3 library (e.g. @noble/hashes)
- *                 For benchmarking purposes this is sufficient — the chaincode
- *                 stores blake3Hash as advisory metadata and does NOT validate it.
+ *  Payload & Hashing:
+ *    transcriptPayload = 'X'.repeat(payloadSize)  [default: 100KB]
+ *    certHash   = SHA-256(studentId|studentName|degree|issuer|issueDate|transcript)
+ *                 ← transcript IS included so the hash covers the full payload
+ *    blake3Hash = SHA-256(certHash) as a placeholder (advisory, not validated on-chain)
  *
- *  Batch Design:
- *    batchId groups certs by worker + round for research paper traceability.
- *    On-chain each cert is still an independent state write (MVCC-safe).
+ *  On-chain stress:
+ *    The chaincode re-computes ComputeCertHash × 100 iterations using the full
+ *    transcript → 100 × 15µs (SHA-256) or 100 × 4µs (BLAKE3) per transaction.
+ *    This amplification makes the CPU difference visible in Fabric latency.
  * ══════════════════════════════════════════════════════════════════════════
  */
 class IssueCertificateWorkload extends WorkloadModuleBase {
@@ -85,11 +87,11 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
 
         const request = {
-            contractId: 'basic',
+            contractId: this.roundArguments.contractId || 'bcms-sha256',
             contractFunction: 'IssueCertificate',
-            // Args MUST match Go func signature order exactly:
-            // (id, studentId, studentName, degree, issuer, issueDate,
-            //  certHash, blake3Hash, signature, batchId)
+            // 11 args — MUST match Go func signature exactly:
+            // (id, studentID, studentName, degree, issuer, issueDate,
+            //  certHash, blake3Hash, signature, batchID, transcript)
             contractArguments: [
                 certID,
                 studentID,

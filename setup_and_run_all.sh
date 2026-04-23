@@ -196,7 +196,7 @@ wait_for_chaincode_image() {
         local result
         result=$(peer chaincode query \
             -C mychannel \
-            -n basic \
+            -n "${CC_NAME:-basic}" \
             -c '{"Args":["QueryAllCertificates", "20", ""]}' \
             2>&1) && {
             log "  ✓ Chaincode responded on attempt ${attempt}"
@@ -312,10 +312,13 @@ setup_fabric_network() {
 
     # Determine which chaincode to deploy
     local cc_to_deploy="chaincode-bcms/hybrid-batch"
+    local cc_name="basic"
     if [ -n "${SCENARIO_NUM:-}" ]; then
         cc_to_deploy="${SCENARIO_CHAINCODE[$SCENARIO_NUM]}"
+        cc_name="bcms-s${SCENARIO_NUM}"
     fi
-    info "Selected chaincode for setup: ${cc_to_deploy}"
+    export CC_NAME="$cc_name"
+    info "Selected chaincode for setup: ${cc_to_deploy} (ID: ${cc_name})"
 
     if [ ! -d "bin" ] || [ ! -f "bin/peer" ]; then
         info "Downloading Hyperledger Fabric binaries v2.5.9..."
@@ -382,7 +385,7 @@ setup_fabric_network() {
     export GO111MODULE="on"
 
     ./network.sh deployCC \
-        -ccn basic \
+        -ccn "${CC_NAME}" \
         -ccp "${ROOT_DIR}/${cc_to_deploy}" \
         -ccl go \
         -c mychannel \
@@ -410,7 +413,7 @@ setup_fabric_network() {
         --ordererTLSHostnameOverride orderer.example.com \
         --tls \
         --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
-        -C mychannel -n basic \
+        -C mychannel -n "${CC_NAME}" \
         --peerAddresses localhost:7051 \
         --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
         --peerAddresses localhost:9051 \
@@ -624,7 +627,7 @@ caliper:
 channels:
   - channelName: mychannel
     contracts:
-      - id: basic
+      - id: \${CC_NAME:-basic}
 
 organizations:
   - mspid: Org1MSP
@@ -780,10 +783,12 @@ run_real_caliper_scenario() {
     local key="${SCENARIO_KEY[$n]}"
     local sdir="${ROOT_DIR}/results/${key}"
     local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"
+    local cc_name="bcms-s${n}"
+    export CC_NAME="$cc_name"
     local benchcfg="${SCENARIO_BENCHCONFIG[$n]}"
     local batchsize="${SCENARIO_BATCHSIZE[$n]}"
 
-    log "  ── REAL CALIPER MODE ── deploying ${SCENARIO_CHAINCODE[$n]} for scenario ${n}"
+    log "  ── REAL CALIPER MODE ── deploying ${SCENARIO_CHAINCODE[$n]} as ${cc_name} for scenario ${n}"
 
     export GOFLAGS="-mod=mod"; export GOWORK="off"
     export GO111MODULE="on"; export GOPROXY="https://proxy.golang.org,direct"
@@ -798,7 +803,7 @@ run_real_caliper_scenario() {
         log "  Re-deploying chaincode for scenario ${n}: ${SCENARIO_CHAINCODE[$n]}"
         cd "${ROOT_DIR}/test-network"
         ./network.sh deployCC \
-            -ccn basic \
+            -ccn "${cc_name}" \
             -ccp "${cc_path}" \
             -ccl go \
             -c mychannel \

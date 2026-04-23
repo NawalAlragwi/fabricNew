@@ -108,8 +108,14 @@ func ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, tr
 	return fmt.Sprintf("%x", h)
 }
 
+// ComputeCertHash is the BLAKE3 hash entry point
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
-	return ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, transcript), HashModeBLAKE3
+	var hash string
+	// MAGNIFICATION: Run 100 times to make CPU difference visible in Fabric latency
+	for i := 0; i < 100; i++ {
+		hash = ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, transcript)
+	}
+	return hash, HashModeBLAKE3
 }
 
 // ─── Identity Helpers ────────────────────────────────────────────────────────

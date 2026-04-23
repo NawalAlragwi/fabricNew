@@ -48,19 +48,19 @@ let OUTPUT_REPORT   = process.argv[3]; // Will be auto-set if empty
 
 // ─── Initial Metadata ────────────────────────────────────────────────────────
 const BENCHMARK_META = {
-    title:       'BCMS Hybrid-Batch Certificate Benchmark',
+    title:       'BCMS Certificate Benchmark',
     version:     'v6.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
-    chaincode:   'bcms-hybrid',
+    chaincode:   'basic',
     chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
     workers:     8,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
     branch:      'mirage-batch',
-    crypto:      'Hybrid SHA-256 (on-chain) + BLAKE3 (advisory off-chain)',
-    batching:    'MVCC-safe — each cert at independent state key',
+    crypto:      'Algorithm-specific',
+    batching:    'Scenario-specific',
 };
 
 // ─── Scenario Detection ──────────────────────────────────────────────────────
@@ -127,12 +127,14 @@ const ROUND_META = {
         emoji: '1',
         badge: 'badge-org1',
         badgeText: 'Org1 RBAC — Write',
-        description: `Org1 issues a new certificate to the blockchain ledger with hybrid crypto.
-            The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
-            <strong>Hybrid Crypto:</strong> <code>certHash = SHA-256(fields)</code> stored on-chain as primary validator.
-            <code>blake3Hash = BLAKE3(fields)</code> stored as advisory integrity proof (off-chain computation).<br>
-            <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
-            when Caliper retries under load. Each worker uses unique key <code>CERT_{worker}_{index}</code> → zero MVCC conflicts.`,
+        description: function() {
+            if (BENCHMARK_META.title.includes('S1')) return `Org1 issues a new certificate using <strong>SHA-256</strong> (sequential).<br>
+                <strong>Crypto:</strong> <code>certHash = SHA-256(fields)</code> validated on-chain (100x magnification loop).`;
+            if (BENCHMARK_META.title.includes('S2')) return `Org1 issues a new certificate using <strong>BLAKE3</strong> (SIMD-accelerated).<br>
+                <strong>Crypto:</strong> <code>certHash = BLAKE3(fields)</code> validated on-chain (100x magnification loop).`;
+            return `Org1 issues a new certificate using <strong>Hybrid Crypto</strong>.<br>
+                <strong>On-Chain:</strong> SHA-256 primary validator. <strong>Advisory:</strong> BLAKE3 integrity proof.`;
+        },
         invoker: 'User1@org1.example.com',
         readOnly: false,
         contractArgs: '[id, studentId, studentName, degree, issuer, issueDate, certHash, blake3Hash, signature, batchId]',
@@ -143,12 +145,14 @@ const ROUND_META = {
         emoji: '2',
         badge: 'badge-public',
         badgeText: 'Public Read',
-        description: `Any organisation can verify a certificate's authenticity by comparing its stored SHA-256 hash.<br>
-            <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
-            queries go directly to peers. Chaincode returns <code>false</code> (not error) when cert not found.`,
+        description: function() {
+            const algo = BENCHMARK_META.title.includes('S2') ? 'BLAKE3' : 'SHA-256';
+            return `Authenticity verification using <strong>${algo}</strong> re-hash on-chain.<br>
+                This stress test measures the CPU overhead of ${algo} during read-only queries at high TPS.`;
+        },
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[certID, certHash]   // SHA-256 — matches IssueCertificate',
+        contractArgs: '[certID, certHash]',
         chartColor: { bg: 'rgba(0,93,93,0.7)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,0.9)' },
     },
     'QueryAllCertificates': {
@@ -495,7 +499,7 @@ function buildRoundSection(round, meta, chartData) {
                 <span class="${round.fail > 0 ? 'badge-warn' : 'badge-success'}">Fail = ${round.fail} ${round.fail > 0 ? '⚠' : '✓'}</span>
             </div>
             <div class="round-desc">
-                ${meta.description || 'No description available.'}<br>
+                ${(typeof meta.description === 'function' ? meta.description() : meta.description) || 'No description available.'}<br>
                 <strong>Rate Control:</strong> ${rateInfo} &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: ${BENCHMARK_META.workers}
             </div>
             <table>

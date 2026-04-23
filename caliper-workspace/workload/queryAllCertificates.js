@@ -2,11 +2,15 @@
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 class QueryAllCertificatesWorkload extends WorkloadModuleBase {
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+    }
     async submitTransaction() {
+        // contractId يُقرأ من YAML arguments → S1 يستخدم bcms-sha256، S2 يستخدم bcms-blake3
         return this.sutAdapter.sendRequests({
-            contractId:        'basic',           // ✅ العودة إلى basic للسيناريو 2
+            contractId:        this.roundArguments.contractId || 'bcms-sha256',
             contractFunction:  'QueryAllCertificates',
-            contractArguments: ['20', ''],        // ✅ pageSize + bookmark مطلوبان
+            contractArguments: ['20', ''],
             readOnly:          true,
         });
     }
