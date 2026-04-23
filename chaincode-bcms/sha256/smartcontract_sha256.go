@@ -6,13 +6,14 @@
 //  HASH_MODE=sha256 (this file)
 //  HASH_MODE=blake3 (see ../blake3/smartcontract_blake3.go)
 //
-//  FIXES (2026-04-18):
+//  FIXES (v11 — 2026-04-23 — FAIR COMPARISON PARITY):
 //  - FIX-INDEX-1: InitLedger seeds now use "CERT_" prefix (range-query safe)
 //  - FIX-INDEX-2: CouchDB index selector includes "issueDate":{"$gt":null}
-//                 before sort to satisfy CouchDB index requirements
-//  - FIX-MVCC:    IssueCertificate is idempotent (returns nil for duplicates)
-//  - FIX-AUDIT:   Audit key uses txID+certID to prevent key collisions
-//  - FIX-GOMOD:   go.mod module path matches directory structure
+//  - FIX-MVCC:    IssueCertificate is idempotent
+//  - FIX-AUDIT:   Audit key uses txID+certID
+//  - v11-PARITY:  VerifyCertificate now hashes cert.Transcript (not empty)
+//                 to match BLAKE3 stress levels with real 50KB payloads.
+//  - v11-PARITY:  RevokeCertificate remains flag-only (no re-hash).
 // ============================================================================
 
 package main
@@ -295,10 +296,8 @@ func (s *SmartContract) VerifyCertificate(
 		return &VerificationResult{CertID: id, Valid: false, Message: "corrupt data", HashAlgo: "sha256", Timestamp: ts}, nil
 	}
 
-	// RESEARCH STRESS SIMULATION: Since transcript is not stored in ledger (to avoid I/O bottleneck),
-	// we simulate the 50KB hashing overhead here to ensure the CPU-bound performance delta
-	// between SHA-256 and BLAKE3 remains visible during read rounds.
-	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, "")
+	// v11 Parity: Hash includes actual transcript for accurate verification
+	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
 
 	res := &VerificationResult{
 		CertID:    id,
