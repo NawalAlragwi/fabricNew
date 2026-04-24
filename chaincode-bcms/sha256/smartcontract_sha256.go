@@ -131,12 +131,19 @@ func ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, tr
 
 // ComputeCertHash is the SHA-256 hash entry point
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
-	var hash string
+	// Preparation: Join strings and convert to bytes once outside the loop
+	parts := []string{studentID, studentName, degree, issuer, issueDate}
+	if transcript != "" {
+		parts = append(parts, transcript)
+	}
+	data := []byte(strings.Join(parts, "|"))
+
+	var hash [32]byte
 	// MAGNIFICATION: Run 100 times to make CPU difference visible in Fabric latency
 	for i := 0; i < 100; i++ {
-		hash = ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, transcript)
+		hash = sha256.Sum256(data)
 	}
-	return hash, HashModeSHA256
+	return fmt.Sprintf("%x", hash), HashModeSHA256
 }
 
 // --- Identity Helpers --------------------------------------------------------
