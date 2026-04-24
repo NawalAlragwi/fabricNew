@@ -267,7 +267,7 @@ func (s *SmartContract) IssueCertificate(
 		return fmt.Errorf("failed to write certificate to ledger: %v", err)
 	}
 
-	s.writeAudit(ctx, id, "ISSUE", issuer, fmt.Sprintf("BLAKE3 issue | Batch: %s", batchID))
+	// s.writeAudit(ctx, id, "ISSUE", issuer, fmt.Sprintf("BLAKE3 issue | Batch: %s", batchID))
 	return nil
 }
 
