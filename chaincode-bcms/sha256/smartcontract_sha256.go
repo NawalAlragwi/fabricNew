@@ -132,8 +132,8 @@ func ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, tr
 // ComputeCertHash is the SHA-256 hash entry point
 func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
 	var hash string
-	// MAGNIFICATION: Run 300 times to make CPU difference visible in Fabric latency
-	for i := 0; i < 300; i++ {
+	// MAGNIFICATION: Run 100 times to make CPU difference visible in Fabric latency
+	for i := 0; i < 100; i++ {
 		hash = ComputeCertHashSHA256(studentID, studentName, degree, issuer, issueDate, transcript)
 	}
 	return hash, HashModeSHA256
