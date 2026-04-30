@@ -721,6 +721,8 @@ run_caliper_benchmarks() {
     # ── End FIX-D ──────────────────────────────────────────────────────────
 
     info "Running Caliper benchmark suite..."
+    NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
+    http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
     npx caliper launch manager \
         --caliper-workspace . \
         --caliper-networkconfig networks/networkConfig.yaml \
@@ -858,6 +860,9 @@ run_real_caliper_scenario() {
     # ── End FIX-D ──────────────────────────────────────────────────────────
 
     log "  Running: caliper benchmarks/${benchcfg} (batchSize=${batchsize}, tps=${tps})"
+    # Unset proxy vars so Node.js gRPC connects directly to localhost peers
+    NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
+    http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
     npx caliper launch manager \
         --caliper-workspace . \
         --caliper-networkconfig networks/networkConfig.yaml \
