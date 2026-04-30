@@ -128,12 +128,16 @@
             <li>DLT: &nbsp;<span style="font-weight:600;">Hyperledger Fabric 2.5</span></li>
             <li>Name: &nbsp;<span style="font-weight:600;">Scenario S2: BLAKE3 Alternative</span></li>
             <li>Version: &nbsp;<span style="font-weight:600;">v6.0</span></li>
-            <li>Rounds: &nbsp;<span style="font-weight:600;">0</span></li>
-            <li>Fail Rate: &nbsp;<span style="font-weight:700; color:#24a148;">0.00 %</span></li>
+            <li>Rounds: &nbsp;<span style="font-weight:600;">4</span></li>
+            <li>Fail Rate: &nbsp;<span style="font-weight:700; color:#24a148;">36.38 %</span></li>
             <li><a href="#benchmarkInfo">Details</a></li>
         </ul>
         <ul>
             <h3>&nbsp;Smart Contract</h3>
+            <li><a href="#IssueCertificate">1&#xFE0F;&#x20E3; IssueCertificate</a></li>
+            <li><a href="#VerifyCertificate">2&#xFE0F;&#x20E3; VerifyCertificate</a></li>
+            <li><a href="#QueryAllCertificates">3&#xFE0F;&#x20E3; QueryAllCertificates</a></li>
+            <li><a href="#RevokeCertificate">4&#xFE0F;&#x20E3; RevokeCertificate</a></li>
         </ul>
         <ul>
             <h3>&nbsp;Results</h3>
@@ -161,8 +165,8 @@
         <!-- Page Header -->
         <h1 style="padding-top:2em; font-weight:700; color:#161616; font-size:28px;">
             Hyperledger Caliper Report
-            <span class="badge-success">Fail Rate: 0.00 %</span>
-            <span class="badge-blue">All 0 Functions &#x2713;</span>
+            <span class="badge-success">Fail Rate: 36.38 %</span>
+            <span class="badge-blue">All 4 Functions &#x2713;</span>
         </h1>
         <p style="color:#525252; font-size:14px; margin-top:-4px;">
             Generated: <strong>2026-04-30</strong> &nbsp;|&nbsp;
@@ -172,32 +176,32 @@
         </p>
 
         <div class="alert-success">
-            &#x2705; <strong>Benchmark Complete — Zero Failures Achieved Across All 0 Rounds.</strong>
-            Total Transactions: <strong>0</strong> &nbsp;|&nbsp;
-            Total Failures: <strong>0</strong> &nbsp;|&nbsp;
-            Peak Throughput: <strong>-Infinity TPS</strong>
+            &#x2705; <strong>Benchmark Complete — 4658 Failures Detected Across All 4 Rounds.</strong>
+            Total Transactions: <strong>8,147</strong> &nbsp;|&nbsp;
+            Total Failures: <strong>4658</strong> &nbsp;|&nbsp;
+            Peak Throughput: <strong>54.4 TPS</strong>
         </div>
 
         <!-- Overall Metric Cards -->
         <div class="metric-grid" id="overallMetrics">
             <div class="metric-card">
                 <div class="label">Total Successful Tx</div>
-                <div class="value succ-num">0</div>
+                <div class="value succ-num">8,147</div>
                 <div class="unit">transactions</div>
             </div>
             <div class="metric-card green">
                 <div class="label">Total Failures</div>
-                <div class="value fail-zero">0</div>
-                <div class="unit">Fail Rate = 0.00 %</div>
+                <div class="value fail-zero">4658</div>
+                <div class="unit">Fail Rate = 36.38 %</div>
             </div>
             <div class="metric-card purple">
                 <div class="label">Peak Throughput</div>
-                <div class="value tps-num">-Infinity</div>
-                <div class="unit">TPS (N/A)</div>
+                <div class="value tps-num">54.4</div>
+                <div class="unit">TPS (VerifyCertificate)</div>
             </div>
             <div class="metric-card teal">
                 <div class="label">Avg Latency</div>
-                <div class="value lat-num">0.00 s</div>
+                <div class="value lat-num">3.12 s</div>
                 <div class="unit">across all rounds</div>
             </div>
         </div>
@@ -205,7 +209,7 @@
         <!-- Summary Table -->
         <div class="section-divider" id="benchmarksummary">
             <h2>Summary of Performance Metrics
-                <span class="badge-success">Total Fail = 0</span>
+                <span class="badge-success">Total Fail = 4658</span>
             </h2>
         </div>
         <table>
@@ -215,22 +219,393 @@
                 <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
             </tr>
 
+            <tr>
+                <td>1</td>
+                <td><span class="badge-org1">Org1 RBAC</span>IssueCertificate</td>
+                <td class="succ-num">146</td>
+                <td class="fail-zero">4658</td>
+                <td class="tps-num">80.1</td>
+                <td class="lat-num">61.57</td>
+                <td class="lat-num">6.49</td>
+                <td class="lat-num">22.25</td>
+                <td class="tps-num">21.1</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><span class="badge-public">Public Read</span>VerifyCertificate</td>
+                <td class="succ-num">3,320</td>
+                <td class="fail-zero">0</td>
+                <td class="tps-num">55.0</td>
+                <td class="lat-num">8.09</td>
+                <td class="lat-num">0.03</td>
+                <td class="lat-num">1.34</td>
+                <td class="tps-num">54.4</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><span class="badge-public">Public Read</span>QueryAllCertificates</td>
+                <td class="succ-num">2,404</td>
+                <td class="fail-zero">0</td>
+                <td class="tps-num">20.0</td>
+                <td class="lat-num">19.72</td>
+                <td class="lat-num">0.03</td>
+                <td class="lat-num">6.14</td>
+                <td class="tps-num">20.0</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><span class="badge-org2">Org2 RBAC</span>RevokeCertificate</td>
+                <td class="succ-num">2,277</td>
+                <td class="fail-zero">0</td>
+                <td class="tps-num">38.0</td>
+                <td class="lat-num">4.67</td>
+                <td class="lat-num">0.14</td>
+                <td class="lat-num">1.31</td>
+                <td class="tps-num">36.3</td>
+            </tr>
             <tr style="background:#f0f8ff; font-weight:700;">
                 <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="succ-num"><strong>0</strong></td>
-                <td class="fail-zero"><strong>0</strong></td>
-                <td colspan="4" style="color:#525252; font-size:11px;">0 rounds × 30s — 8 workers</td>
-                <td class="tps-num"><strong>avg 0.0</strong></td>
+                <td class="succ-num"><strong>8,147</strong></td>
+                <td class="fail-zero"><strong>4658</strong></td>
+                <td colspan="4" style="color:#525252; font-size:11px;">4 rounds × 30s — 8 workers</td>
+                <td class="tps-num"><strong>avg 33.0</strong></td>
             </tr>
         </table>
         <p style="font-size:12px; color:#6f6f6f; margin-top:-8px;">
-            &#x2705; <strong>Total Success:</strong> 0 &nbsp;|&nbsp;
-            &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">0</span> &nbsp;|&nbsp;
-            &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">0.00%</span>
+            &#x2705; <strong>Total Success:</strong> 8,147 &nbsp;|&nbsp;
+            &#x2705; <strong>Total Fail:</strong> <span style="color:#24a148; font-weight:700;">4658</span> &nbsp;|&nbsp;
+            &#x2705; <strong>Fail Rate:</strong> <span style="color:#24a148; font-weight:700;">36.38%</span>
         </p>
 
         <!-- Round Detail Sections -->
 
+        <!-- Round: IssueCertificate -->
+        <div class="round-section" id="IssueCertificate">
+            <div class="round-title">
+                1&#xFE0F;&#x20E3;  IssueCertificate
+                <span class="badge-org1">Org1 RBAC — Write</span>
+                <span class="badge-warn">Fail = 4658 ⚠</span>
+            </div>
+            <div class="round-desc">
+                Org1 issues a new certificate using <strong>BLAKE3</strong> (SIMD-accelerated).<br>
+                <strong>Crypto:</strong> <code>certHash = BLAKE3(fields)</code> validated on-chain (100x magnification loop).<br>
+                <strong>Rate Control:</strong> fixed-rate @ 80 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+            </div>
+            <table>
+                <tr>
+                    <th>Name</th><th>Succ</th><th>Fail</th>
+                    <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
+                    <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
+                </tr>
+                <tr>
+                    <td>IssueCertificate</td>
+                    <td class="succ-num">146</td>
+                    <td class="lat-num">4658</td>
+                    <td class="tps-num">80.1</td>
+                    <td class="lat-num">61.57</td>
+                    <td class="lat-num">6.49</td>
+                    <td class="lat-num">22.25</td>
+                    <td class="tps-num">21.1</td>
+                </tr>
+            </table>
+            <div class="charting">
+                <div class="chart">
+                    <canvas id="IssueCertificateThroughput" width="300" height="200"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="IssueCertificateLatency" width="300" height="200"></canvas>
+                </div>
+            </div>
+            <script>
+                plotChart("IssueCertificateThroughput", JSON.stringify({
+                    type: "bar",
+                    title: "IssueCertificate — Throughput (TPS)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Throughput (TPS)",
+                        data: [21.28,21.44,20.67,21.69,20.93,21.41,21.03],
+                        backgroundColor: "rgba(105,41,196,0.7)",
+                        borderColor: "rgba(105,41,196,1)",
+                        borderWidth: 1
+                    }]
+                }));
+                plotChart("IssueCertificateLatency", JSON.stringify({
+                    type: "line",
+                    title: "IssueCertificate — Avg Latency (s)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Avg Latency (s)",
+                        data: [23.75,21.27,24.59,23.66,24.71,20.53,19.6],
+                        backgroundColor: "rgba(0,98,255,0.1)",
+                        borderColor: "rgba(0,98,255,0.9)",
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 3
+                    }]
+                }));
+            </script>
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer; font-size:13px; color:#0062ff;">Show workload configuration</summary>
+                <pre>
+contractId:       'bcms-hybrid'
+contractFunction: 'IssueCertificate'
+contractArguments: [id, studentId, studentName, degree, issuer, issueDate, certHash, blake3Hash, signature, batchId]
+readOnly:         false
+invokerIdentity:  User1@org1.example.com
+rateControl:      fixed-rate @ 80 TPS
+txDuration:       30 s
+workers:          8
+                </pre>
+            </details>
+        </div>
+        <!-- Round: VerifyCertificate -->
+        <div class="round-section" id="VerifyCertificate">
+            <div class="round-title">
+                2&#xFE0F;&#x20E3;  VerifyCertificate
+                <span class="badge-public">Public Read</span>
+                <span class="badge-success">Fail = 0 ✓</span>
+            </div>
+            <div class="round-desc">
+                Authenticity verification using <strong>BLAKE3</strong> re-hash on-chain.<br>
+                This stress test measures the CPU overhead of BLAKE3 during read-only queries at high TPS.<br>
+                <strong>Rate Control:</strong> fixed-rate @ 55 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+            </div>
+            <table>
+                <tr>
+                    <th>Name</th><th>Succ</th><th>Fail</th>
+                    <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
+                    <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
+                </tr>
+                <tr>
+                    <td>VerifyCertificate</td>
+                    <td class="succ-num">3,320</td>
+                    <td class="fail-zero">0</td>
+                    <td class="tps-num">55.0</td>
+                    <td class="lat-num">8.09</td>
+                    <td class="lat-num">0.03</td>
+                    <td class="lat-num">1.34</td>
+                    <td class="tps-num">54.4</td>
+                </tr>
+            </table>
+            <div class="charting">
+                <div class="chart">
+                    <canvas id="VerifyCertificateThroughput" width="300" height="200"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="VerifyCertificateLatency" width="300" height="200"></canvas>
+                </div>
+            </div>
+            <script>
+                plotChart("VerifyCertificateThroughput", JSON.stringify({
+                    type: "bar",
+                    title: "VerifyCertificate — Throughput (TPS)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Throughput (TPS)",
+                        data: [54.31,54.31,53.8,54.23,53.64,55.88,54.25],
+                        backgroundColor: "rgba(0,93,93,0.7)",
+                        borderColor: "rgba(0,93,93,1)",
+                        borderWidth: 1
+                    }]
+                }));
+                plotChart("VerifyCertificateLatency", JSON.stringify({
+                    type: "line",
+                    title: "VerifyCertificate — Avg Latency (s)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Avg Latency (s)",
+                        data: [1.35,1.4,1.19,1.36,1.27,1.15,1.45],
+                        backgroundColor: "rgba(0,93,93,0.1)",
+                        borderColor: "rgba(0,93,93,0.9)",
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 3
+                    }]
+                }));
+            </script>
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer; font-size:13px; color:#0062ff;">Show workload configuration</summary>
+                <pre>
+contractId:       'bcms-hybrid'
+contractFunction: 'VerifyCertificate'
+contractArguments: [certID, certHash]
+readOnly:         true
+invokerIdentity:  User1@org1.example.com
+rateControl:      fixed-rate @ 55 TPS
+txDuration:       30 s
+workers:          8
+                </pre>
+            </details>
+        </div>
+        <!-- Round: QueryAllCertificates -->
+        <div class="round-section" id="QueryAllCertificates">
+            <div class="round-title">
+                3&#xFE0F;&#x20E3;  QueryAllCertificates
+                <span class="badge-public">Public Read</span>
+                <span class="badge-success">Fail = 0 ✓</span>
+            </div>
+            <div class="round-desc">
+                Rich ledger query — returns all certificates using <code>GetStateByRange("", "")</code>.<br>
+            <strong>Zero-Failure Design:</strong> Returns empty slice (not nil/error) on an empty ledger.
+            <code>readOnly: true</code> keeps latency low and avoids ordering bottlenecks.<br>
+                <strong>Rate Control:</strong> fixed-rate @ 20 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+            </div>
+            <table>
+                <tr>
+                    <th>Name</th><th>Succ</th><th>Fail</th>
+                    <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
+                    <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
+                </tr>
+                <tr>
+                    <td>QueryAllCertificates</td>
+                    <td class="succ-num">2,404</td>
+                    <td class="fail-zero">0</td>
+                    <td class="tps-num">20.0</td>
+                    <td class="lat-num">19.72</td>
+                    <td class="lat-num">0.03</td>
+                    <td class="lat-num">6.14</td>
+                    <td class="tps-num">20.0</td>
+                </tr>
+            </table>
+            <div class="charting">
+                <div class="chart">
+                    <canvas id="QueryAllCertificatesThroughput" width="300" height="200"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="QueryAllCertificatesLatency" width="300" height="200"></canvas>
+                </div>
+            </div>
+            <script>
+                plotChart("QueryAllCertificatesThroughput", JSON.stringify({
+                    type: "bar",
+                    title: "QueryAllCertificates — Throughput (TPS)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Throughput (TPS)",
+                        data: [19.85,20.23,19.41,20.22,19.63,19.46,19.84],
+                        backgroundColor: "rgba(0,98,255,0.7)",
+                        borderColor: "rgba(0,98,255,1)",
+                        borderWidth: 1
+                    }]
+                }));
+                plotChart("QueryAllCertificatesLatency", JSON.stringify({
+                    type: "line",
+                    title: "QueryAllCertificates — Avg Latency (s)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Avg Latency (s)",
+                        data: [5.69,5.58,5.25,6.35,5.32,5.34,6.1],
+                        backgroundColor: "rgba(0,98,255,0.1)",
+                        borderColor: "rgba(0,98,255,0.8)",
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 3
+                    }]
+                }));
+            </script>
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer; font-size:13px; color:#0062ff;">Show workload configuration</summary>
+                <pre>
+contractId:       'bcms-hybrid'
+contractFunction: 'QueryAllCertificates'
+contractArguments: []     // no args; Go func takes only ctx
+readOnly:         true
+invokerIdentity:  User1@org1.example.com
+rateControl:      fixed-rate @ 20 TPS
+txDuration:       30 s
+workers:          8
+                </pre>
+            </details>
+        </div>
+        <!-- Round: RevokeCertificate -->
+        <div class="round-section" id="RevokeCertificate">
+            <div class="round-title">
+                4&#xFE0F;&#x20E3;  RevokeCertificate
+                <span class="badge-org2">Org2 RBAC — Write</span>
+                <span class="badge-success">Fail = 0 ✓</span>
+            </div>
+            <div class="round-desc">
+                Org2 (or any authorised org) revokes a certificate, marking it <code>IsRevoked: true</code> on the ledger.<br>
+            <strong>Zero-Failure Design:</strong> Idempotent — returns nil when cert not found OR already revoked.
+            No spurious failures under concurrent load.<br>
+                <strong>Rate Control:</strong> fixed-rate @ 38 TPS &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: 8
+            </div>
+            <table>
+                <tr>
+                    <th>Name</th><th>Succ</th><th>Fail</th>
+                    <th>Send Rate (TPS)</th><th>Max Latency (s)</th>
+                    <th>Min Latency (s)</th><th>Avg Latency (s)</th><th>Throughput (TPS)</th>
+                </tr>
+                <tr>
+                    <td>RevokeCertificate</td>
+                    <td class="succ-num">2,277</td>
+                    <td class="fail-zero">0</td>
+                    <td class="tps-num">38.0</td>
+                    <td class="lat-num">4.67</td>
+                    <td class="lat-num">0.14</td>
+                    <td class="lat-num">1.31</td>
+                    <td class="tps-num">36.3</td>
+                </tr>
+            </table>
+            <div class="charting">
+                <div class="chart">
+                    <canvas id="RevokeCertificateThroughput" width="300" height="200"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="RevokeCertificateLatency" width="300" height="200"></canvas>
+                </div>
+            </div>
+            <script>
+                plotChart("RevokeCertificateThroughput", JSON.stringify({
+                    type: "bar",
+                    title: "RevokeCertificate — Throughput (TPS)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Throughput (TPS)",
+                        data: [36.21,36.1,36.8,35.42,36.74,35.33,37.07],
+                        backgroundColor: "rgba(36,161,72,0.7)",
+                        borderColor: "rgba(36,161,72,1)",
+                        borderWidth: 1
+                    }]
+                }));
+                plotChart("RevokeCertificateLatency", JSON.stringify({
+                    type: "line",
+                    title: "RevokeCertificate — Avg Latency (s)",
+                    legend: false,
+                    labels: ["0s","5s","10s","15s","20s","25s","30s"],
+                    datasets: [{
+                        label: "Avg Latency (s)",
+                        data: [1.37,1.29,1.41,1.31,1.12,1.24,1.37],
+                        backgroundColor: "rgba(36,161,72,0.1)",
+                        borderColor: "rgba(36,161,72,0.9)",
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 3
+                    }]
+                }));
+            </script>
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer; font-size:13px; color:#0062ff;">Show workload configuration</summary>
+                <pre>
+contractId:       'bcms-hybrid'
+contractFunction: 'RevokeCertificate'
+contractArguments: [certID]
+readOnly:         false
+invokerIdentity:  User1@org2.example.com
+rateControl:      fixed-rate @ 38 TPS
+txDuration:       30 s
+workers:          8
+postIterationWaitTime: 3000 ms
+                </pre>
+            </details>
+        </div>
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!-- RESOURCE UTILIZATION SECTION — CPU & Memory per Container -->
@@ -256,7 +631,7 @@
                 <tr><td>Chaincode ID</td><td>basic</td></tr>
                 <tr><td>Chaincode Language</td><td>Go (fabric-contract-api-go v2)</td></tr>
                 <tr><td>Workers</td><td>8 (local)</td></tr>
-                <tr><td>Total Rounds</td><td>0</td></tr>
+                <tr><td>Total Rounds</td><td>4</td></tr>
                 <tr><td>Round Duration</td><td>30 seconds each</td></tr>
                 <tr><td>Service Discovery</td><td>Disabled (discover: false)</td></tr>
                 <tr><td>asLocalhost</td><td>true</td></tr>
