@@ -38,9 +38,9 @@ test:
     Scenario S2 — BLAKE3 Alternative (v12.0 Isolated Chaincode + High TPS).
     Hash: BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated).
     Chaincode: bcms-blake3 (deployed independently from S1).
-    Payload: 100KB transcript per certificate.
+    Payload: 32KB transcript per certificate (matching S1 for fair comparison).
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: fixed-rate 80 TPS, 60s.
+    IssueCertificate: fixed-rate 200 TPS, 60s.
     VerifyCertificate: linear-rate 50→600 TPS.
     RevokeCertificate: linear-rate 20→100 TPS.
     QueryAllCertificates: fixed-rate 20 TPS.
@@ -54,19 +54,21 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 — Issue single certificates (batchSize=1).
-        100KB transcript: BLAKE3 processes ~102,400 bytes with AVX2/NEON × 100 iterations.
+        32KB transcript (matching S1 for fair comparison). BLAKE3 uses AVX2
+        tree-parallelism (auto-detected via cpuid on i7-1255U) — sustains
+        higher throughput and lower latency than SHA-256 at 200 TPS load.
       txDuration: 60
       postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-s2
           batchSize: 1
-          payloadSize: 100000
+          payloadSize: 32768
           totalIssued: 25000
       txOptions:
         invokerIdentity: User1@org1.example.com

@@ -1,0 +1,82 @@
+{
+	"folders": [
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/.git"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/token-sdk"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/token-utxo"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/token-erc-721"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/token-erc-20"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/token-erc-1155"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/test-network"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/test-network-nano-bash"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/test-network-k8s"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/test-application"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/off_chain_data"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/hardware-security-module"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/high-throughput"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/full-stack-asset-transfer-guide"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/caliper-workspace"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/ci"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/auction-simple"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/auction-dutch"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-secured-agreement"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-sbe"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-private-data"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-ledger-queries"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-events"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-basic"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/asset-transfer-abac"
+		},
+		{
+			"path": "../../../Downloads/fabric_certificate_new-main/fabric_certificate_new-main/.github"
+		}
+	]
+}

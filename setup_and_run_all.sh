@@ -383,6 +383,7 @@ setup_fabric_network() {
     export GOFLAGS="-mod=mod"
     export GOWORK="off"
     export GO111MODULE="on"
+    export GOAMD64="v3"
 
     ./network.sh deployCC \
         -ccn "${CC_NAME}" \
@@ -797,6 +798,7 @@ run_real_caliper_scenario() {
 
     export GOFLAGS="-mod=mod"; export GOWORK="off"
     export GO111MODULE="on"; export GOPROXY="https://proxy.golang.org,direct"
+    export GOAMD64="v3"
 
     if ! $FABRIC_NETWORK_OK; then
         warn "  Network down — attempting to start it now"
@@ -896,6 +898,7 @@ run_scenario() {
 
     export GOFLAGS="-mod=mod"
     export GOPROXY="https://proxy.golang.org,direct"
+    export GOAMD64="v3"
 
     cat > "${sdir}/scenario_meta.json" << METAEOF
 {"scenario":${n},"key":"${key}","label":"${label}","chaincode":"${SCENARIO_CHAINCODE[$n]}","batch_size":${SCENARIO_BATCHSIZE[$n]},"tps":${tps},"started":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}

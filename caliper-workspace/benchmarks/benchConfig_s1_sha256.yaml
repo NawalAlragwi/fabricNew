@@ -37,9 +37,9 @@ test:
     Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS).
     Hash: SHA-256 (crypto/sha256, sequential Merkle-Damgard).
     Chaincode: bcms-sha256 (deployed independently from S2).
-    Payload: 100KB transcript per certificate.
+    Payload: 32KB transcript per certificate (realistic academic cert).
     batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: fixed-rate 80 TPS, 60s.
+    IssueCertificate: fixed-rate 200 TPS, 60s.
     VerifyCertificate: linear-rate 50→600 TPS.
     RevokeCertificate: linear-rate 20→100 TPS.
     QueryAllCertificates: fixed-rate 20 TPS.
@@ -53,19 +53,21 @@ test:
     - label: IssueCertificate
       description: >
         S1 SHA-256 — Issue single certificates (batchSize=1).
-        100KB transcript forces SHA-256 to process ~102,400 bytes per hash × 100 iterations.
+        32KB transcript (realistic academic cert payload). SHA-256 sequential
+        hash on each issuance — CPU bottleneck expected at high TPS.
+        Fixed-rate 200 TPS stresses the endorsing peer's SHA-256 compute path.
       txDuration: 60
       postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 200
       workload:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-s1
           batchSize: 1
-          payloadSize: 100000
+          payloadSize: 32768
           totalIssued: 25000
       txOptions:
         invokerIdentity: User1@org1.example.com
