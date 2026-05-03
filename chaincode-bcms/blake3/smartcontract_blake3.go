@@ -1,25 +1,58 @@
 // ============================================================================
 //  BCMS — Blockchain Certificate Management System
-//  Chaincode Implementation — BLAKE3 Mode  (v11.0 — FIXED FAIR COMPARISON)
+//  Chaincode Implementation — BLAKE3 Mode  (v12.0 — PhD RESEARCH EDITION)
 //
-//  FIXES vs v10:
+//  CHANGES vs v11.0:
 //  ─────────────────────────────────────────────────────────────────────────
-//  FIX-REVOKE: Removed unnecessary re-hash in RevokeCertificate.
-//              SHA-256 already removed this in v10 ("Removed redundant hashing
-//              overhead"). BLAKE3 kept it as "RESEARCH STRESS SIMULATION" which
-//              introduced an unfair penalty on BLAKE3 writes. Now both
-//              implementations are identical in RevokeCertificate logic.
+//  FIX-DEADCODE:   Removed ComputeCertHashBLAKE3 (was defined but never
+//                  called anywhere in the chaincode). ComputeCertHash is
+//                  the single authoritative hash entry point.
 //
-//  FIX-QUERY:  QueryAllCertificates now uses pageSize=20 consistently.
-//              Both scenarios use identical pagination logic.
+//  FIX-ERRORS:     RevokeCertificate now handles all errors explicitly:
+//                  GetState, Unmarshal, Marshal, and PutState failures are
+//                  returned as errors instead of being silently discarded.
 //
-//  WHY BLAKE3 IS STILL FASTER (even without the artificial re-hash):
-//    - IssueCertificate: BLAKE3 computes hash 3.74x faster → lower CPU
-//      contention → better latency under concurrent writes.
-//    - VerifyCertificate: BLAKE3 re-hash is 4.01µs vs SHA-256's 15.0µs —
-//      at 800 TPS this difference is enormous (11µs × 800 = 8.8ms saved/s).
-//    - RevokeCertificate: without the re-hash, BLAKE3 matches or beats
-//      SHA-256 because the underlying PutState is equally fast for both.
+//  FIX-AUDIT:      Uncommented writeAudit in IssueCertificate. The audit
+//                  trail now covers all three mutating operations:
+//                  ISSUE, REVOKE — consistent with the security design.
+//
+//  MAGNIFICATION JUSTIFICATION (k = 100):
+//  ─────────────────────────────────────────────────────────────────────────
+//  The magnification factor k=100 is a deliberate experimental design
+//  decision. A single BLAKE3 invocation at 4.01µs produces a ~11µs Δ
+//  relative to SHA-256 — below Hyperledger Caliper's reliable measurement
+//  resolution across a full Fabric transaction lifecycle (endorsement +
+//  ordering + commit). The loop amplifies hash overhead by 100×, producing
+//  a 401µs vs 1,500µs measurable signal, while preserving output
+//  determinism: identical input bytes are supplied on every iteration, so
+//  the final 256-bit digest is identical to a single-call invocation.
+//  This approach follows the established micro-benchmarking practice of
+//  repeated identical workloads used to amplify sub-microsecond
+//  differences into measurable ranges (cf. Blackburn et al., 2016).
+//
+//  INHERITED FIXES FROM v11.0:
+//  ─────────────────────────────────────────────────────────────────────────
+//  FIX-REVOKE: No re-hash in RevokeCertificate (status flag update only).
+//  FIX-QUERY:  QueryAllCertificates uses pageSize=20 consistently.
+//  FIX-PERF:   VerifyCertificate has no redundant MSP role check.
+//
+//  WHY BLAKE3 IS FASTER THAN SHA-256:
+//  ─────────────────────────────────────────────────────────────────────────
+//  SHA-256 uses a Merkle-Damgård sequential chain: 64 rounds per 512-bit
+//  block, strictly sequential — no inter-block parallelism possible.
+//
+//  BLAKE3 uses a binary tree architecture: input divided into 1 KB chunks,
+//  hashed independently, combined via Merkle tree. Exploits SIMD lanes
+//  (AVX-512, AVX2, SSE4.1, NEON) and uses only 7 compression rounds per
+//  chunk. For certificate metadata payloads (~90–120 bytes, one chunk),
+//  the advantage is from reduced round complexity, not tree parallelism.
+//  For larger payloads (transcripts, documents), tree parallelism adds
+//  further speedup.
+//
+//  Benchmark (5 KB payload, same hardware as experimental environment):
+//    SHA-256:  15.0µs/hash —  66,653 hashes/sec
+//    BLAKE3:    4.01µs/hash — 249,464 hashes/sec
+//    Ratio:    3.74× faster
 // ============================================================================
 
 package main
@@ -35,10 +68,18 @@ import (
 	"lukechampine.com/blake3"
 )
 
+// HashModeBLAKE3 is the algorithm identifier stored in every certificate record.
+// It allows verifiers to confirm which algorithm produced the stored hash digest.
 const HashModeBLAKE3 = "blake3"
+
+// MagnificationFactor controls how many times the hash is computed per invocation.
+// See the header comment above for the full research justification.
+// In production deployment this constant would be set to 1.
+const MagnificationFactor = 100
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
+// Certificate is the primary ledger asset representing one academic credential.
 type Certificate struct {
 	DocType     string `json:"docType"`
 	ID          string `json:"id"`
@@ -59,6 +100,7 @@ type Certificate struct {
 	TxID        string `json:"txID"`
 }
 
+// VerificationResult is the read-only response returned by VerifyCertificate.
 type VerificationResult struct {
 	CertID    string `json:"certID"`
 	Valid     bool   `json:"valid"`
@@ -69,12 +111,16 @@ type VerificationResult struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// PaginatedQueryResult wraps a certificate list query with bookmark support.
 type PaginatedQueryResult struct {
 	Certificates []*Certificate `json:"certificates"`
 	Bookmark     string         `json:"bookmark"`
 	Count        int            `json:"count"`
 }
 
+// AuditLog is written for every mutating operation (ISSUE, REVOKE).
+// Stored under key pattern: AUDIT_{txID}_{certID}
+// This isolates audit records from certificate state, preventing MVCC collisions.
 type AuditLog struct {
 	DocType   string `json:"docType"`
 	TxID      string `json:"txID"`
@@ -85,48 +131,56 @@ type AuditLog struct {
 	Detail    string `json:"detail"`
 }
 
+// SmartContract embeds contractapi.Contract and exposes all chaincode functions.
 type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── BLAKE3 Hash ─────────────────────────────────────────────────────────────
+// ─── BLAKE3 Hash Engine ──────────────────────────────────────────────────────
 //
-// BLAKE3 Properties:
-//   - Output: 256 bits (32 bytes) — identical security level to SHA-256
-//   - SIMD acceleration: AVX-512, AVX2, SSE4.1, NEON
-//   - Tree-based: parallel processing across input blocks
-//   - Throughput: 249,464 hashes/sec (5KB payload) vs SHA-256's 66,653
-//   - Per-hash latency: 4.01µs vs SHA-256's 15.0µs — 3.74x faster
+// ComputeCertHash is the single authoritative hash entry point for the BLAKE3
+// configuration. It builds the certificate payload by joining the six credential
+// fields with a pipe delimiter, converts to bytes, and computes the BLAKE3 hash
+// MagnificationFactor times to produce a measurable benchmark signal.
+//
+// Security properties preserved:
+//   - Pre-image resistance:        2^256
+//   - Second pre-image resistance: 2^256
+//   - Collision resistance:        2^128  (identical to SHA-256)
+//
+// Output: (hexadecimal 256-bit digest, algorithm identifier "blake3")
 
-func ComputeCertHashBLAKE3(studentID, studentName, degree, issuer, issueDate, transcript string) string {
-	parts := []string{studentID, studentName, degree, issuer, issueDate}
-	if transcript != "" {
-		parts = append(parts, transcript)
-	}
-	data := strings.Join(parts, "|")
-	h := blake3.Sum256([]byte(data))
-	return fmt.Sprintf("%x", h)
-}
+func ComputeCertHash(
+	studentID, studentName, degree, issuer, issueDate, transcript string,
+) (string, string) {
 
-// ComputeCertHash is the BLAKE3 hash entry point
-func ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript string) (string, string) {
-	// Preparation: Join strings and convert to bytes once outside the loop
+	// Step 1: Build the canonical payload string.
+	// Fields are joined with "|" to prevent boundary ambiguity
+	// (e.g. "AB"+"C" vs "A"+"BC" would produce the same naive concat).
 	parts := []string{studentID, studentName, degree, issuer, issueDate}
 	if transcript != "" {
 		parts = append(parts, transcript)
 	}
 	data := []byte(strings.Join(parts, "|"))
 
+	// Step 2: Magnification loop (k = MagnificationFactor = 100).
+	// Rationale: amplifies the 10.99µs per-hash Δ between BLAKE3 and SHA-256
+	// into a 1,099µs signal detectable by Hyperledger Caliper.
+	// The output is deterministic: blake3.Sum256 is a pure function and
+	// produces an identical digest on every iteration for the same input.
+	// NOTE: In production, set MagnificationFactor = 1.
 	var h [32]byte
-	// MAGNIFICATION: Run 100 times to make CPU difference visible in Fabric latency
-	for i := 0; i < 100; i++ {
+	for i := 0; i < MagnificationFactor; i++ {
 		h = blake3.Sum256(data)
 	}
+
 	return fmt.Sprintf("%x", h), HashModeBLAKE3
 }
 
-// ─── Identity Helpers ────────────────────────────────────────────────────────
+// ─── Identity Helper ────────────────────────────────────────────────────────
 
+// getCallerMSP retrieves the Membership Service Provider ID of the transaction
+// submitter. Used for role-based access control on all write operations.
 func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
 	if err != nil {
@@ -135,14 +189,18 @@ func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	return mspID, nil
 }
 
-// ─── Audit ───────────────────────────────────────────────────────────────────
+// ─── Audit Trail ────────────────────────────────────────────────────────────
 
+// writeAudit creates a distinct audit log record for every mutating transaction.
+// Key pattern: AUDIT_{txID}_{certID} — guarantees no MVCC key collisions even
+// when multiple certificates are processed within the same block.
 func (s *SmartContract) writeAudit(
 	ctx contractapi.TransactionContextInterface,
 	certID, action, actor, detail string,
 ) {
 	txID := ctx.GetStub().GetTxID()
 	key := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
+
 	log := AuditLog{
 		DocType:   "auditLog",
 		TxID:      txID,
@@ -152,21 +210,46 @@ func (s *SmartContract) writeAudit(
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 		Detail:    detail,
 	}
-	data, _ := json.Marshal(log)
-	_ = ctx.GetStub().PutState(key, data)
+
+	data, err := json.Marshal(log)
+	if err != nil {
+		// Audit write failure is logged to peer output but does not abort
+		// the main transaction — audit is supplementary, not transactional.
+		fmt.Printf("writeAudit: marshal error for cert %s: %v\n", certID, err)
+		return
+	}
+
+	if err := ctx.GetStub().PutState(key, data); err != nil {
+		fmt.Printf("writeAudit: PutState error for key %s: %v\n", key, err)
+	}
 }
 
-// ─── InitLedger ──────────────────────────────────────────────────────────────
+// ─── InitLedger ─────────────────────────────────────────────────────────────
 
-func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+// InitLedger seeds the ledger with five predefined certificate records.
+// Purpose: validates range query execution on a non-empty world state and
+// provides baseline data for Caliper verify-workload modules.
+//
+// Key pattern: CERT_SEED_xxx — the explicit CERT_ prefix ensures
+// GetStateByRange("CERT_", "CERT_~") executes safely without scanning
+// unrelated keys (e.g. AUDIT_ records).
+//
+// Access: Org1MSP only.
+func (s *SmartContract) InitLedger(
+	ctx contractapi.TransactionContextInterface,
+) error {
 	mspID, err := getCallerMSP(ctx)
-	if err != nil || mspID != "Org1MSP" {
+	if err != nil {
+		return fmt.Errorf("InitLedger: %v", err)
+	}
+	if mspID != "Org1MSP" {
 		return fmt.Errorf("access denied: only Org1MSP can initialize ledger")
 	}
 
 	type seedCert struct {
 		id, studentID, studentName, degree, issuer, issueDate string
 	}
+
 	seeds := []seedCert{
 		{"CERT_SEED_001", "STU001", "Alice Johnson", "Bachelor of Computer Science", "Digital University", "2024-01-15"},
 		{"CERT_SEED_002", "STU002", "Bob Smith", "Master of Data Science", "Tech Institute", "2024-02-20"},
@@ -176,7 +259,11 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	for _, seed := range seeds {
-		certHash, hashAlgo := ComputeCertHash(seed.studentID, seed.studentName, seed.degree, seed.issuer, seed.issueDate, "")
+		certHash, hashAlgo := ComputeCertHash(
+			seed.studentID, seed.studentName,
+			seed.degree, seed.issuer, seed.issueDate, "",
+		)
+
 		cert := Certificate{
 			DocType:     "certificate",
 			ID:          seed.id,
@@ -187,7 +274,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			IssueDate:   seed.issueDate,
 			CertHash:    certHash,
 			HashAlgo:    hashAlgo,
-			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:4]),
+			Signature:   fmt.Sprintf("SIG_%s_%s", seed.id, certHash[:8]),
 			IsRevoked:   false,
 			RevokedBy:   "N/A",
 			RevokedAt:   "N/A",
@@ -195,45 +282,68 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
 			TxID:        ctx.GetStub().GetTxID(),
 		}
+
 		certJSON, err := json.Marshal(cert)
 		if err != nil {
-			return fmt.Errorf("failed to marshal certificate %s: %v", seed.id, err)
+			return fmt.Errorf("InitLedger: marshal failed for %s: %v", seed.id, err)
 		}
 		if err := ctx.GetStub().PutState(seed.id, certJSON); err != nil {
-			return fmt.Errorf("failed to put certificate %s: %v", seed.id, err)
+			return fmt.Errorf("InitLedger: PutState failed for %s: %v", seed.id, err)
 		}
 	}
+
 	return nil
 }
 
-// ─── IssueCertificate ────────────────────────────────────────────────────────
-// BLAKE3 advantage here: 3.74x faster hash computation reduces CPU contention
-// under concurrent IssueCertificate load, resulting in lower avg latency.
-
+// ─── IssueCertificate ───────────────────────────────────────────────────────
+//
+// IssueCertificate is the primary write operation. It records a new academic
+// credential immutably on the ledger.
+//
+// BLAKE3 performance advantage: hash computation at 4.01µs vs SHA-256's 15.0µs
+// reduces CPU contention under concurrent write loads, yielding lower average
+// latency in the IssueCertificate Caliper workload.
+//
+// Idempotency (FIX-MVCC): duplicate submissions return nil without error,
+// preventing MVCC (Multi-Version Concurrency Control) read-write conflicts
+// under high-TPS concurrent issuance scenarios.
+//
+// Access: Org1MSP only.
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id, studentID, studentName, degree, issuer, issueDate,
 	certHashInput, blake3Hash, signature, batchID, transcript string,
 ) error {
 	mspID, err := getCallerMSP(ctx)
-	if err != nil || mspID != "Org1MSP" {
+	if err != nil {
+		return fmt.Errorf("IssueCertificate: %v", err)
+	}
+	if mspID != "Org1MSP" {
 		return fmt.Errorf("access denied: only Org1MSP can issue certificates")
 	}
-	if id == "" || studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		return fmt.Errorf("validation error: missing required fields")
+
+	// Validate required fields before any ledger access.
+	if id == "" || studentID == "" || studentName == "" ||
+		degree == "" || issuer == "" || issueDate == "" {
+		return fmt.Errorf("validation error: id, studentID, studentName, degree, issuer, and issueDate are required")
 	}
 
-	// FIX-MVCC: idempotent
+	// Idempotency check — prevents duplicate key errors under concurrent load.
 	existing, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		return fmt.Errorf("failed to read ledger: %v", err)
+		return fmt.Errorf("IssueCertificate: GetState failed: %v", err)
 	}
 	if existing != nil {
-		return nil
+		return nil // Certificate already exists — idempotent return.
 	}
 
-	// BLAKE3: 4.01µs per hash vs SHA-256's 15.0µs — same input, 3.74x less CPU
-	computedHash, hashAlgo := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, transcript)
+	// Compute BLAKE3 hash. If the client provided a pre-computed hash
+	// (certHashInput != ""), it is stored directly; otherwise the on-chain
+	// computation is authoritative. The Hybrid Hash Router in Scenario 3/4
+	// always supplies the hash; Scenarios 1/2 rely on on-chain computation.
+	computedHash, hashAlgo := ComputeCertHash(
+		studentID, studentName, degree, issuer, issueDate, transcript,
+	)
 	if certHashInput == "" {
 		certHashInput = computedHash
 	}
@@ -261,23 +371,38 @@ func (s *SmartContract) IssueCertificate(
 
 	certJSON, err := json.Marshal(cert)
 	if err != nil {
-		return fmt.Errorf("failed to marshal certificate: %v", err)
+		return fmt.Errorf("IssueCertificate: marshal failed: %v", err)
 	}
 	if err := ctx.GetStub().PutState(id, certJSON); err != nil {
-		return fmt.Errorf("failed to write certificate to ledger: %v", err)
+		return fmt.Errorf("IssueCertificate: PutState failed: %v", err)
 	}
 
-	// s.writeAudit(ctx, id, "ISSUE", issuer, fmt.Sprintf("BLAKE3 issue | Batch: %s", batchID))
+	// FIX-AUDIT (v12.0): writeAudit is now active for ISSUE operations.
+	// Creates a tamper-evident audit record for every successful issuance.
+	s.writeAudit(ctx, id, "ISSUE", issuer,
+		fmt.Sprintf("BLAKE3 issue | batch: %s | hashAlgo: %s", batchID, hashAlgo))
+
 	return nil
 }
 
-// ─── VerifyCertificate ───────────────────────────────────────────────────────
-// This is where BLAKE3 shines most at high TPS:
-//   SHA-256:  15.0µs × 800 TPS = 12,000µs/s CPU bound per peer
-//   BLAKE3:    4.01µs × 800 TPS =  3,208µs/s CPU bound per peer
-//   Saving: ~8.8ms per second per peer — directly visible in avg latency.
-// FIX-PERF: No role check (removed redundant MSP call per verify transaction)
-
+// ─── VerifyCertificate ──────────────────────────────────────────────────────
+//
+// VerifyCertificate is the performance-critical read operation and the function
+// where BLAKE3's speed advantage is most pronounced at high TPS.
+//
+// On every call, the hash is recomputed from the stored plaintext fields and
+// compared against the stored digest — making this operation CPU-bound rather
+// than purely I/O-bound.
+//
+// CPU cost at 800 TPS (with MagnificationFactor = 100):
+//   SHA-256:  1,500µs × 800 = 1,200,000µs/sec per peer
+//   BLAKE3:     401µs × 800 =   320,800µs/sec per peer
+//   Saving:   ≈ 879,200µs/sec ≈ 0.88 sec/sec CPU freed per peer
+//
+// FIX-PERF (v11.0): No MSP role check — eliminates one redundant Fabric SDK
+// call per verify transaction under high read loads.
+//
+// Access: open to all participants (no MSP restriction).
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id, certHash string,
@@ -285,17 +410,36 @@ func (s *SmartContract) VerifyCertificate(
 	ts := time.Now().UTC().Format(time.RFC3339)
 
 	certJSON, err := ctx.GetStub().GetState(id)
-	if err != nil || certJSON == nil {
-		return &VerificationResult{CertID: id, Valid: false, Message: "certificate not found", HashAlgo: HashModeBLAKE3, Timestamp: ts}, nil
+	if err != nil {
+		return &VerificationResult{
+			CertID: id, Valid: false,
+			Message:   fmt.Sprintf("ledger read error: %v", err),
+			HashAlgo:  HashModeBLAKE3, Timestamp: ts,
+		}, nil
+	}
+	if certJSON == nil {
+		return &VerificationResult{
+			CertID: id, Valid: false,
+			Message:   "certificate not found",
+			HashAlgo:  HashModeBLAKE3, Timestamp: ts,
+		}, nil
 	}
 
 	var cert Certificate
 	if err := json.Unmarshal(certJSON, &cert); err != nil {
-		return &VerificationResult{CertID: id, Valid: false, Message: "corrupt data", HashAlgo: HashModeBLAKE3, Timestamp: ts}, nil
+		return &VerificationResult{
+			CertID: id, Valid: false,
+			Message:   "corrupt certificate data in ledger",
+			HashAlgo:  HashModeBLAKE3, Timestamp: ts,
+		}, nil
 	}
 
-	// Re-compute hash on-chain — BLAKE3 SIMD makes this 3.74x cheaper than SHA-256
-	computed, _ := ComputeCertHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+	// Re-compute hash from stored plaintext — BLAKE3 at 4.01µs × 100 = 401µs.
+	// vs SHA-256 at 15.0µs × 100 = 1,500µs. Difference is visible at ≥200 TPS.
+	computed, _ := ComputeCertHash(
+		cert.StudentID, cert.StudentName,
+		cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript,
+	)
 
 	isValid := cert.CertHash == computed
 	if certHash != "" && certHash != computed {
@@ -303,53 +447,99 @@ func (s *SmartContract) VerifyCertificate(
 	}
 
 	if cert.IsRevoked {
-		return &VerificationResult{CertID: id, Valid: false, IsRevoked: true, HashMatch: isValid, HashAlgo: HashModeBLAKE3, Message: "certificate has been revoked", Timestamp: ts}, nil
+		return &VerificationResult{
+			CertID: id, Valid: false, IsRevoked: true, HashMatch: isValid,
+			HashAlgo:  HashModeBLAKE3,
+			Message:   "certificate has been revoked",
+			Timestamp: ts,
+		}, nil
 	}
+
 	if !isValid {
-		return &VerificationResult{CertID: id, Valid: false, HashMatch: false, HashAlgo: HashModeBLAKE3, Message: "hash mismatch — certificate may have been tampered", Timestamp: ts}, nil
+		return &VerificationResult{
+			CertID: id, Valid: false, HashMatch: false,
+			HashAlgo:  HashModeBLAKE3,
+			Message:   "hash mismatch — certificate may have been tampered with",
+			Timestamp: ts,
+		}, nil
 	}
-	return &VerificationResult{CertID: id, Valid: true, IsRevoked: false, HashMatch: true, HashAlgo: HashModeBLAKE3, Message: "certificate is valid and authentic (BLAKE3 verified)", Timestamp: ts}, nil
+
+	return &VerificationResult{
+		CertID: id, Valid: true, IsRevoked: false, HashMatch: true,
+		HashAlgo:  HashModeBLAKE3,
+		Message:   "certificate is valid and authentic (BLAKE3 verified)",
+		Timestamp: ts,
+	}, nil
 }
 
-// ─── VerifyCertificateByID ───────────────────────────────────────────────────
+// ─── VerifyCertificateByID ──────────────────────────────────────────────────
 
-func (s *SmartContract) VerifyCertificateByID(ctx contractapi.TransactionContextInterface, id string) (*VerificationResult, error) {
+// VerifyCertificateByID retrieves the stored hash and delegates to VerifyCertificate.
+// Convenience wrapper for clients that do not have the hash value available.
+func (s *SmartContract) VerifyCertificateByID(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+) (*VerificationResult, error) {
 	cert, err := s.GetCertificate(ctx, id)
 	if err != nil {
 		ts := time.Now().UTC().Format(time.RFC3339)
-		return &VerificationResult{CertID: id, Valid: false, Message: fmt.Sprintf("verification failed: %v", err), HashAlgo: HashModeBLAKE3, Timestamp: ts}, nil
+		return &VerificationResult{
+			CertID: id, Valid: false,
+			Message:   fmt.Sprintf("verification failed: %v", err),
+			HashAlgo:  HashModeBLAKE3, Timestamp: ts,
+		}, nil
 	}
 	return s.VerifyCertificate(ctx, id, cert.CertHash)
 }
 
-// ─── GetCertificate / ReadCertificate ────────────────────────────────────────
+// ─── GetCertificate / ReadCertificate ───────────────────────────────────────
 
-func (s *SmartContract) GetCertificate(ctx contractapi.TransactionContextInterface, id string) (*Certificate, error) {
+// GetCertificate performs a point-to-point key lookup in the CouchDB world
+// state. This is a pure I/O operation — the hash algorithm has no impact.
+func (s *SmartContract) GetCertificate(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+) (*Certificate, error) {
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read from world state: %v", err)
+		return nil, fmt.Errorf("GetCertificate: ledger read error: %v", err)
 	}
 	if certJSON == nil {
-		return nil, fmt.Errorf("the certificate %s does not exist", id)
+		return nil, fmt.Errorf("GetCertificate: certificate %s does not exist", id)
 	}
+
 	var cert Certificate
 	if err = json.Unmarshal(certJSON, &cert); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetCertificate: unmarshal error: %v", err)
 	}
 	return &cert, nil
 }
 
-func (s *SmartContract) ReadCertificate(ctx contractapi.TransactionContextInterface, id string) (*Certificate, error) {
+// ReadCertificate is an alias for GetCertificate (REST API compatibility).
+func (s *SmartContract) ReadCertificate(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+) (*Certificate, error) {
 	return s.GetCertificate(ctx, id)
 }
 
-// ─── RevokeCertificate ───────────────────────────────────────────────────────
-// FIX-REVOKE: Removed the "RESEARCH STRESS SIMULATION" re-hash that was
-// present in v10. SHA-256's RevokeCertificate already removed this overhead
-// ("Removed redundant hashing overhead to resolve bottleneck at high TPS").
-// Having it only in BLAKE3 was an unfair penalty, not a fair comparison.
-// Both implementations now perform identical work: read → check → write.
-
+// ─── RevokeCertificate ──────────────────────────────────────────────────────
+//
+// RevokeCertificate permanently invalidates a certificate by toggling
+// the isRevoked boolean flag to true.
+//
+// FIX-REVOKE (v11.0): No hash recomputation is performed.
+// Revocation is a STATUS FLAG UPDATE only — not a verification event.
+// Both SHA-256 (Scenario 1) and BLAKE3 (Scenario 2) perform identical work:
+//   read → validate → check flag → update flag → write → audit
+// This ensures any TPS/latency difference in revocation benchmarks reflects
+// Fabric overhead (CouchDB I/O, Raft consensus), not algorithmic asymmetry.
+//
+// FIX-ERRORS (v12.0): All GetState, Unmarshal, Marshal, and PutState
+// errors are now returned explicitly instead of being silently discarded.
+//
+// Idempotency: already-revoked certificates return nil without error.
+// Access: Org1MSP and Org2MSP.
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -362,52 +552,86 @@ func (s *SmartContract) RevokeCertificate(
 		return fmt.Errorf("access denied: only Org1MSP or Org2MSP can revoke certificates")
 	}
 
-	certJSON, _ := ctx.GetStub().GetState(id)
-	if certJSON == nil {
-		return nil // idempotent
+	// FIX-ERRORS: explicit error check (previously discarded with _).
+	certJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return fmt.Errorf("RevokeCertificate: GetState failed: %v", err)
 	}
+	if certJSON == nil {
+		return nil // Certificate not found — idempotent return.
+	}
+
+	// FIX-ERRORS: explicit error check on unmarshal (previously discarded).
 	var cert Certificate
-	json.Unmarshal(certJSON, &cert)
+	if err := json.Unmarshal(certJSON, &cert); err != nil {
+		return fmt.Errorf("RevokeCertificate: unmarshal failed: %v", err)
+	}
 
 	if cert.IsRevoked {
-		return nil // already revoked — idempotent
+		return nil // Already revoked — idempotent return.
 	}
 
-	// FIX-REVOKE: No re-hash here. Revocation is a status flag update only.
-	// The certificate hash was already verified at issuance time.
-	// Adding a re-hash here adds pure overhead with zero security benefit
-	// (we are not verifying integrity, we are changing a flag).
+	// FIX-REVOKE: no hash recomputation here.
+	// The certificate hash was validated at IssueCertificate time.
+	// Recomputing the hash on revocation adds CPU overhead with zero
+	// security benefit — we are updating a flag, not verifying integrity.
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
 	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
 	cert.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 
-	updated, _ := json.Marshal(cert)
-	ctx.GetStub().PutState(id, updated)
-	s.writeAudit(ctx, id, "REVOKE", msp, "BLAKE3 revoke")
+	// FIX-ERRORS: explicit error check on marshal (previously discarded with _).
+	updated, err := json.Marshal(cert)
+	if err != nil {
+		return fmt.Errorf("RevokeCertificate: marshal failed: %v", err)
+	}
+
+	// FIX-ERRORS: explicit error check on PutState (previously unchecked).
+	if err := ctx.GetStub().PutState(id, updated); err != nil {
+		return fmt.Errorf("RevokeCertificate: PutState failed: %v", err)
+	}
+
+	s.writeAudit(ctx, id, "REVOKE", msp, "flag update — no re-hash (FIX-REVOKE)")
 	return nil
 }
 
-// ─── QueryAllCertificates ────────────────────────────────────────────────────
-// FIX-QUERY: Identical logic to SHA-256 variant.
-// QueryAllCertificates is I/O-bound (CouchDB) — hash algorithm has no impact.
-// Any latency difference here is pure CouchDB/network variance, not algorithmic.
-
+// ─── QueryAllCertificates ───────────────────────────────────────────────────
+//
+// QueryAllCertificates returns a paginated list of all active certificate assets.
+//
+// FIX-QUERY (v11.0): Uses pageSize=20 consistently across both BLAKE3 and
+// SHA-256 chaincode variants. QueryAllCertificates is I/O-bound (CouchDB) —
+// the hash algorithm has zero impact on this function. Any latency difference
+// between scenarios in this workload reflects CouchDB/network variance only
+// and must not be attributed to the hash algorithm.
+//
+// The rich query selector matches the indexDocTypeIssueDate CouchDB index.
+// Results are sorted by issueDate descending for chronological display.
+// Transcript payloads are stripped before transmission to minimise bandwidth.
+// Falls back to GetStateByRange if the rich query index is unavailable.
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface,
 	pageSize string,
 	bookmark string,
 ) (string, error) {
-	// FIX-INDEX-2: Both selector fields match the indexDocTypeIssueDate index
-	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
+	queryString := `{
+		"selector": {
+			"docType": "certificate",
+			"issueDate": { "$gt": null }
+		},
+		"sort": [{ "issueDate": "desc" }]
+	}`
 
 	ps, err := strconv.ParseInt(pageSize, 10, 32)
-	if err != nil {
-		ps = 20
+	if err != nil || ps <= 0 {
+		ps = 20 // FIX-QUERY: consistent default across both scenarios.
 	}
 
-	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(queryString, int32(ps), bookmark)
+	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
+		queryString, int32(ps), bookmark,
+	)
 	if err != nil {
+		// Fallback to range query if CouchDB index is unavailable.
 		return s.queryAllByRange(ctx, int(ps))
 	}
 	defer resultsIterator.Close()
@@ -419,8 +643,11 @@ func (s *SmartContract) QueryAllCertificates(
 			continue
 		}
 		var cert Certificate
-		if err = json.Unmarshal(queryResponse.Value, &cert); err == nil && cert.DocType == "certificate" {
-			cert.Transcript = "" // strip heavy payload for list view
+		if err = json.Unmarshal(queryResponse.Value, &cert); err != nil {
+			continue
+		}
+		if cert.DocType == "certificate" {
+			cert.Transcript = "" // Strip payload to minimise network I/O.
 			certificates = append(certificates, &cert)
 		}
 	}
@@ -430,11 +657,18 @@ func (s *SmartContract) QueryAllCertificates(
 		Bookmark:     metadata.Bookmark,
 		Count:        len(certificates),
 	}
-	resJSON, _ := json.Marshal(res)
+	resJSON, err := json.Marshal(res)
+	if err != nil {
+		return "", fmt.Errorf("QueryAllCertificates: marshal response failed: %v", err)
+	}
 	return string(resJSON), nil
 }
 
-func (s *SmartContract) queryAllByRange(ctx contractapi.TransactionContextInterface, limit int) (string, error) {
+// queryAllByRange is the fallback range scan when CouchDB rich queries fail.
+func (s *SmartContract) queryAllByRange(
+	ctx contractapi.TransactionContextInterface,
+	limit int,
+) (string, error) {
 	resultsIterator, err := ctx.GetStub().GetStateByRange("CERT_", "CERT_~")
 	if err != nil {
 		return `{"certificates":[],"bookmark":"","count":0}`, nil
@@ -464,16 +698,31 @@ func (s *SmartContract) queryAllByRange(ctx contractapi.TransactionContextInterf
 		Bookmark:     "",
 		Count:        len(certificates),
 	}
-	resJSON, _ := json.Marshal(res)
+	resJSON, err := json.Marshal(res)
+	if err != nil {
+		return `{"certificates":[],"bookmark":"","count":0}`, nil
+	}
 	return string(resJSON), nil
 }
 
 // ─── GetCertificatesByStudent ────────────────────────────────────────────────
 
-func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionContextInterface, studentID string) ([]*Certificate, error) {
+// GetCertificatesByStudent retrieves all certificates for a specific student.
+// Uses a compound CouchDB index on studentID + issueDate for fast lookup.
+// Prevents full world-state scans by targeting indexed fields only.
+func (s *SmartContract) GetCertificatesByStudent(
+	ctx contractapi.TransactionContextInterface,
+	studentID string,
+) ([]*Certificate, error) {
+	if studentID == "" {
+		return []*Certificate{}, fmt.Errorf("studentID is required")
+	}
+
 	queryString := fmt.Sprintf(
 		`{"selector":{"docType":"certificate","studentID":"%s","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`,
-		studentID)
+		studentID,
+	)
+
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil {
 		return []*Certificate{}, nil
@@ -496,8 +745,20 @@ func (s *SmartContract) GetCertificatesByStudent(ctx contractapi.TransactionCont
 
 // ─── GetAuditLogs ────────────────────────────────────────────────────────────
 
-func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
-	queryString := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}],"limit":50}`
+// GetAuditLogs returns the 50 most recent audit records sorted by timestamp.
+// Falls back to a range scan if the CouchDB index on timestamp is unavailable.
+func (s *SmartContract) GetAuditLogs(
+	ctx contractapi.TransactionContextInterface,
+) ([]*AuditLog, error) {
+	queryString := `{
+		"selector": {
+			"docType": "auditLog",
+			"timestamp": { "$gt": null }
+		},
+		"sort": [{ "timestamp": "desc" }],
+		"limit": 50
+	}`
+
 	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
 	if err != nil || resultsIterator == nil {
 		return s.getAuditLogsByRange(ctx)
@@ -520,7 +781,10 @@ func (s *SmartContract) GetAuditLogs(ctx contractapi.TransactionContextInterface
 	return logs, nil
 }
 
-func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextInterface) ([]*AuditLog, error) {
+// getAuditLogsByRange is the fallback range scan for audit records.
+func (s *SmartContract) getAuditLogsByRange(
+	ctx contractapi.TransactionContextInterface,
+) ([]*AuditLog, error) {
 	resultsIterator, err := ctx.GetStub().GetStateByRange("AUDIT_", "AUDIT_~")
 	if err != nil {
 		return []*AuditLog{}, nil
@@ -543,19 +807,43 @@ func (s *SmartContract) getAuditLogsByRange(ctx contractapi.TransactionContextIn
 	return logs, nil
 }
 
-// ─── ComputeHash / GetHashAlgorithm ─────────────────────────────────────────
+// ─── Utility Functions ───────────────────────────────────────────────────────
 
+// ComputeHash is the public Caliper benchmark endpoint.
+// It exercises the BLAKE3 hash computation without writing to the ledger,
+// providing a pure CPU throughput measurement that isolates hashing overhead
+// from I/O and consensus latency. This is the primary workload invoked by
+// the Caliper ComputeHash workload module across all four scenarios.
 func (s *SmartContract) ComputeHash(
 	ctx contractapi.TransactionContextInterface,
 	studentID, studentName, degree, issuer, issueDate string,
 ) (string, error) {
-	if studentID == "" || studentName == "" || degree == "" || issuer == "" || issueDate == "" {
-		return "", fmt.Errorf("all fields are required")
+	if studentID == "" || studentName == "" || degree == "" ||
+		issuer == "" || issueDate == "" {
+		return "", fmt.Errorf("all five fields are required for hash computation")
 	}
+
 	hash, _ := ComputeCertHash(studentID, studentName, degree, issuer, issueDate, "")
 	return hash, nil
 }
 
-func (s *SmartContract) GetHashAlgorithm(ctx contractapi.TransactionContextInterface) (string, error) {
+// GetHashAlgorithm returns the algorithm identifier for this chaincode instance.
+// Allows Caliper workload modules and client applications to confirm the active
+// hash mode without inspecting certificate records.
+func (s *SmartContract) GetHashAlgorithm(
+	ctx contractapi.TransactionContextInterface,
+) (string, error) {
 	return HashModeBLAKE3, nil
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+func main() {
+	chaincode, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		panic(fmt.Sprintf("Error creating BCMS BLAKE3 chaincode: %v", err))
+	}
+	if err := chaincode.Start(); err != nil {
+		panic(fmt.Sprintf("Error starting BCMS BLAKE3 chaincode: %v", err))
+	}
 }

@@ -4,17 +4,23 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 /**
  * ══════════════════════════════════════════════════════════════════════════
- *  GetCertificatesByStudent Workload — BCMS Hybrid-Batch (mirage-batch)
+ *  GetCertificatesByStudent Workload — BCMS Benchmark (all scenarios)
+ *  v2.0 — FIX-CONTRACTID: reads contractId from roundArguments
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Function signature (smartcontract_hybrid.go):
- *    GetCertificatesByStudent(studentId) ([]*Certificate, error)
+ *  Function signature:
+ *    GetCertificatesByStudent(studentID string) ([]*Certificate, error)
  *
- *  IMPORTANT: The hybrid chaincode uses lowercase JSON field names.
- *  studentId (camelCase) matches the CouchDB selector field "studentId"
- *  which is the Go struct tag: json:"studentId"
+ *  FIX-CONTRACTID (v2.0):
+ *  Previous version hardcoded contractId: 'basic' — would always call the
+ *  wrong chaincode regardless of which scenario is running.
+ *  Fixed: reads contractId from roundArguments (set in benchConfig YAML).
  *
- *  readOnly:true — CouchDB rich query with composite index.
+ *  studentID pattern: STU_{workerIndex}_{txIndex}
+ *  Matches the IssueCertificate workload key scheme so queries find real
+ *  certificates issued in the preceding round.
+ *
+ *  readOnly: true — CouchDB rich query with compound index.
  *  Returns empty slice [] when student has no certs — never returns error.
  * ══════════════════════════════════════════════════════════════════════════
  */
@@ -31,19 +37,18 @@ class GetCertificatesByStudentWorkload extends WorkloadModuleBase {
 
     async submitTransaction() {
         this.txIndex++;
-        const w         = this.workerIndex || 0;
-        // Query students from Round 1 issue batch — same ID pattern
+        const w = this.workerIndex || 0;
         const studentID = `STU_${w}_${this.txIndex}`;
 
         return this.sutAdapter.sendRequests({
-            contractId:        'basic',
-            contractFunction:  'GetCertificatesByStudent',
+            contractId: this.roundArguments.contractId || 'bcms-sha256',
+            contractFunction: 'GetCertificatesByStudent',
             contractArguments: [studentID],
-            readOnly:          true,
+            readOnly: true,
         });
     }
 
-    async cleanupWorkloadModule() {}
+    async cleanupWorkloadModule() { }
 }
 
 module.exports = { createWorkloadModule: () => new GetCertificatesByStudentWorkload() };

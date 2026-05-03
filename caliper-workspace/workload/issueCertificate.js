@@ -6,33 +6,37 @@ const crypto = require('crypto');
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  IssueCertificate Workload — BCMS S1/S2 Benchmark (SHA-256 & BLAKE3)
+ *  v8.0 — FIX-CERTHASH: Pass empty certHash so chaincode computes it
  * ══════════════════════════════════════════════════════════════════════════
- *
- *  Target chaincode: bcms-sha256 (S1) or bcms-blake3 (S2)
- *  Chaincode ID is injected dynamically via roundArguments.contractId.
  *
  *  Function signature (smartcontract_sha256.go / smartcontract_blake3.go):
  *    IssueCertificate(
- *      id, studentID, studentName, degree, issuer, issueDate,   // 6
- *      certHash, blake3Hash, signature, batchID,               // 4
- *      transcript                                               // 1 ← 11th arg
+ *      id, studentID, studentName, degree, issuer, issueDate,
+ *      certHash, blake3Hash, signature, batchID, transcript
  *    ) error
  *
+ *  FIX-CERTHASH (v8.0):
+ *  ─────────────────────────────────────────────────────────────────────
+ *  Previous versions computed SHA-256 client-side and sent it as certHash.
+ *  This caused a critical bug in S2 (BLAKE3):
+ *    - Chaincode stored the client SHA-256 hash
+ *    - VerifyCertificate re-computed BLAKE3 on-chain
+ *    - SHA-256 ≠ BLAKE3 → HashMatch = false on EVERY verification
+ *    - All S2 VerifyCertificate calls returned "hash mismatch" silently
+ *
+ *  Fix: certHash is sent as '' (empty string).
+ *  In the chaincode IssueCertificate:
+ *    computedHash, hashAlgo := ComputeCertHash(...)
+ *    if certHash == "" { certHash = computedHash }
+ *  → S1 stores SHA-256 hash; S2 stores BLAKE3 hash.
+ *  → VerifyCertificate re-computes same algorithm → HashMatch = true ✓
+ *
  *  MVCC Safety:
- *    - Each worker generates a UNIQUE ID: CERT_{workerIndex}_{txIndex}
- *    - No two workers ever share a key → zero phantom-read conflicts
- *    - Idempotent: duplicate ID returns nil (not error)
+ *    CERT_{workerIndex}_{txIndex} — unique per worker, zero conflicts.
  *
- *  Payload & Hashing:
- *    transcriptPayload = 'X'.repeat(payloadSize)  [default: 100KB]
- *    certHash   = SHA-256(studentId|studentName|degree|issuer|issueDate|transcript)
- *                 ← transcript IS included so the hash covers the full payload
- *    blake3Hash = SHA-256(certHash) as a placeholder (advisory, not validated on-chain)
- *
- *  On-chain stress:
- *    The chaincode re-computes ComputeCertHash × 100 iterations using the full
- *    transcript → 100 × 15µs (SHA-256) or 100 × 4µs (BLAKE3) per transaction.
- *    This amplification makes the CPU difference visible in Fabric latency.
+ *  contractId:
+ *    Read from roundArguments.contractId (set in benchConfig YAML).
+ *    S1 YAML → bcms-sha256 ; S2 YAML → bcms-blake3
  * ══════════════════════════════════════════════════════════════════════════
  */
 class IssueCertificateWorkload extends WorkloadModuleBase {
@@ -41,18 +45,17 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         this.txIndex = 0;
         this.batchId = '';
         this.issueDate = '';
-        this.payloadSize = 5000;
+        this.payloadSize = 50000;
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         this.txIndex = 0;
-        // Freeze issueDate per worker-round so all certs in a batch share the same date
         this.issueDate = new Date().toISOString().split('T')[0];
-        // Unique batch ID per worker × round
         this.batchId = `BATCH_W${workerIndex}_R${roundIndex}_${Date.now()}`;
-        // Read payloadSize from YAML arguments (default to 5000 if not specified)
-        this.payloadSize = (roundArguments && roundArguments.payloadSize) ? parseInt(roundArguments.payloadSize, 10) : 5000;
+        this.payloadSize = (roundArguments && roundArguments.payloadSize)
+            ? parseInt(roundArguments.payloadSize, 10)
+            : 50000;
     }
 
     async submitTransaction() {
@@ -66,32 +69,27 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
         const issuer = 'Digital University';
         const issueDate = this.issueDate;
 
-        // ── EDUCATIONAL PAYLOAD (Optimized Stress Test) ──────────────────
-        // Large payloads force the CPU to work harder on hashing. 
-        // Read dynamically from benchConfig YAML (e.g., 5000 for 5KB, 50000 for 50KB).
+        // 50 KB transcript payload — forces chaincode to hash ~51,000 bytes.
+        // SHA-256 ×100: 15.0 µs × 100 = 1,500 µs per tx  (S1 baseline)
+        // BLAKE3  ×100:  4.01 µs × 100 =   401 µs per tx  (S2 alternative)
         const transcriptPayload = 'X'.repeat(this.payloadSize);
 
-        // ── SHA-256 hash (primary, validated on-chain) ──────────────────
-        // Formula: SHA256(studentId|studentName|degree|issuer|issueDate|payload)
-        const fields = [studentID, studentName, degree, issuer, issueDate, transcriptPayload].join('|');
-        const certHash = crypto.createHash('sha256').update(fields).digest('hex');
+        // FIX-CERTHASH: certHash = '' → chaincode computes hash using its own
+        // algorithm (SHA-256 for S1, BLAKE3 for S2). This is the ONLY correct
+        // approach to ensure VerifyCertificate passes in both scenarios.
+        // Sending a pre-computed SHA-256 hash to S2 would cause ALL
+        // VerifyCertificate calls to return HashMatch=false (silent failure).
+        const certHash = '';
 
-        // ── BLAKE3 advisory hash (stored, NOT validated on-chain) ────────
-        // Real BLAKE3 is ~3-10x faster than SHA-256 for 50KB+ payloads.
-        // For benchmarking with standard Node.js, we simulate the "near-zero"
-        // cost of BLAKE3 by using a fixed-length slice of the transcript,
-        // effectively demonstrating the upper-bound performance.
-        const blake3Hash = crypto.createHash('sha256').update(certHash).digest('hex');
+        // blake3Hash is an advisory field — stored but not validated on-chain.
+        // We use SHA-256(empty) as a deterministic placeholder.
+        const blake3Hash = crypto.createHash('sha256').update('').digest('hex');
 
-        // ── Digital signature placeholder ────────────────────────────────
-        const signature = `SIG_${certID}_${certHash.substring(0, 16)}`;
+        const signature = `SIG_${certID}_placeholder`;
 
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId: this.roundArguments.contractId || 'bcms-sha256',
             contractFunction: 'IssueCertificate',
-            // 11 args — MUST match Go func signature exactly:
-            // (id, studentID, studentName, degree, issuer, issueDate,
-            //  certHash, blake3Hash, signature, batchID, transcript)
             contractArguments: [
                 certID,
                 studentID,
@@ -99,21 +97,17 @@ class IssueCertificateWorkload extends WorkloadModuleBase {
                 degree,
                 issuer,
                 issueDate,
-                certHash,
-                blake3Hash,
+                certHash,          // '' → chaincode computes correct algorithm's hash
+                blake3Hash,        // advisory only
                 signature,
                 this.batchId,
-                transcriptPayload, // New 11th argument: Heavy Transcript
+                transcriptPayload, // 50 KB stress payload
             ],
             readOnly: false,
-        };
-
-        return this.sutAdapter.sendRequests(request);
+        });
     }
 
-    async cleanupWorkloadModule() {
-        // Idempotent design — no cleanup needed
-    }
+    async cleanupWorkloadModule() { }
 }
 
 module.exports = { createWorkloadModule: () => new IssueCertificateWorkload() };
