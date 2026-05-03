@@ -2,7 +2,7 @@
   "scenario": 4,
   "title": "Hybrid + Batching \u00d710",
   "description": "Real Caliper benchmark \u2014 Hybrid + Batching \u00d710",
-  "timestamp": "2026-05-03T19:33:32Z",
+  "timestamp": "2026-05-03T19:38:59Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/hybrid-batch",
