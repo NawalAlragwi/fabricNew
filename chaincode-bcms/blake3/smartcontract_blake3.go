@@ -75,7 +75,7 @@ const HashModeBLAKE3 = "blake3"
 // MagnificationFactor controls how many times the hash is computed per invocation.
 // See the header comment above for the full research justification.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 100
+const MagnificationFactor = 1000
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
@@ -201,13 +201,14 @@ func (s *SmartContract) writeAudit(
 	txID := ctx.GetStub().GetTxID()
 	key := fmt.Sprintf("AUDIT_%s_%s", txID, certID)
 
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
 	log := AuditLog{
 		DocType:   "auditLog",
 		TxID:      txID,
 		CertID:    certID,
 		Action:    action,
 		Actor:     actor,
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Timestamp: time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339),
 		Detail:    detail,
 	}
 
@@ -258,6 +259,7 @@ func (s *SmartContract) InitLedger(
 		{"CERT_SEED_005", "STU005", "Eve Davis", "MBA in Business Administration", "Business School", "2024-05-12"},
 	}
 
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
 	for _, seed := range seeds {
 		certHash, hashAlgo := ComputeCertHash(
 			seed.studentID, seed.studentName,
@@ -278,8 +280,8 @@ func (s *SmartContract) InitLedger(
 			IsRevoked:   false,
 			RevokedBy:   "N/A",
 			RevokedAt:   "N/A",
-			CreatedAt:   time.Now().UTC().Format(time.RFC3339),
-			UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+			CreatedAt:   time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339),
+			UpdatedAt:   time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339),
 			TxID:        ctx.GetStub().GetTxID(),
 		}
 
@@ -348,7 +350,8 @@ func (s *SmartContract) IssueCertificate(
 		certHashInput = computedHash
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
+	now := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
 	cert := Certificate{
 		DocType:     "certificate",
 		ID:          id,
@@ -407,7 +410,8 @@ func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
 	id, certHash string,
 ) (*VerificationResult, error) {
-	ts := time.Now().UTC().Format(time.RFC3339)
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
+	ts := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
 
 	certJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
@@ -481,8 +485,9 @@ func (s *SmartContract) VerifyCertificateByID(
 	id string,
 ) (*VerificationResult, error) {
 	cert, err := s.GetCertificate(ctx, id)
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
 	if err != nil {
-		ts := time.Now().UTC().Format(time.RFC3339)
+		ts := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
 		return &VerificationResult{
 			CertID: id, Valid: false,
 			Message:   fmt.Sprintf("verification failed: %v", err),
@@ -575,10 +580,11 @@ func (s *SmartContract) RevokeCertificate(
 	// The certificate hash was validated at IssueCertificate time.
 	// Recomputing the hash on revocation adds CPU overhead with zero
 	// security benefit — we are updating a flag, not verifying integrity.
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
 	cert.IsRevoked = true
 	cert.RevokedBy = msp
-	cert.RevokedAt = time.Now().UTC().Format(time.RFC3339)
-	cert.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	cert.RevokedAt = time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
+	cert.UpdatedAt = time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
 
 	// FIX-ERRORS: explicit error check on marshal (previously discarded with _).
 	updated, err := json.Marshal(cert)
