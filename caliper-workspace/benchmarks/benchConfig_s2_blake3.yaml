@@ -47,9 +47,9 @@ monitors:
 test:
   name: bcms-s2-blake3-alternative-v9
   description: >
-    Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned).
+    Scenario S2 — BLAKE3 Alternative (v12.0 — PhD Research Parity).
     Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us/hash).
-    Magnification: x1000 → 40,100 us hash overhead per transaction.
+    Magnification: x1500 → 6,015 us hash overhead per transaction.
     Payload: 20 KB (symmetric stress test vs SHA-256).
     Mix: 60% CPU-bound (Verify/HashOnly) to maximize BLAKE3 visibility.
     BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than SHA-256.
@@ -64,10 +64,10 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s.
-        20KB payload: BLAKE3 processes ~20,000 bytes with AVX2 SIMD x1000 = 16,000 us/tx.
-        vs SHA-256: 150,000 us/tx. Lower CPU contention → lower avg latency.
+        20KB payload: BLAKE3 processes ~20,000 bytes with AVX2 SIMD x1500 = 6,015 us/tx.
+        vs SHA-256: 22,500 us/tx. Lower CPU contention → lower avg latency.
         contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
-      txDuration: 30
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
@@ -84,7 +84,7 @@ test:
     - label: VerifyCertificate
       description: >
         S2 BLAKE3 — LINEAR-RATE 20→100 TPS verify (60s).
-        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 16,000 us/tx (vs SHA-256: 60,000 us/tx).
+        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 6,015 us/tx (vs SHA-256: 22,500 us/tx).
         i7-1255U AVX2: P-core handles 4 BLAKE3 lanes simultaneously.
         Expected: BLAKE3 latency stays low while SHA-256 saturates P-cores above 100 TPS.
         This is where T2 < T1 is proven. Caliper will show lower avg latency

@@ -1,21 +1,21 @@
 Operation,Scenario,Function,Succ,Fail,Success Rate (%),TPS,Eff Cert TPS,Avg Latency (s),P95 (s),Consensus/100
-IssueCertificate,SHA-256 Baseline,IssueCertificate,605,0,100.0,19.7,19.7,0.45,0.675,100.0
+IssueCertificate,SHA-256 Baseline,IssueCertificate,1205,0,100.0,19.9,19.9,0.45,0.675,100.0
 IssueCertificate,BLAKE3 Alternative,IssueCertificate,605,0,100.0,18.9,18.9,6.01,9.015,100.0
 IssueCertificate,Hybrid SHA-256 + BLAKE3,IssueCertificate,2985,0,100.0,37.8,37.8,17.32,25.98,100.0
 IssueCertificate,Hybrid + Batching ×10,IssueCertificate,4597,0,100.0,72.9,729.0,2.06,3.09,10.0
-VerifyCertificate,SHA-256 Baseline,VerifyCertificate,4682,0,100.0,39.1,39.1,0.03,0.045,100.0
+VerifyCertificate,SHA-256 Baseline,VerifyCertificate,4691,0,100.0,39.1,39.1,0.03,0.045,100.0
 VerifyCertificate,BLAKE3 Alternative,VerifyCertificate,4210,0,100.0,33.7,33.7,0.84,1.26,100.0
 VerifyCertificate,Hybrid SHA-256 + BLAKE3,VerifyCertificate,11105,0,100.0,174.4,174.4,3.54,5.31,100.0
 VerifyCertificate,Hybrid + Batching ×10,VerifyCertificate,12008,0,100.0,199.5,199.5,0.03,0.045,10.0
-HashOnlyBenchmark,SHA-256 Baseline,HashOnlyBenchmark,4805,0,100.0,80.0,80.0,0.03,0.045,100.0
+HashOnlyBenchmark,SHA-256 Baseline,HashOnlyBenchmark,4805,0,100.0,80.0,80.0,0.02,0.03,100.0
 HashOnlyBenchmark,BLAKE3 Alternative,HashOnlyBenchmark,4805,0,100.0,73.5,73.5,3.02,4.53,100.0
 HashOnlyBenchmark,Hybrid SHA-256 + BLAKE3,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 HashOnlyBenchmark,Hybrid + Batching ×10,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,10.0
-QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,305,0,100.0,15.2,15.2,0.07,0.105,100.0
+QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,905,0,100.0,15.1,15.1,0.05,0.075,100.0
 QueryAllCertificates,BLAKE3 Alternative,QueryAllCertificates,905,0,100.0,15.0,15.0,0.16,0.24,100.0
 QueryAllCertificates,Hybrid SHA-256 + BLAKE3,QueryAllCertificates,3010,0,100.0,31.4,31.4,34.82,52.23,100.0
 QueryAllCertificates,Hybrid + Batching ×10,QueryAllCertificates,3008,0,100.0,49.7,49.7,0.07,0.105,10.0
-RevokeCertificate,SHA-256 Baseline,RevokeCertificate,305,0,100.0,14.8,14.8,0.43,0.645,100.0
+RevokeCertificate,SHA-256 Baseline,RevokeCertificate,905,0,100.0,14.9,14.9,0.47,0.705,100.0
 RevokeCertificate,BLAKE3 Alternative,RevokeCertificate,905,0,100.0,14.9,14.9,0.6,0.9,100.0
 RevokeCertificate,Hybrid SHA-256 + BLAKE3,RevokeCertificate,5029,78,98.5,63.9,63.9,30.0,45.0,100.0
 RevokeCertificate,Hybrid + Batching ×10,RevokeCertificate,9175,0,100.0,125.4,125.4,22.58,33.87,10.0
