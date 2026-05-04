@@ -326,8 +326,8 @@ setup_fabric_network() {
     cd "$ROOT_DIR"
 
     # FIX-CCNAME: use semantic name from SCENARIO_CCNAME array
-    local cc_to_deploy="chaincode-bcms/hybrid-batch"
-    local cc_name="bcms-hybrid-batch"
+    local cc_to_deploy="${SCENARIO_CHAINCODE[1]}"
+    local cc_name="${SCENARIO_CCNAME[1]}"
     if [ -n "${SCENARIO_NUM:-}" ]; then
         cc_to_deploy="${SCENARIO_CHAINCODE[$SCENARIO_NUM]}"
         cc_name="${SCENARIO_CCNAME[$SCENARIO_NUM]}"
@@ -642,12 +642,13 @@ run_real_caliper_scenario() {
 
     # FIX-CCNAME: use semantic name, not "bcms-s${n}"
     # This ensures networkConfig.id = workload contractId
-    local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"
     local cc_name="${SCENARIO_CCNAME[$n]}"
-    export CC_NAME="$cc_name"
-
+    local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"
     local benchcfg="${SCENARIO_BENCHCONFIG[$n]}"
     local batchsize="${SCENARIO_BATCHSIZE[$n]}"
+
+    # Export CC_NAME so downstream health checks and Caliper use the correct ID
+    export CC_NAME="${cc_name}"
 
     log "  Scenario ${n} — CC: ${cc_name} — Bench: ${benchcfg}"
     info "  S1 baseline: bcms-sha256 (15.0 µs/hash ×100 = 1,500 µs/tx)"
@@ -864,8 +865,8 @@ run_caliper_benchmarks() {
         -name "*.pem" | grep "tlsca" | head -1)
 
     # FIX-DEFAULTBENCH + FIX-CCNAME: default to S1 (SHA-256 baseline)
-    local default_cc="${CC_NAME:-bcms-sha256}"
-    local default_bench="benchConfig_s1_sha256.yaml"
+    local default_cc="${CC_NAME:-${SCENARIO_CCNAME[1]}}"
+    local default_bench="${SCENARIO_BENCHCONFIG[1]}"
     if [ -n "${SCENARIO_NUM:-}" ]; then
         default_cc="${SCENARIO_CCNAME[$SCENARIO_NUM]}"
         default_bench="${SCENARIO_BENCHCONFIG[$SCENARIO_NUM]}"
@@ -1021,7 +1022,11 @@ main() {
         check_prerequisites
         [ "$SKIP_TAMARIN" = "false" ] && run_tamarin_verification
         detect_runtime_environment
-        [ "$SKIP_NETWORK" = "false" ] && setup_fabric_network
+        # If skipping network, assume it is up. Otherwise, do a clean setup for S1 first.
+        if [ "$SKIP_NETWORK" = "false" ]; then
+            SCENARIO_NUM=1
+            setup_fabric_network
+        fi
         run_all_scenarios
         generate_summary_report
         print_final_summary
