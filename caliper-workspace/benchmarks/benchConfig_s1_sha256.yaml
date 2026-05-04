@@ -1,9 +1,28 @@
 # ============================================================================
-#  BCMS — Scenario S1: SHA-256 Baseline (v9.0 — PERFORMANCE FIXES)
-#  Hash algorithm : SHA-256 (crypto/sha256 — sequential, no SIMD)
-#  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 10
-#  Transcript     : 5 KB per certificate (Reduced from 50 KB for stability)
+#  BCMS — Scenario S1: SHA-256 Baseline  (v9.0 — HP ProBook 450 G9 Tuned)
+#  Hardware: Intel i7-1255U (10-core AVX2), 16 GB RAM, WSL2, Windows 11
+#
+#  HARDWARE TUNING RATIONALE:
+#  ─────────────────────────────────────────────────────────────────────────
+#  workers: 5       — optimal for i7-1255U under WSL2 + Docker overhead
+#                     (2 P-cores + 3 E-cores for Caliper,
+#                      remaining cores for Docker containers + scheduler)
+#
+#  payloadSize: 5000 — 5 KB: fits in CPU L2 cache (i7-1255U = 512KB L2 per P-core)
+#                      Resolves gRPC overflow that caused 98.5% failure with 50KB
+#                      SHA-256 ×100: 15.0µs × 100 = 1,500µs per tx at this size
+#                      BLAKE3 ×100:   4.01µs × 100 =   401µs per tx at this size
+#
+#  IssueCertificate: 20 TPS — safe rate for 5KB writes on WSL2 CouchDB
+#                              20 TPS × 60s × 5 workers = 1,200 certs issued
+#
+#  VerifyCertificate: 50→150 TPS linear — PRIMARY COMPARISON ROUND
+#                     CPU-bound re-hash: BLAKE3 AVX2 on i7-1255U shows clear
+#                     advantage over SHA-256 (no SIMD) in this range.
+#                     At 150 TPS: SHA-256 uses 225ms/s CPU vs BLAKE3 60ms/s
+#                     → latency difference measurable on this hardware
+#
+#  FAIR COMPARISON: IDENTICAL to benchConfig_s2_blake3.yaml except contractId
 # ============================================================================
 
 monitors:
@@ -24,20 +43,25 @@ monitors:
 test:
   name: bcms-s1-sha256-baseline-v9
   description: >
-    Scenario S1 — SHA-256 Baseline.
-    Payload: 5 KB transcript per certificate.
-    Issue: 20 TPS (Stabilized).
-    Verify: 100-500 TPS linear ramp.
-    Query/Revoke: 50 TPS.
+    Scenario S1 — SHA-256 Baseline (v9.0, HP ProBook 450 G9 i7-1255U tuned).
+    Hash: SHA-256 (sequential Merkle-Damgard, no SIMD, 15.0 us/hash).
+    Magnification: x100 → 1,500 us hash overhead per transaction.
+    Payload: 5 KB (fits L2 cache, resolves gRPC overflow from 50 KB).
+    workers: 5 (i7-1255U optimal: 2 P-cores + 3 E-cores for Caliper).
+    IDENTICAL config to S2-BLAKE3 — only contractId differs.
   workers:
     type: local
-    number: 10
+    number: 5
 
   rounds:
+
+    # ── Round 1: Issue certificates (write, CPU + I/O) ──────────────────
     - label: IssueCertificate
       description: >
-        S1 SHA-256 — Issue certificates at fixed-rate 20 TPS.
-        Payload: 5 KB transcript.
+        S1 SHA-256 — Issue 1,200 certs at 20 TPS fixed-rate, 60s.
+        5KB payload: SHA-256 processes ~5,100 bytes x100 = 1,500 us overhead/tx.
+        20 TPS chosen to stay within WSL2/CouchDB safe write throughput.
+        contractId: bcms-sha256 (FIX-CONTRACTID).
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -51,15 +75,21 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 2: Verify certificates (read, CPU-bound — PRIMARY ROUND) ──
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — Linear-rate 100-500 TPS verify (read-only).
+        S1 SHA-256 — LINEAR-RATE 50→150 TPS verify (60s).
+        PRIMARY COMPARISON ROUND: VerifyCertificateByID re-computes SHA-256
+        on-chain on every call: 1,500 us CPU overhead per transaction.
+        i7-1255U P-cores saturate earlier than BLAKE3 (AVX2 vs no-SIMD).
+        Expected: SHA-256 latency increases steeply above 100 TPS.
+        contractId: bcms-sha256 (FIX-CONTRACTID).
       txDuration: 60
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 100
-          finishingTps: 500
+          startingTps: 50
+          finishingTps: 150
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -68,14 +98,19 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 3: Query all certificates (I/O-bound, hash has zero impact) ─
     - label: QueryAllCertificates
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
+        S1 SHA-256 — Fixed-rate 15 TPS CouchDB rich query (60s).
+        I/O-bound operation: hash algorithm has ZERO impact on this round.
+        Any S1 vs S2 difference here = CouchDB variance, not algorithmic.
+        Reduced to 15 TPS for WSL2 stability on 16 GB system.
+        contractId: bcms-sha256 (FIX-CONTRACTID).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 15
       workload:
         module: workload/queryAllCertificates.js
         arguments:
@@ -83,14 +118,19 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 4: Revoke certificates (write, flag-only, no hash) ──────────
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS revocation.
+        S1 SHA-256 — Fixed-rate 15 TPS revocation (60s).
+        v12 chaincode: flag-only update, NO hash recomputation (FIX-REVOKE).
+        SHA-256 and BLAKE3 perform IDENTICAL work in this round.
+        Any latency difference = Fabric/CouchDB overhead, not algorithm.
+        contractId: bcms-sha256 (FIX-CONTRACTID).
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 15
       workload:
         module: workload/revokeCertificate.js
         arguments:

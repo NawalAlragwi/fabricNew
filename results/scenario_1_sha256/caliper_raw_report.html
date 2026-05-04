@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v12</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS). Hash: SHA-256 (crypto&#x2F;sha256, sequential Merkle-Damgard). Chaincode: bcms-sha256 (deployed independently from S2). Payload: 32KB transcript per certificate (realistic academic cert). batchSize: 1 (single certificate per Fabric transaction). IssueCertificate: fixed-rate 200 TPS, 60s. VerifyCertificate: linear-rate 50→600 TPS. RevokeCertificate: linear-rate 20→100 TPS. QueryAllCertificates: fixed-rate 20 TPS. IDENTICAL config to S2-BLAKE3-v12 for fair comparison.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-baseline-v9</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 — SHA-256 Baseline (v9.0, HP ProBook 450 G9 i7-1255U tuned). Hash: SHA-256 (sequential Merkle-Damgard, no SIMD, 15.0 us&#x2F;hash). Magnification: x100 → 1,500 us hash overhead per transaction. Payload: 5 KB (fits L2 cache, resolves gRPC overflow from 50 KB). workers: 5 (i7-1255U optimal: 2 P-cores + 3 E-cores for Caliper). IDENTICAL config to S2-BLAKE3 — only contractId differs.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -156,28 +156,28 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>2654</td> <td>2126</td> <td>79.5</td> <td>117.93</td> <td>3.84</td> <td>101.43</td> <td>30.2</td>
+                         <td>IssueCertificate</td> <td>1205</td> <td>0</td> <td>20.1</td> <td>0.91</td> <td>0.14</td> <td>0.49</td> <td>20.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>4353</td> <td>0</td> <td>54.3</td> <td>30.37</td> <td>0.01</td> <td>0.27</td> <td>53.8</td>
+                         <td>VerifyCertificate</td> <td>4615</td> <td>0</td> <td>77.0</td> <td>0.08</td> <td>0.01</td> <td>0.01</td> <td>77.0</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>2404</td> <td>0</td> <td>20.0</td> <td>0.83</td> <td>0.04</td> <td>0.12</td> <td>20.0</td>
+                         <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.22</td> <td>0.03</td> <td>0.08</td> <td>15.0</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>2124</td> <td>0</td> <td>35.5</td> <td>8.67</td> <td>0.18</td> <td>2.83</td> <td>31.8</td>
+                         <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.98</td> <td>0.17</td> <td>0.53</td> <td>14.9</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S1 SHA-256 — Issue single certificates (batchSize&#x3D;1). 32KB transcript (realistic academic cert payload). SHA-256 sequential hash on each issuance — CPU bottleneck expected at high TPS. Fixed-rate 200 TPS stresses the endorsing peer&#39;s SHA-256 compute path.
+                <p>S1 SHA-256 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 5KB payload: SHA-256 processes ~5,100 bytes x100 &#x3D; 1,500 us overhead&#x2F;tx. 20 TPS chosen to stay within WSL2&#x2F;CouchDB safe write throughput. contractId: bcms-sha256 (FIX-CONTRACTID).
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 80
+    tps: 20
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -185,7 +185,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>2654</td> <td>2126</td> <td>79.5</td> <td>117.93</td> <td>3.84</td> <td>101.43</td> <td>30.2</td>
+                                     <td>IssueCertificate</td> <td>1205</td> <td>0</td> <td>20.1</td> <td>0.91</td> <td>0.14</td> <td>0.49</td> <td>20.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -193,14 +193,14 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>S1 SHA-256 — Linear-rate 500→1500 TPS verify (CPU-bound stress test). SHA-256 re-hash × 100 iterations per verify: 100 × 15µs &#x3D; 1500µs CPU&#x2F;tx. At 1500 TPS: 1500 × 1500µs &#x3D; 2,250,000µs&#x2F;s CPU demand on peer → saturation. This is the KEY round where SHA-256 sequential bottleneck becomes visible.
+                <p>S1 SHA-256 — LINEAR-RATE 50→150 TPS verify (60s). PRIMARY COMPARISON ROUND: VerifyCertificateByID re-computes SHA-256 on-chain on every call: 1,500 us CPU overhead per transaction. i7-1255U P-cores saturate earlier than BLAKE3 (AVX2 vs no-SIMD). Expected: SHA-256 latency increases steeply above 100 TPS. contractId: bcms-sha256 (FIX-CONTRACTID).
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: linear-rate
   opts:
     startingTps: 50
-    finishingTps: 600
+    finishingTps: 150
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -208,7 +208,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>4353</td> <td>0</td> <td>54.3</td> <td>30.37</td> <td>0.01</td> <td>0.27</td> <td>53.8</td>
+                                     <td>VerifyCertificate</td> <td>4615</td> <td>0</td> <td>77.0</td> <td>0.08</td> <td>0.01</td> <td>0.01</td> <td>77.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -216,13 +216,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>S1 SHA-256 — Fixed-rate 20 TPS CouchDB rich query. I&#x2F;O-bound operation — hash algorithm has no impact here. Uses indexDocTypeIssueDate for optimized pagination.
+                <p>S1 SHA-256 — Fixed-rate 15 TPS CouchDB rich query (60s). I&#x2F;O-bound operation: hash algorithm has ZERO impact on this round. Any S1 vs S2 difference here &#x3D; CouchDB variance, not algorithmic. Reduced to 15 TPS for WSL2 stability on 16 GB system. contractId: bcms-sha256 (FIX-CONTRACTID).
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 20
+    tps: 15
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -230,7 +230,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>2404</td> <td>0</td> <td>20.0</td> <td>0.83</td> <td>0.04</td> <td>0.12</td> <td>20.0</td>
+                                     <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.22</td> <td>0.03</td> <td>0.08</td> <td>15.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -238,14 +238,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>S1 SHA-256 — Linear-rate ramp 100→500 TPS revocation (idempotent write). SHA-256 sequential hash computation during revocation integrity check. Linear ramp exposes SHA-256 degradation under increasing load.
+                <p>S1 SHA-256 — Fixed-rate 15 TPS revocation (60s). v12 chaincode: flag-only update, NO hash recomputation (FIX-REVOKE). SHA-256 and BLAKE3 perform IDENTICAL work in this round. Any latency difference &#x3D; Fabric&#x2F;CouchDB overhead, not algorithm. contractId: bcms-sha256 (FIX-CONTRACTID).
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
-  type: linear-rate
+  type: fixed-rate
   opts:
-    startingTps: 20
-    finishingTps: 100
+    tps: 15
 </pre>
                         <h3>Performance metrics for RevokeCertificate</h3>
                             <table style="min-width: 100%;">
@@ -253,7 +252,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>2124</td> <td>0</td> <td>35.5</td> <td>8.67</td> <td>0.18</td> <td>2.83</td> <td>31.8</td>
+                                     <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.98</td> <td>0.17</td> <td>0.53</td> <td>14.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -262,96 +261,89 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-baseline-v12
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-baseline-v9
 description: &gt;
-  Scenario S1 — SHA-256 Baseline (v12.0 Isolated Chaincode + High TPS). Hash:
-  SHA-256 (crypto&#x2F;sha256, sequential Merkle-Damgard). Chaincode: bcms-sha256
-  (deployed independently from S2). Payload: 32KB transcript per certificate
-  (realistic academic cert). batchSize: 1 (single certificate per Fabric
-  transaction). IssueCertificate: fixed-rate 200 TPS, 60s. VerifyCertificate:
-  linear-rate 50→600 TPS. RevokeCertificate: linear-rate 20→100 TPS.
-  QueryAllCertificates: fixed-rate 20 TPS. IDENTICAL config to S2-BLAKE3-v12 for
-  fair comparison.
+  Scenario S1 — SHA-256 Baseline (v9.0, HP ProBook 450 G9 i7-1255U tuned). Hash:
+  SHA-256 (sequential Merkle-Damgard, no SIMD, 15.0 us&#x2F;hash). Magnification:
+  x100 → 1,500 us hash overhead per transaction. Payload: 5 KB (fits L2 cache,
+  resolves gRPC overflow from 50 KB). workers: 5 (i7-1255U optimal: 2 P-cores +
+  3 E-cores for Caliper). IDENTICAL config to S2-BLAKE3 — only contractId
+  differs.
 workers:
   type: local
-  number: 4
+  number: 5
 rounds:
   - label: IssueCertificate
     description: &gt;
-      S1 SHA-256 — Issue single certificates (batchSize&#x3D;1). 32KB transcript
-      (realistic academic cert payload). SHA-256 sequential hash on each
-      issuance — CPU bottleneck expected at high TPS. Fixed-rate 200 TPS
-      stresses the endorsing peer&#39;s SHA-256 compute path.
+      S1 SHA-256 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 5KB payload:
+      SHA-256 processes ~5,100 bytes x100 &#x3D; 1,500 us overhead&#x2F;tx. 20 TPS chosen
+      to stay within WSL2&#x2F;CouchDB safe write throughput. contractId: bcms-sha256
+      (FIX-CONTRACTID).
     txDuration: 60
-    postIterationWaitTime: 20000
-    rateControl:
-      type: fixed-rate
-      opts:
-        tps: 80
-    workload:
-      module: workload&#x2F;issueCertificate.js
-      arguments:
-        contractId: bcms-s1
-        batchSize: 1
-        payloadSize: 32768
-        totalIssued: 25000
-    txOptions:
-      invokerIdentity: User1@org1.example.com
-  - label: VerifyCertificate
-    description: &gt;
-      S1 SHA-256 — Linear-rate 500→1500 TPS verify (CPU-bound stress test).
-      SHA-256 re-hash × 100 iterations per verify: 100 × 15µs &#x3D; 1500µs CPU&#x2F;tx.
-      At 1500 TPS: 1500 × 1500µs &#x3D; 2,250,000µs&#x2F;s CPU demand on peer →
-      saturation. This is the KEY round where SHA-256 sequential bottleneck
-      becomes visible.
-    txDuration: 60
-    postIterationWaitTime: 20000
-    rateControl:
-      type: linear-rate
-      opts:
-        startingTps: 50
-        finishingTps: 600
-    workload:
-      module: workload&#x2F;verifyCertificate.js
-      arguments:
-        contractId: bcms-s1
-        totalIssued: 25000
-    txOptions:
-      invokerIdentity: User1@org1.example.com
-  - label: QueryAllCertificates
-    description: &gt;
-      S1 SHA-256 — Fixed-rate 20 TPS CouchDB rich query. I&#x2F;O-bound operation —
-      hash algorithm has no impact here. Uses indexDocTypeIssueDate for
-      optimized pagination.
-    txDuration: 120
-    postIterationWaitTime: 20000
     rateControl:
       type: fixed-rate
       opts:
         tps: 20
     workload:
+      module: workload&#x2F;issueCertificate.js
+      arguments:
+        contractId: bcms-sha256
+        payloadSize: 5000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: VerifyCertificate
+    description: &gt;
+      S1 SHA-256 — LINEAR-RATE 50→150 TPS verify (60s). PRIMARY COMPARISON
+      ROUND: VerifyCertificateByID re-computes SHA-256 on-chain on every call:
+      1,500 us CPU overhead per transaction. i7-1255U P-cores saturate earlier
+      than BLAKE3 (AVX2 vs no-SIMD). Expected: SHA-256 latency increases steeply
+      above 100 TPS. contractId: bcms-sha256 (FIX-CONTRACTID).
+    txDuration: 60
+    rateControl:
+      type: linear-rate
+      opts:
+        startingTps: 50
+        finishingTps: 150
+    workload:
+      module: workload&#x2F;verifyCertificate.js
+      arguments:
+        contractId: bcms-sha256
+        totalIssued: 1000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: QueryAllCertificates
+    description: &gt;
+      S1 SHA-256 — Fixed-rate 15 TPS CouchDB rich query (60s). I&#x2F;O-bound
+      operation: hash algorithm has ZERO impact on this round. Any S1 vs S2
+      difference here &#x3D; CouchDB variance, not algorithmic. Reduced to 15 TPS for
+      WSL2 stability on 16 GB system. contractId: bcms-sha256 (FIX-CONTRACTID).
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 15
+    workload:
       module: workload&#x2F;queryAllCertificates.js
       arguments:
-        contractId: bcms-s1
+        contractId: bcms-sha256
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
     description: &gt;
-      S1 SHA-256 — Linear-rate ramp 100→500 TPS revocation (idempotent write).
-      SHA-256 sequential hash computation during revocation integrity check.
-      Linear ramp exposes SHA-256 degradation under increasing load.
+      S1 SHA-256 — Fixed-rate 15 TPS revocation (60s). v12 chaincode: flag-only
+      update, NO hash recomputation (FIX-REVOKE). SHA-256 and BLAKE3 perform
+      IDENTICAL work in this round. Any latency difference &#x3D; Fabric&#x2F;CouchDB
+      overhead, not algorithm. contractId: bcms-sha256 (FIX-CONTRACTID).
     txDuration: 60
-    postIterationWaitTime: 20000
     rateControl:
-      type: linear-rate
+      type: fixed-rate
       opts:
-        startingTps: 20
-        finishingTps: 100
+        tps: 15
     workload:
       module: workload&#x2F;revokeCertificate.js
       arguments:
-        contractId: bcms-s1
-        totalIssued: 10000
+        contractId: bcms-sha256
+        totalIssued: 1000
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>

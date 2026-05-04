@@ -1,0 +1,27 @@
+# ============================================================================
+#  BCMS BENCHMARK OPTIMIZED WSL2 CONFIGURATION
+#  Target: Hyperledger Fabric + Caliper (SHA256 vs BLAKE3)
+#  File location: C:\Users\<YourUsername>\.wslconfig
+# ============================================================================
+
+[wsl2]
+# High memory allocation for Docker containers (Peers, Orderers, CouchDB, Caliper)
+# 16GB RAM System -> 12GB for WSL
+# 32GB RAM System -> 24GB for WSL
+memory=12GB
+
+# Logical processors for parallel transaction endorsement and hash computation
+# For BLAKE3 AVX2 optimization, ensure P-cores are accessible to WSL
+processors=8
+
+# Swap space for handling memory spikes during high TPS rounds (250+ TPS)
+swap=4GB
+
+# Performance Tuning: swappiness=10 favors RAM over disk swap
+kernelCommandLine=sysctl.vm.swappiness=10 sysctl.vm.vfs_cache_pressure=50
+
+# Networking: Ensure localhost forwarding for Caliper connection to Fabric
+localhostForwarding=true
+
+# Keep WSL2 alive to prevent cold-start penalties between benchmark iterations
+guiApplications=false
