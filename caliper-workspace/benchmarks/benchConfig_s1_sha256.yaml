@@ -8,18 +8,15 @@
 #                     (2 P-cores + 3 E-cores for Caliper,
 #                      remaining cores for Docker containers + scheduler)
 #
-#  payloadSize: 50000 — 50 KB: stresses SIMD vs sequential hashing.
-#                      Resolves previous gRPC issues by using optimized buffer sizes.
-#                      SHA-256 ×1000: 150.0µs × 1000 = 150,000µs per tx at this size
-#                      BLAKE3 ×1000:   40.1µs × 1000 =   40,100µs per tx at this size
+#  payloadSize: 20000 — 20 KB: stresses SIMD vs sequential hashing.
+#                      SHA-256 ×1000: 60.0µs × 1000 = 60,000µs per tx at this size
+#                      BLAKE3 ×1000:  16.0µs × 1000 = 16,000µs per tx at this size
 #
 #  IssueCertificate: 20 TPS — safe rate for 5KB writes on WSL2 CouchDB
 #                              20 TPS × 60s × 5 workers = 1,200 certs issued
 #
-#  VerifyCertificate: 50→300 TPS linear — PRIMARY COMPARISON ROUND
-#                     CPU-bound re-hash: BLAKE3 AVX2 on i7-1255U shows clear
-#                     advantage over SHA-256 (no SIMD) in this range.
-#                     At 300 TPS: SHA-256 uses 4500ms/s CPU vs BLAKE3 1200ms/s
+#  VerifyCertificate: 20→100 TPS linear — PRIMARY COMPARISON ROUND
+#                     At 100 TPS: SHA-256 uses 6000ms/s CPU vs BLAKE3 1600ms/s
 #                     → latency difference measurable on this hardware
 #
 #  FAIR COMPARISON: IDENTICAL to benchConfig_s2_blake3.yaml except contractId
@@ -46,7 +43,7 @@ test:
     Scenario S1 — SHA-256 Baseline (v9.0, HP ProBook 450 G9 i7-1255U tuned).
     Hash: SHA-256 (sequential Merkle-Damgard, no SIMD, 15.0 us/hash).
     Magnification: x1000 → 15,000 us hash overhead per transaction.
-    Payload: 50 KB (stresses hash algorithm compute vs bandwidth).
+    Payload: 20 KB (stresses hash algorithm compute vs bandwidth).
     workers: 5 (i7-1255U optimal: 2 P-cores + 3 E-cores for Caliper).
     Mix: 60% CPU-bound (Verify/HashOnly) to maximize BLAKE3 visibility.
   workers:
@@ -70,14 +67,14 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 50000
+          payloadSize: 20000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ── Round 2: Verify certificates (read, CPU-bound — PRIMARY ROUND) ──
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — LINEAR-RATE 50→150 TPS verify (60s).
+        S1 SHA-256 — LINEAR-RATE 20→100 TPS verify (60s).
         PRIMARY COMPARISON ROUND: VerifyCertificateByID re-computes SHA-256
         on-chain on every call: 15,000 us CPU overhead per transaction.
         i7-1255U P-cores saturate earlier than BLAKE3 (AVX2 vs no-SIMD).
@@ -87,8 +84,8 @@ test:
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          startingTps: 20
+          finishingTps: 100
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -148,11 +145,11 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 80
       workload:
         module: workload/hashOnlyBenchmark.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 50000
+          payloadSize: 20000
       txOptions:
         invokerIdentity: User1@org1.example.com

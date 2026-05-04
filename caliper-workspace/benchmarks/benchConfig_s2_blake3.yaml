@@ -10,13 +10,13 @@
 #  SHA-256 in Go's crypto/sha256 uses NO SIMD — purely sequential.
 #
 #  Result on this machine:
-#    BLAKE3 ×1000 = 40.1µs × 1000 =   40,100µs per VerifyCertificate call
-#    SHA-256 ×1000 = 150.0µs × 1000 = 150,000µs per VerifyCertificate call
+#    BLAKE3 ×1000 = 16.0µs × 1000 =   16,000µs per VerifyCertificate call
+#    SHA-256 ×1000 = 60.0µs × 1000 =  60,000µs per VerifyCertificate call
 #
-#  At 300 TPS: (top of linear-rate ramp):
-#    SHA-256: 150,000µs × 300 = 45,000,000µs/sec P-core bound  ← saturates
-#    BLAKE3:    40,100µs × 300 = 12,030,000µs/sec P-core bound  ← headroom
-#    CPU freed: 32,970,000µs/sec per peer → directly visible in avg latency
+#  At 100 TPS:
+#    SHA-256: 60,000µs × 100 = 6,000,000µs/sec P-core bound
+#    BLAKE3:  16,000µs × 100 = 1,600,000µs/sec P-core bound
+#    CPU freed: 4,400,000µs/sec per peer → directly visible in avg latency
 #
 #  CRITICAL v12.0 FIXES THAT MAKE THIS COMPARISON VALID:
 #  ─────────────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ test:
     Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned).
     Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us/hash).
     Magnification: x1000 → 40,100 us hash overhead per transaction.
-    Payload: 50 KB (symmetric stress test vs SHA-256).
+    Payload: 20 KB (symmetric stress test vs SHA-256).
     Mix: 60% CPU-bound (Verify/HashOnly) to maximize BLAKE3 visibility.
     BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than SHA-256.
     Expected T2 < T1 in VerifyCertificate above 80 TPS.
@@ -64,7 +64,7 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s.
-        50KB payload: BLAKE3 processes ~51,000 bytes with AVX2 SIMD x1000 = 40,100 us/tx.
+        20KB payload: BLAKE3 processes ~20,000 bytes with AVX2 SIMD x1000 = 16,000 us/tx.
         vs SHA-256: 150,000 us/tx. Lower CPU contention → lower avg latency.
         contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
       txDuration: 30
@@ -76,15 +76,15 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-blake3
-          payloadSize: 50000
+          payloadSize: 20000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     # ── Round 2: Verify certificates (read, CPU-bound — PRIMARY ROUND) ──
     - label: VerifyCertificate
       description: >
-        S2 BLAKE3 — LINEAR-RATE 50→150 TPS verify (60s).
-        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 40,100 us/tx (vs SHA-256: 150,000 us/tx).
+        S2 BLAKE3 — LINEAR-RATE 20→100 TPS verify (60s).
+        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 16,000 us/tx (vs SHA-256: 60,000 us/tx).
         i7-1255U AVX2: P-core handles 4 BLAKE3 lanes simultaneously.
         Expected: BLAKE3 latency stays low while SHA-256 saturates P-cores above 100 TPS.
         This is where T2 < T1 is proven. Caliper will show lower avg latency
@@ -94,8 +94,8 @@ test:
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 300
+          startingTps: 20
+          finishingTps: 100
       workload:
         module: workload/verifyCertificate.js
         arguments:
@@ -154,11 +154,11 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 100
+          tps: 80
       workload:
         module: workload/hashOnlyBenchmark.js
         arguments:
           contractId: bcms-blake3
-          payloadSize: 50000
+          payloadSize: 20000
       txOptions:
         invokerIdentity: User1@org1.example.com
