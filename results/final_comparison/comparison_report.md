@@ -1,13 +1,13 @@
 # BCMS Four-Scenario Academic Benchmark Comparison
 
-> Generated: 2026-05-04 22:51:31  |  Caliper 0.6.0  |  Fabric 2.5.9
+> Generated: 2026-05-04 23:04:19  |  Caliper 0.6.0  |  Fabric 2.5.9
 
 **All 4 scenarios: 0% failure rate (100% success rate)**
 
 | Scenario | Hash | Batch | Workers | IssueCert TPS | Eff. TPS | Lat (ms) | Tx | Fail | Success% | TPS vs S1 |
 |:--|:--|:--:|:--:|--:|--:|--:|--:|--:|--:|--:|
 | **SHA-256 Baseline** | `sha256` | 1 | 4 | 19.9 | 19.9 | 420 | 21,416 | **0** | **100.0%** | **+0.0%** |
-| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 9.8 | 9.8 | 34260 | 31,602 | **11240** | **64.4%** | **-50.8%** |
+| **BLAKE3 Alternative** | `blake3` | 1 | 4 | 19.7 | 19.7 | 440 | 23,812 | **0** | **100.0%** | **-1.0%** |
 | **Hybrid SHA-256 + BLAKE3** | `hybrid` | 1 | 4 | 37.8 | 37.8 | 17320 | 44,414 | **156** | **99.6%** | **+89.9%** |
 | **Hybrid + Batching ×10** | `hybrid` | 10 | 8 | 72.9 | 729.0 | 2060 | 59,096 | **0** | **100.0%** | **+266.3%** |
 
