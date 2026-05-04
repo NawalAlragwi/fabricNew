@@ -75,7 +75,7 @@ const HashModeBLAKE3 = "blake3"
 // MagnificationFactor controls how many times the hash is computed per invocation.
 // See the header comment above for the full research justification.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 1000
+const MagnificationFactor = 1500
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 

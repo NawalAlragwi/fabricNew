@@ -82,7 +82,7 @@ const HashModeSHA256 = "sha256"
 // MagnificationFactor controls the number of hash iterations per invocation.
 // Identical to BLAKE3 v12 — ensures symmetric benchmark amplification.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 1000
+const MagnificationFactor = 1500
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
