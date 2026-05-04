@@ -127,9 +127,9 @@
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
                 <li>Name: &nbsp<span style="font-weight: 500;">bcms-s2-blake3-alternative-v9</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned). Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us&#x2F;hash). Magnification: x1000 → 4,010 us hash overhead per transaction. Payload: 5 KB (identical to S1 — symmetric comparison). workers: 5 (i7-1255U optimal — identical to S1). BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than SHA-256. Expected T2 &lt; T1 in VerifyCertificate above 80 TPS.
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned). Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us&#x2F;hash). Magnification: x1000 → 40,100 us hash overhead per transaction. Payload: 50 KB (symmetric stress test vs SHA-256). Mix: 60% CPU-bound (Verify&#x2F;HashOnly) to maximize BLAKE3 visibility. BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than SHA-256. Expected T2 &lt; T1 in VerifyCertificate above 80 TPS.
 </span></li>
-                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">5</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
             <ul>
@@ -139,6 +139,7 @@
                     <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
                     <li><a href="#QueryAllCertificates">QueryAllCertificates</a></li>
                     <li><a href="#RevokeCertificate">RevokeCertificate</a></li>
+                    <li><a href="#HashOnlyBenchmark">HashOnlyBenchmark</a></li>
             </ul>
             <ul>
                 <h3>&nbspSystem under test</h3>
@@ -156,24 +157,27 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1205</td> <td>0</td> <td>20.1</td> <td>1.02</td> <td>0.17</td> <td>0.50</td> <td>20.0</td>
+                         <td>IssueCertificate</td> <td>605</td> <td>0</td> <td>20.2</td> <td>39.91</td> <td>4.47</td> <td>34.26</td> <td>9.8</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>5767</td> <td>0</td> <td>96.2</td> <td>0.19</td> <td>0.01</td> <td>0.02</td> <td>96.2</td>
+                         <td>VerifyCertificate</td> <td>4600</td> <td>3000</td> <td>63.3</td> <td>59.99</td> <td>0.05</td> <td>23.24</td> <td>43.0</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.26</td> <td>0.07</td> <td>0.13</td> <td>15.0</td>
+                         <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>6.43</td> <td>0.13</td> <td>1.07</td> <td>15.0</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.89</td> <td>0.18</td> <td>0.54</td> <td>14.9</td>
+                         <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>1.67</td> <td>0.18</td> <td>0.59</td> <td>15.0</td>
+                    </tr>
+                    <tr>
+                         <td>HashOnlyBenchmark</td> <td>3166</td> <td>2620</td> <td>96.2</td> <td>60.00</td> <td>0.06</td> <td>27.02</td> <td>48.2</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 5KB payload: BLAKE3 processes ~5,100 bytes with AVX2 SIMD x1000 &#x3D; 4,010 us&#x2F;tx. vs SHA-256: 1,500 us&#x2F;tx. Lower CPU contention → lower avg latency. contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
+                <p>S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 50KB payload: BLAKE3 processes ~51,000 bytes with AVX2 SIMD x1000 &#x3D; 40,100 us&#x2F;tx. vs SHA-256: 150,000 us&#x2F;tx. Lower CPU contention → lower avg latency. contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
 rateControl:
   type: fixed-rate
   opts:
@@ -185,7 +189,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1205</td> <td>0</td> <td>20.1</td> <td>1.02</td> <td>0.17</td> <td>0.50</td> <td>20.0</td>
+                                     <td>IssueCertificate</td> <td>605</td> <td>0</td> <td>20.2</td> <td>39.91</td> <td>4.47</td> <td>34.26</td> <td>9.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -193,9 +197,9 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>S2 BLAKE3 — LINEAR-RATE 50→150 TPS verify (60s). PRIMARY COMPARISON ROUND: BLAKE3 re-hash &#x3D; 4,010 us&#x2F;tx (vs SHA-256: 15,000 us&#x2F;tx). i7-1255U AVX2: P-core handles 4 BLAKE3 lanes simultaneously. Expected: BLAKE3 latency stays low while SHA-256 saturates P-cores above 100 TPS. This is where T2 &lt; T1 is proven. Caliper will show lower avg latency and higher throughput for BLAKE3 vs SHA-256 in this round. contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
+                <p>S2 BLAKE3 — LINEAR-RATE 50→150 TPS verify (60s). PRIMARY COMPARISON ROUND: BLAKE3 re-hash &#x3D; 40,100 us&#x2F;tx (vs SHA-256: 150,000 us&#x2F;tx). i7-1255U AVX2: P-core handles 4 BLAKE3 lanes simultaneously. Expected: BLAKE3 latency stays low while SHA-256 saturates P-cores above 100 TPS. This is where T2 &lt; T1 is proven. Caliper will show lower avg latency and higher throughput for BLAKE3 vs SHA-256 in this round. contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
 </p>
-                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
   type: linear-rate
   opts:
@@ -208,7 +212,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>5767</td> <td>0</td> <td>96.2</td> <td>0.19</td> <td>0.01</td> <td>0.02</td> <td>96.2</td>
+                                     <td>VerifyCertificate</td> <td>4600</td> <td>3000</td> <td>63.3</td> <td>59.99</td> <td>0.05</td> <td>23.24</td> <td>43.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -230,7 +234,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.26</td> <td>0.07</td> <td>0.13</td> <td>15.0</td>
+                                     <td>QueryAllCertificates</td> <td>905</td> <td>0</td> <td>15.1</td> <td>6.43</td> <td>0.13</td> <td>1.07</td> <td>15.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -252,10 +256,32 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>0.89</td> <td>0.18</td> <td>0.54</td> <td>14.9</td>
+                                     <td>RevokeCertificate</td> <td>905</td> <td>0</td> <td>15.1</td> <td>1.67</td> <td>0.18</td> <td>0.59</td> <td>15.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
+                <h2>Benchmark round: HashOnlyBenchmark</h2>
+                <p>S2 BLAKE3 — Pure CPU benchmark at 100 TPS. Bypasses ledger database to isolate hash performance. Expected: BLAKE3 will use minimal CPU (&lt;25% of 1 core) at this magnification.
+</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 100
+</pre>
+                        <h3>Performance metrics for HashOnlyBenchmark</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>HashOnlyBenchmark</td> <td>3166</td> <td>2620</td> <td>96.2</td> <td>60.00</td> <td>0.06</td> <td>27.02</td> <td>48.2</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for HashOnlyBenchmark</h3>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
@@ -265,21 +291,21 @@ rateControl:
 description: &gt;
   Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned).
   Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us&#x2F;hash).
-  Magnification: x1000 → 4,010 us hash overhead per transaction. Payload: 5 KB
-  (identical to S1 — symmetric comparison). workers: 5 (i7-1255U optimal —
-  identical to S1). BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than
-  SHA-256. Expected T2 &lt; T1 in VerifyCertificate above 80 TPS.
+  Magnification: x1000 → 40,100 us hash overhead per transaction. Payload: 50 KB
+  (symmetric stress test vs SHA-256). Mix: 60% CPU-bound (Verify&#x2F;HashOnly) to
+  maximize BLAKE3 visibility. BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster
+  than SHA-256. Expected T2 &lt; T1 in VerifyCertificate above 80 TPS.
 workers:
   type: local
   number: 5
 rounds:
   - label: IssueCertificate
     description: &gt;
-      S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 5KB payload:
-      BLAKE3 processes ~5,100 bytes with AVX2 SIMD x1000 &#x3D; 4,010 us&#x2F;tx. vs
-      SHA-256: 1,500 us&#x2F;tx. Lower CPU contention → lower avg latency.
+      S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s. 50KB payload:
+      BLAKE3 processes ~51,000 bytes with AVX2 SIMD x1000 &#x3D; 40,100 us&#x2F;tx. vs
+      SHA-256: 150,000 us&#x2F;tx. Lower CPU contention → lower avg latency.
       contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
-    txDuration: 60
+    txDuration: 30
     rateControl:
       type: fixed-rate
       opts:
@@ -288,19 +314,19 @@ rounds:
       module: workload&#x2F;issueCertificate.js
       arguments:
         contractId: bcms-blake3
-        payloadSize: 5000
+        payloadSize: 50000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
       S2 BLAKE3 — LINEAR-RATE 50→150 TPS verify (60s). PRIMARY COMPARISON ROUND:
-      BLAKE3 re-hash &#x3D; 4,010 us&#x2F;tx (vs SHA-256: 15,000 us&#x2F;tx). i7-1255U AVX2:
+      BLAKE3 re-hash &#x3D; 40,100 us&#x2F;tx (vs SHA-256: 150,000 us&#x2F;tx). i7-1255U AVX2:
       P-core handles 4 BLAKE3 lanes simultaneously. Expected: BLAKE3 latency
       stays low while SHA-256 saturates P-cores above 100 TPS. This is where T2
       &lt; T1 is proven. Caliper will show lower avg latency and higher throughput
       for BLAKE3 vs SHA-256 in this round. contractId: bcms-blake3
       (FIX-CONTRACTID — CRITICAL).
-    txDuration: 60
+    txDuration: 120
     rateControl:
       type: linear-rate
       opts:
@@ -346,6 +372,23 @@ rounds:
       arguments:
         contractId: bcms-blake3
         totalIssued: 1000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: HashOnlyBenchmark
+    description: &gt;
+      S2 BLAKE3 — Pure CPU benchmark at 100 TPS. Bypasses ledger database to
+      isolate hash performance. Expected: BLAKE3 will use minimal CPU (&lt;25% of 1
+      core) at this magnification.
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload&#x2F;hashOnlyBenchmark.js
+      arguments:
+        contractId: bcms-blake3
+        payloadSize: 50000
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>

@@ -37,6 +37,7 @@ SCENARIOS = [
 OPERATIONS = [
     "IssueCertificate",
     "VerifyCertificate",
+    "HashOnlyBenchmark",
     "QueryAllCertificates",
     "RevokeCertificate",
     "GetCertificatesByStudent",

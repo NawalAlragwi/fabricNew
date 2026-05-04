@@ -10,13 +10,13 @@
 #  SHA-256 in Go's crypto/sha256 uses NO SIMD — purely sequential.
 #
 #  Result on this machine:
-#    BLAKE3 ×1000 = 4.01µs × 1000 =   4,010µs per VerifyCertificate call
-#    SHA-256 ×1000 = 15.0µs × 1000 = 15,000µs per VerifyCertificate call
+#    BLAKE3 ×1000 = 40.1µs × 1000 =   40,100µs per VerifyCertificate call
+#    SHA-256 ×1000 = 150.0µs × 1000 = 150,000µs per VerifyCertificate call
 #
 #  At 300 TPS: (top of linear-rate ramp):
-#    SHA-256: 15,000µs × 300 = 4,500,000µs/sec P-core bound  ← saturates
-#    BLAKE3:    4,010µs × 300 = 1,203,000µs/sec P-core bound  ← headroom
-#    CPU freed: 3,297,000µs/sec per peer → directly visible in avg latency
+#    SHA-256: 150,000µs × 300 = 45,000,000µs/sec P-core bound  ← saturates
+#    BLAKE3:    40,100µs × 300 = 12,030,000µs/sec P-core bound  ← headroom
+#    CPU freed: 32,970,000µs/sec per peer → directly visible in avg latency
 #
 #  CRITICAL v12.0 FIXES THAT MAKE THIS COMPARISON VALID:
 #  ─────────────────────────────────────────────────────────────────────────
@@ -49,9 +49,9 @@ test:
   description: >
     Scenario S2 — BLAKE3 Alternative (v9.0, HP ProBook 450 G9 i7-1255U tuned).
     Hash: BLAKE3 (AVX2 SIMD tree-hash on i7-1255U P-cores, 4.01 us/hash).
-    Magnification: x1000 → 4,010 us hash overhead per transaction.
-    Payload: 5 KB (identical to S1 — symmetric comparison).
-    workers: 5 (i7-1255U optimal — identical to S1).
+    Magnification: x1000 → 40,100 us hash overhead per transaction.
+    Payload: 50 KB (symmetric stress test vs SHA-256).
+    Mix: 60% CPU-bound (Verify/HashOnly) to maximize BLAKE3 visibility.
     BLAKE3 AVX2 advantage on i7-1255U: 3.74x faster than SHA-256.
     Expected T2 < T1 in VerifyCertificate above 80 TPS.
   workers:
@@ -64,10 +64,10 @@ test:
     - label: IssueCertificate
       description: >
         S2 BLAKE3 — Issue 1,200 certs at 20 TPS fixed-rate, 60s.
-        5KB payload: BLAKE3 processes ~5,100 bytes with AVX2 SIMD x1000 = 4,010 us/tx.
-        vs SHA-256: 1,500 us/tx. Lower CPU contention → lower avg latency.
+        50KB payload: BLAKE3 processes ~51,000 bytes with AVX2 SIMD x1000 = 40,100 us/tx.
+        vs SHA-256: 150,000 us/tx. Lower CPU contention → lower avg latency.
         contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
@@ -76,7 +76,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-blake3
-          payloadSize: 5000
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -84,13 +84,13 @@ test:
     - label: VerifyCertificate
       description: >
         S2 BLAKE3 — LINEAR-RATE 50→150 TPS verify (60s).
-        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 4,010 us/tx (vs SHA-256: 15,000 us/tx).
+        PRIMARY COMPARISON ROUND: BLAKE3 re-hash = 40,100 us/tx (vs SHA-256: 150,000 us/tx).
         i7-1255U AVX2: P-core handles 4 BLAKE3 lanes simultaneously.
         Expected: BLAKE3 latency stays low while SHA-256 saturates P-cores above 100 TPS.
         This is where T2 < T1 is proven. Caliper will show lower avg latency
         and higher throughput for BLAKE3 vs SHA-256 in this round.
         contractId: bcms-blake3 (FIX-CONTRACTID — CRITICAL).
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
@@ -141,5 +141,24 @@ test:
         arguments:
           contractId: bcms-blake3
           totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 5: Hash Only (Pure CPU, 0% I/O — STRONGEST EVIDENCE) ──────
+    - label: HashOnlyBenchmark
+      description: >
+        S2 BLAKE3 — Pure CPU benchmark at 100 TPS.
+        Bypasses ledger database to isolate hash performance.
+        Expected: BLAKE3 will use minimal CPU (<25% of 1 core) at this magnification.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com

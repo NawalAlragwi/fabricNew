@@ -815,4 +815,18 @@ func (s *SmartContract) GetHashAlgorithm(
 	return HashModeSHA256, nil
 }
 
+// HashOnlyBenchmark — Dedicated CPU-bound round for pure hash performance measurement.
+// Bypasses ledger I/O to isolate the cryptographic algorithm overhead.
+func (s *SmartContract) HashOnlyBenchmark(
+	ctx contractapi.TransactionContextInterface,
+	payload string,
+) (string, error) {
+	data := []byte(payload)
+	var h [32]byte
+	for i := 0; i < MagnificationFactor; i++ {
+		h = sha256.Sum256(data)
+	}
+	return fmt.Sprintf("%x", h), nil
+}
+
 // ─── End of SmartContract ────────────────────────────────────────────────────

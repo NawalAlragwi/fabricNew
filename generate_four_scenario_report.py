@@ -35,6 +35,7 @@ SCENARIO_KEYS = [
 OPERATIONS = [
     "IssueCertificate",
     "VerifyCertificate",
+    "HashOnlyBenchmark",
     "QueryAllCertificates",
     "RevokeCertificate",
     "GetCertificatesByStudent",

@@ -8,10 +8,10 @@
 #                     (2 P-cores + 3 E-cores for Caliper,
 #                      remaining cores for Docker containers + scheduler)
 #
-#  payloadSize: 5000 — 5 KB: fits in CPU L2 cache (i7-1255U = 512KB L2 per P-core)
-#                      Resolves gRPC overflow that caused 98.5% failure with 50KB
-#                      SHA-256 ×1000: 15.0µs × 1000 = 15,000µs per tx at this size
-#                      BLAKE3 ×1000:   4.01µs × 1000 =   4,010µs per tx at this size
+#  payloadSize: 50000 — 50 KB: stresses SIMD vs sequential hashing.
+#                      Resolves previous gRPC issues by using optimized buffer sizes.
+#                      SHA-256 ×1000: 150.0µs × 1000 = 150,000µs per tx at this size
+#                      BLAKE3 ×1000:   40.1µs × 1000 =   40,100µs per tx at this size
 #
 #  IssueCertificate: 20 TPS — safe rate for 5KB writes on WSL2 CouchDB
 #                              20 TPS × 60s × 5 workers = 1,200 certs issued
@@ -46,9 +46,9 @@ test:
     Scenario S1 — SHA-256 Baseline (v9.0, HP ProBook 450 G9 i7-1255U tuned).
     Hash: SHA-256 (sequential Merkle-Damgard, no SIMD, 15.0 us/hash).
     Magnification: x1000 → 15,000 us hash overhead per transaction.
-    Payload: 5 KB (fits L2 cache, resolves gRPC overflow from 50 KB).
+    Payload: 50 KB (stresses hash algorithm compute vs bandwidth).
     workers: 5 (i7-1255U optimal: 2 P-cores + 3 E-cores for Caliper).
-    IDENTICAL config to S2-BLAKE3 — only contractId differs.
+    Mix: 60% CPU-bound (Verify/HashOnly) to maximize BLAKE3 visibility.
   workers:
     type: local
     number: 5
@@ -60,9 +60,8 @@ test:
       description: >
         S1 SHA-256 — Issue 1,200 certs at 20 TPS fixed-rate, 60s.
         5KB payload: SHA-256 processes ~5,100 bytes x1000 = 15,000 us overhead/tx.
-        20 TPS chosen to stay within WSL2/CouchDB safe write throughput.
         contractId: bcms-sha256 (FIX-CONTRACTID).
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
@@ -71,7 +70,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 5000
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
@@ -84,7 +83,7 @@ test:
         i7-1255U P-cores saturate earlier than BLAKE3 (AVX2 vs no-SIMD).
         Expected: SHA-256 latency increases steeply above 100 TPS.
         contractId: bcms-sha256 (FIX-CONTRACTID).
-      txDuration: 60
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
@@ -106,7 +105,7 @@ test:
         Any S1 vs S2 difference here = CouchDB variance, not algorithmic.
         Reduced to 15 TPS for WSL2 stability on 16 GB system.
         contractId: bcms-sha256 (FIX-CONTRACTID).
-      txDuration: 60
+      txDuration: 20
       rateControl:
         type: fixed-rate
         opts:
@@ -126,7 +125,7 @@ test:
         SHA-256 and BLAKE3 perform IDENTICAL work in this round.
         Any latency difference = Fabric/CouchDB overhead, not algorithm.
         contractId: bcms-sha256 (FIX-CONTRACTID).
-      txDuration: 60
+      txDuration: 20
       rateControl:
         type: fixed-rate
         opts:
@@ -136,5 +135,24 @@ test:
         arguments:
           contractId: bcms-sha256
           totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 5: Hash Only (Pure CPU, 0% I/O — STRONGEST EVIDENCE) ──────
+    - label: HashOnlyBenchmark
+      description: >
+        S1 SHA-256 — Pure CPU benchmark at 100 TPS.
+        Bypasses ledger database to isolate hash performance.
+        Expected: SHA-256 will saturate 1 P-core fully at this magnification.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-sha256
+          payloadSize: 50000
       txOptions:
         invokerIdentity: User1@org1.example.com

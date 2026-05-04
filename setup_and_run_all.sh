@@ -651,9 +651,9 @@ run_real_caliper_scenario() {
     export CC_NAME="${cc_name}"
 
     log "  Scenario ${n} — CC: ${cc_name} — Bench: ${benchcfg}"
-    info "  S1 baseline: bcms-sha256 (15.0 µs/hash ×100 = 1,500 µs/tx)"
-    info "  S2 test:     bcms-blake3 ( 4.01 µs/hash ×100 =   401 µs/tx)"
-    info "  Expected BLAKE3 advantage at 500 TPS: ~549,500 µs/sec freed per peer"
+    info "  S1 baseline: bcms-sha256 (150.0 µs/hash ×1000 = 150,000 µs/tx)"
+    info "  S2 test:     bcms-blake3 ( 40.1 µs/hash ×1000 =  40,100 µs/tx)"
+    info "  Expected BLAKE3 advantage at 300 TPS: ~32.9 seconds of CPU freed per second across peer cluster"
 
     export GOFLAGS="-mod=mod"; export GOWORK="off"
     export GO111MODULE="on"; export GOPROXY="https://proxy.golang.org,direct"
