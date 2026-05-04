@@ -1,22 +1,9 @@
 # ============================================================================
-#  BCMS — Scenario S3: Hybrid (SHA-256 + BLAKE3) Baseline  (v7.0 — FAIR COMPARISON)
+#  BCMS — Scenario S3: Hybrid (v9.0 — PERFORMANCE FIXES)
 #  Hash algorithm : Hybrid (SHA-256 on-chain + BLAKE3 advisory)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 10 (local)
-#  Transcript     : 5KB per certificate (realistic payload stress test)
-#
-#  FAIR COMPARISON POLICY:
-#  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters in benchConfig_s3_hybrid.yaml are IDENTICAL to
-#  benchConfig_s1_sha256.yaml and benchConfig_s2_blake3.yaml
-#  except for the chaincode deployed.
-#  This ensures any TPS/latency difference is due ONLY to the hash algorithm.
-#
-#  Benchmark Design:
-#    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers
-#    VerifyCertificate: fixed-rate 200 TPS, 60 s (read-only, no ordering)
-#    QueryAllCertificates: fixed-rate 50 TPS, 60 s (CouchDB rich query - reduced for stability)
-#    RevokeCertificate: fixed-rate 200 TPS, 60 s (write, idempotent)
+#  Workers        : 10
+#  Transcript     : 5 KB per certificate (Reduced from 50 KB for stability)
 # ============================================================================
 
 monitors:
@@ -35,44 +22,39 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s3-hybrid-baseline-v7
+  name: bcms-s3-hybrid-baseline-v9
   description: >
-    Scenario S3 — Hybrid Baseline (v7.0 Fair Comparison).
-    Hash: Hybrid (SHA-256 on-chain, BLAKE3 advisory).
-    Payload: 50KB transcript per certificate (PhD Research Stress Test).
-    batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: linear-rate ramp 50→300 TPS, 60 s, 10 workers.
-    All read rounds: fixed-rate 200 TPS, 60 s.
-    IDENTICAL config to S1/S2 for fair comparison.
+    Scenario S3 — Hybrid Baseline.
+    Payload: 5 KB transcript per certificate.
+    Issue: 20 TPS (Stabilized).
+    Verify: 100-500 TPS linear ramp.
+    Query/Revoke: 50 TPS.
   workers:
     type: local
-    number: 5
+    number: 10
 
   rounds:
-
     - label: IssueCertificate
       description: >
         S3 Hybrid Baseline — Issue single certificates (batchSize=1).
-        Double-hash per tx: SHA-256(fields) + BLAKE3(fields).
-        Fixed-rate 50 TPS, 60 s, 10 workers.
-      txDuration: 120
-      postIterationWaitTime: 20000
+        Fixed-rate 20 TPS, 60 s, 10 workers.
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 80
+          tps: 20
       workload:
         module: workload/issueCertificate.js
         arguments:
+          contractId: bcms-hybrid
           batchSize: 1
-          payloadSize: 50000
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: VerifyCertificate
       description: >
-        S3 Hybrid — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
-        SHA-256 re-hash on every verify call.
+        S3 Hybrid — Linear-rate 100-500 TPS verify (read-only).
       txDuration: 60
       rateControl:
         type: linear-rate
@@ -82,30 +64,29 @@ test:
       workload:
         module: workload/verifyCertificate.js
         arguments:
-          totalIssued: 3000
+          contractId: bcms-hybrid
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
       description: >
         S3 Hybrid — Fixed-rate 50 TPS CouchDB rich query.
-        Reduced from 100 to 50 TPS to ensure SUT stability and prevent timeouts.
-        Uses indexDocTypeIssueDate for optimized pagination.
-      txDuration: 120
-      postIterationWaitTime: 20000
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 50
       workload:
         module: workload/queryAllCertificates.js
+        arguments:
+          contractId: bcms-hybrid
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: RevokeCertificate
       description: >
-        S3 Hybrid — Fixed-rate 50 TPS revocation (idempotent write).
-        SHA-256 re-hash during revocation integrity check.
+        S3 Hybrid — Fixed-rate 50 TPS revocation.
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -114,6 +95,8 @@ test:
       workload:
         module: workload/revokeCertificate.js
         arguments:
-          totalIssued: 3000
+          contractId: bcms-hybrid
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com
+
