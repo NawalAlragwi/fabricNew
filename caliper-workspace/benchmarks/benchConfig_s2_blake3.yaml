@@ -1,20 +1,9 @@
 # ============================================================================
-#  BCMS — Scenario S2: BLAKE3 Alternative  (v12.0 — FIXED ISOLATED CHAINCODE)
+#  BCMS — Scenario S2: BLAKE3 Alternative (v9.0 — PERFORMANCE FIXES)
 #  Hash algorithm : BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated)
-#  Chaincode ID   : bcms-blake3  ← مستقل عن S1 تماماً
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 8
-#
-#  FIXES v12:
-#  ─────────────────────────────────────────────────────────────────────────
-#  FIX-#2: contractId: bcms-blake3 في كل round (بدل 'basic' المشترك)
-#  FIX-#3: IssueCertificate fixed-rate 80 TPS (Stabilized)
-#           VerifyCertificate: linear 50→600 TPS
-#           RevokeCertificate: linear 20→100 TPS
-#
-#  FAIR COMPARISON POLICY:
-#  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters IDENTICAL to S1-SHA256-v12 except chaincode ID.
+#  Workers        : 10
+#  Transcript     : 5 KB per certificate (Reduced from 50 KB for stability)
 # ============================================================================
 
 monitors:
@@ -33,101 +22,79 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s2-blake3-alternative-v12
+  name: bcms-s2-blake3-alternative-v9
   description: >
-    Scenario S2 — BLAKE3 Alternative (v12.0 Isolated Chaincode + High TPS).
-    Hash: BLAKE3 (lukechampine.com/blake3, tree-based, SIMD-accelerated).
-    Chaincode: bcms-blake3 (deployed independently from S1).
-    Payload: 32KB transcript per certificate (matching S1 for fair comparison).
-    batchSize: 1 (single certificate per Fabric transaction).
-    IssueCertificate: fixed-rate 200 TPS, 60s.
-    VerifyCertificate: linear-rate 50→600 TPS.
-    RevokeCertificate: linear-rate 20→100 TPS.
-    QueryAllCertificates: fixed-rate 20 TPS.
-    IDENTICAL config to S1-SHA256-v12 for fair comparison.
+    Scenario S2 — BLAKE3 Alternative.
+    Payload: 5 KB transcript per certificate.
+    Issue: 20 TPS (Stabilized).
+    Verify: 100-500 TPS linear ramp.
+    Query/Revoke: 50 TPS.
   workers:
     type: local
-    number: 4
+    number: 10
 
   rounds:
-
     - label: IssueCertificate
       description: >
-        S2 BLAKE3 — Issue single certificates (batchSize=1).
-        32KB transcript (matching S1 for fair comparison). BLAKE3 uses AVX2
-        tree-parallelism (auto-detected via cpuid on i7-1255U) — sustains
-        higher throughput and lower latency than SHA-256 at 200 TPS load.
+        S2 BLAKE3 — Issue certificates at fixed-rate 20 TPS.
+        Payload: 5 KB transcript.
       txDuration: 60
-      postIterationWaitTime: 20000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 80
-      workload:
-        module: workload/issueCertificate.js
-        arguments:
-          contractId: bcms-s2
-          batchSize: 1
-          payloadSize: 32768
-          totalIssued: 25000
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: VerifyCertificate
-      description: >
-        S2 BLAKE3 — Linear-rate 500→1500 TPS verify (CPU-bound stress test).
-        BLAKE3 re-hash × 100 iterations per verify: 100 × 4µs = 400µs CPU/tx.
-        At 1500 TPS: 1500 × 400µs = 600,000µs/s CPU demand → 3.75x less than SHA-256.
-        SIMD acceleration (AVX2) gives BLAKE3 clear advantage — latency stays low.
-      txDuration: 60
-      postIterationWaitTime: 20000
-      rateControl:
-        type: linear-rate
-        opts:
-          startingTps: 50
-          finishingTps: 600
-      workload:
-        module: workload/verifyCertificate.js
-        arguments:
-          contractId: bcms-s2
-          totalIssued: 25000
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: QueryAllCertificates
-      description: >
-        S2 BLAKE3 — Fixed-rate 20 TPS CouchDB rich query.
-        I/O-bound operation — hash algorithm has no impact here.
-        Uses indexDocTypeIssueDate for optimized pagination.
-      txDuration: 120
-      postIterationWaitTime: 20000
       rateControl:
         type: fixed-rate
         opts:
           tps: 20
       workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 5000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: VerifyCertificate
+      description: >
+        S2 BLAKE3 — Linear-rate 100-500 TPS verify (read-only).
+      txDuration: 60
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 100
+          finishingTps: 500
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: >
+        S2 BLAKE3 — Fixed-rate 50 TPS CouchDB rich query.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
         module: workload/queryAllCertificates.js
         arguments:
-          contractId: bcms-s2
+          contractId: bcms-blake3
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: RevokeCertificate
       description: >
-        S2 BLAKE3 — Linear-rate ramp 100→500 TPS revocation (idempotent write).
-        BLAKE3 tree-based parallelism maintains lower latency under ramp load.
-        Linear ramp exposes BLAKE3 advantage in CPU-bound write operations.
+        S2 BLAKE3 — Fixed-rate 50 TPS revocation.
       txDuration: 60
-      postIterationWaitTime: 20000
       rateControl:
-        type: linear-rate
+        type: fixed-rate
         opts:
-          startingTps: 20
-          finishingTps: 100
+          tps: 50
       workload:
         module: workload/revokeCertificate.js
         arguments:
-          contractId: bcms-s2
-          totalIssued: 10000
+          contractId: bcms-blake3
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com

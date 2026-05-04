@@ -46,7 +46,7 @@ test:
     IDENTICAL config to S1/S2 for fair comparison.
   workers:
     type: local
-    number: 10
+    number: 5
 
   rounds:
 

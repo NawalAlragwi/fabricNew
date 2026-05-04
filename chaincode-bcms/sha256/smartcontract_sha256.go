@@ -809,14 +809,4 @@ func (s *SmartContract) GetHashAlgorithm(
 	return HashModeSHA256, nil
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
-
-func main() {
-	chaincode, err := contractapi.NewChaincode(&SmartContract{})
-	if err != nil {
-		panic(fmt.Sprintf("Error creating BCMS SHA-256 chaincode: %v", err))
-	}
-	if err := chaincode.Start(); err != nil {
-		panic(fmt.Sprintf("Error starting BCMS SHA-256 chaincode: %v", err))
-	}
-}
+// ─── End of SmartContract ────────────────────────────────────────────────────

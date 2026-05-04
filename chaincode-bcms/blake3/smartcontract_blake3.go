@@ -836,14 +836,4 @@ func (s *SmartContract) GetHashAlgorithm(
 	return HashModeBLAKE3, nil
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
-
-func main() {
-	chaincode, err := contractapi.NewChaincode(&SmartContract{})
-	if err != nil {
-		panic(fmt.Sprintf("Error creating BCMS BLAKE3 chaincode: %v", err))
-	}
-	if err := chaincode.Start(); err != nil {
-		panic(fmt.Sprintf("Error starting BCMS BLAKE3 chaincode: %v", err))
-	}
-}
+// ─── End of SmartContract ────────────────────────────────────────────────────

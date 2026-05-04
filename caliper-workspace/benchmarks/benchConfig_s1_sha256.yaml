@@ -1,33 +1,9 @@
 # ============================================================================
-#  BCMS — Scenario S1: SHA-256 Baseline  (v8.0 — FIXED FAIR COMPARISON)
+#  BCMS — Scenario S1: SHA-256 Baseline (v9.0 — PERFORMANCE FIXES)
 #  Hash algorithm : SHA-256 (crypto/sha256 — sequential, no SIMD)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 10 (local)
-#  Transcript     : 50 KB per certificate (research stress payload)
-#
-#  FAIR COMPARISON POLICY:
-#  ─────────────────────────────────────────────────────────────────────────
-#  ALL parameters in S1 and S2 YAML are IDENTICAL except contractId.
-#  contractId: bcms-sha256  (S1)  vs  contractId: bcms-blake3  (S2)
-#  This ensures any TPS/latency difference = hash algorithm ONLY.
-#
-#  FIX-CONTRACTID (v8.0):
-#  contractId is now explicitly specified in every round's arguments.
-#  Previously missing → workloads defaulted to 'bcms-sha256' accidentally.
-#
-#  FIX-DESCRIPTION (v8.0):
-#  IssueCertificate corrected to fixed-rate 50 TPS (not linear-rate).
-#  RevokeCertificate description corrected — no re-hash in v12 chaincode.
-#
-#  Benchmark Design:
-#    Round 1 IssueCertificate : fixed-rate 50 TPS, 60 s — issues 3,000 certs
-#    Round 2 VerifyCertificate: linear-rate 100→500 TPS, 60 s (CPU-bound)
-#    Round 3 QueryAllCerts    : fixed-rate 50 TPS, 60 s (CouchDB I/O-bound)
-#    Round 4 RevokeCertificate: fixed-rate 50 TPS, 60 s (flag-only write)
-#
-#  Performance expectation (SHA-256 = T₁ baseline):
-#    SHA-256 hash: 15.0 µs × 100 magnification = 1,500 µs per tx
-#    S2 (BLAKE3) will demonstrate T₂ < T₁ in VerifyCertificate and IssueCertificate
+#  Workers        : 10
+#  Transcript     : 5 KB per certificate (Reduced from 50 KB for stability)
 # ============================================================================
 
 monitors:
@@ -46,47 +22,38 @@ monitors:
           - ca_orderer
 
 test:
-  name: bcms-s1-sha256-baseline-v8
+  name: bcms-s1-sha256-baseline-v9
   description: >
-    Scenario S1 — SHA-256 Baseline (v8.0 Fixed Fair Comparison).
-    Hash: SHA-256 (crypto/sha256, sequential Merkle-Damgard, 15.0 us/hash).
-    Magnification: x100 iterations per tx → 1,500 us hash overhead per tx.
-    Payload: 50 KB transcript per certificate.
-    batchSize: 1 (single certificate per Fabric transaction).
-    All rounds: fixed-rate 50 TPS (Issue/Query/Revoke), linear 100-500 (Verify).
-    contractId: bcms-sha256 (explicitly set in all rounds).
-    IDENTICAL structure to S2-BLAKE3 for fair comparison.
+    Scenario S1 — SHA-256 Baseline.
+    Payload: 5 KB transcript per certificate.
+    Issue: 20 TPS (Stabilized).
+    Verify: 100-500 TPS linear ramp.
+    Query/Revoke: 50 TPS.
   workers:
     type: local
     number: 10
 
   rounds:
-
     - label: IssueCertificate
       description: >
-        S1 SHA-256 — Issue 3,000 certificates at fixed-rate 50 TPS, 60 s.
-        50 KB transcript: SHA-256 processes ~51,000 bytes × 100 iterations.
-        Hash overhead: 15.0 us × 100 = 1,500 us per transaction.
-        contractId: bcms-sha256 (FIX-CONTRACTID v8.0).
+        S1 SHA-256 — Issue certificates at fixed-rate 20 TPS.
+        Payload: 5 KB transcript.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 20
       workload:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 50000
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: VerifyCertificate
       description: >
-        S1 SHA-256 — Linear-rate 100-500 TPS verify (read-only, CPU-bound).
-        VerifyCertificateByID re-computes SHA-256 on-chain: 1,500 us overhead per tx.
-        This is the primary function where SHA-256 vs BLAKE3 latency difference is visible.
-        contractId: bcms-sha256 (FIX-CONTRACTID v8.0).
+        S1 SHA-256 — Linear-rate 100-500 TPS verify (read-only).
       txDuration: 60
       rateControl:
         type: linear-rate
@@ -97,16 +64,13 @@ test:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-sha256
-          totalIssued: 3000
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
     - label: QueryAllCertificates
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query (I/O-bound).
-        Hash algorithm has zero impact on this operation — any latency difference
-        between S1 and S2 in this round is CouchDB/network variance only.
-        contractId: bcms-sha256 (FIX-CONTRACTID v8.0).
+        S1 SHA-256 — Fixed-rate 50 TPS CouchDB rich query.
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -121,11 +85,7 @@ test:
 
     - label: RevokeCertificate
       description: >
-        S1 SHA-256 — Fixed-rate 50 TPS revocation (idempotent write).
-        v12 chaincode: flag-only update, no hash recomputation (FIX-REVOKE).
-        SHA-256 and BLAKE3 perform identical work in this round.
-        Any latency difference = Fabric/CouchDB overhead, not algorithm.
-        contractId: bcms-sha256 (FIX-CONTRACTID v8.0).
+        S1 SHA-256 — Fixed-rate 50 TPS revocation.
       txDuration: 60
       rateControl:
         type: fixed-rate
@@ -135,6 +95,6 @@ test:
         module: workload/revokeCertificate.js
         arguments:
           contractId: bcms-sha256
-          totalIssued: 3000
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com

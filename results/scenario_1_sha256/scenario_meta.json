@@ -1,1 +1,10 @@
-{"scenario":1,"key":"scenario_1_sha256","label":"S1: SHA-256 Baseline","chaincode":"chaincode-bcms/sha256","batch_size":1,"tps":50,"started":"2026-05-03T19:38:57Z"}
+{
+  "scenario": 1,
+  "key": "scenario_1_sha256",
+  "label": "S1: SHA-256 Baseline (15.0 us/hash x100)",
+  "chaincode": "chaincode-bcms/sha256",
+  "cc_name": "bcms-sha256",
+  "batch_size": 1,
+  "tps": 50,
+  "started": "2026-05-04T08:08:06Z"
+}

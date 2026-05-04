@@ -25,7 +25,7 @@ test:
     batching, and increased concurrency.
   workers:
     type: local
-    number: 10    # ⬅️ تقليل العمال لزيادة استقرار CouchDB
+    number: 5    # ⬅️ تقليل العمال لزيادة استقرار CouchDB
 
   rounds:
     # 🔹 Warm-up
