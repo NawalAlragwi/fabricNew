@@ -1,0 +1,107 @@
+# ============================================================
+#  S1 — SHA-256 Baseline  |  Target TPS: 200
+#  VerifyCertificate: 40 → 200 TPS (PRIMARY ROUND)
+# ============================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: bcms-s1-sha256-tps200
+  description: >
+    Scenario S1 SHA-256 Baseline at 200 TPS target.
+    VerifyCertificate: linear 40→200 TPS (PRIMARY COMPARISON ROUND).
+    Magnification x1500 = 22,500 us hash overhead per tx.
+  workers:
+    type: local
+    number: 3
+
+  rounds:
+
+    - label: IssueCertificate
+      description: Issue certs at 50 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── الجولة الأساسية للمقارنة ──────────────────────────────────────
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — SHA-256 linear 40→200 TPS, 120s.
+        Re-computes SHA-256 on-chain per call: 22,500 us CPU overhead.
+        Expected: latency climbs steeply as TPS rises (no SIMD).
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 40
+          finishingTps: 200
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: I/O-bound query 40 TPS, 60s (algorithm has zero impact)
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: workload/queryAllCertificates.js
+        arguments:
+          contractId: bcms-sha256
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: RevokeCertificate
+      description: Flag-only revoke 40 TPS, 60s (no hash recomputation)
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: workload/revokeCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: HashOnlyBenchmark
+      description: Pure CPU hash isolation at 160 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 160
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-sha256
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

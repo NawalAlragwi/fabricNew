@@ -1,0 +1,107 @@
+# ============================================================
+#  S2 — BLAKE3 Alternative  |  Target TPS: 200
+#  VerifyCertificate: 40 → 200 TPS (PRIMARY ROUND)
+# ============================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: bcms-s2-blake3-tps200
+  description: >
+    Scenario S2 BLAKE3 Alternative at 200 TPS target.
+    VerifyCertificate: linear 40→200 TPS (PRIMARY COMPARISON ROUND).
+    Magnification x1500 = 6,015 us hash overhead per tx (3.74x faster than SHA-256).
+  workers:
+    type: local
+    number: 3
+
+  rounds:
+
+    - label: IssueCertificate
+      description: Issue certs at 50 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── الجولة الأساسية للمقارنة ──────────────────────────────────────
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — BLAKE3 linear 40→200 TPS, 120s.
+        AVX2 SIMD: 6,015 us per tx vs SHA-256 22,500 us.
+        Expected: BLAKE3 latency stays low while SHA-256 saturates.
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 40
+          finishingTps: 200
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: QueryAllCertificates
+      description: I/O-bound query 40 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: workload/queryAllCertificates.js
+        arguments:
+          contractId: bcms-blake3
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: RevokeCertificate
+      description: Flag-only revoke 40 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: workload/revokeCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          totalIssued: 1000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    - label: HashOnlyBenchmark
+      description: Pure CPU hash isolation at 160 TPS, 60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 160
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

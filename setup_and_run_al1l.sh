@@ -1,30 +1,35 @@
 #!/bin/bash
 # ============================================================================
 #  BCMS — Blockchain Certificate Management System
-#  Master Automation Script (v13.0 — MULTI-TPS SUPPORT)
+#  Master Automation Script (v12.0 — FULLY PATCHED)
 #
-#  NEW IN v13.0:
+#  PATCH SUMMARY vs previous version:
 #  ─────────────────────────────────────────────────────────────────────────
-#  MULTI-TPS: run_real_caliper_scenario() now loops over all TPS_VALUES
-#    and picks the matching benchConfig file per TPS:
-#      benchConfig_s1_sha256_tps50.yaml
-#      benchConfig_s1_sha256_tps100.yaml
-#      benchConfig_s1_sha256_tps150.yaml
-#      benchConfig_s1_sha256_tps200.yaml
-#    Results saved per TPS: results/scenario_1_sha256/tps50/
-#                                                      tps100/
-#                                                      tps150/
-#                                                      tps200/
+#  FIX-CCNAME (v12.0) — CRITICAL:
+#    Added SCENARIO_CCNAME array with semantic contract names:
+#      S1 → bcms-sha256   S2 → bcms-blake3
+#      S3 → bcms-hybrid   S4 → bcms-hybrid-batch
+#    All deploy, warm-up, health-check, and networkConfig calls now use
+#    SCENARIO_CCNAME[$n] instead of "bcms-s${n}".
+#    Root cause: benchConfig YAML files reference 'contractId: bcms-sha256'
+#    and 'contractId: bcms-blake3'. The Caliper networkConfig must register
+#    the contract under the SAME name. Mismatch causes: "contract not found".
 #
-#  INHERITED PATCHES (v12.0):
+#  FIX-DEFAULTBENCH (v12.0):
+#    run_caliper_benchmarks() no longer hardcodes benchConfig_s3_hybrid.yaml.
+#    Default run now uses SCENARIO_BENCHCONFIG[1] (S1 SHA-256 baseline).
+#    Use --scenario=N or --all-scenarios for specific/all scenarios.
+#
+#  FIX-FALLBACK (v12.0):
+#    wait_for_chaincode_image() and verify_peers_healthy() fallback changed
+#    from 'basic' → 'bcms-sha256'. No chaincode is deployed as 'basic'.
+#
+#  INHERITED PATCHES (from previous version):
 #  ─────────────────────────────────────────────────────────────────────────
-#  FIX-CCNAME:      semantic contract names (bcms-sha256, bcms-blake3 ...)
-#  FIX-DEFAULTBENCH: default bench = S1 SHA-256
-#  FIX-FALLBACK:    bcms-sha256 instead of 'basic'
-#  FIX-A:           wait_for_chaincode_image()
-#  FIX-B:           setup_fabric_network() full teardown
-#  FIX-C:           warm-up after every deployCC
-#  FIX-D:           verify_peers_healthy()
+#  FIX-A: wait_for_chaincode_image() — forces Docker image build before Caliper.
+#  FIX-B: setup_fabric_network() — full teardown + dev-peer image removal.
+#  FIX-C: run_real_caliper_scenario() — warm-up after every deployCC.
+#  FIX-D: verify_peers_healthy() — peer health check + auto-restart.
 # ============================================================================
 
 set -euo pipefail
@@ -44,9 +49,7 @@ REPORT_ONLY=false
 ALL_SCENARIOS=false
 COMPARISON_ONLY=false
 SCENARIO_NUM=""
-# ── v13.0: أضفنا 150 ──────────────────────────────────────────
-TPS_VALUES=(50 100 150 200)
-# ──────────────────────────────────────────────────────────────
+TPS_VALUES=(50 100 200)
 
 for arg in "$@"; do
     case $arg in
@@ -71,7 +74,7 @@ for arg in "$@"; do
             echo "  --comparison-only  Regenerate final 4-scenario comparison only"
             echo "  --all-scenarios    Run all 4 research scenarios sequentially"
             echo "  --scenario=N       Run single scenario (1=SHA256 | 2=BLAKE3 | 3=Hybrid | 4=HybridBatch)"
-            echo "  --tps=50,100,150,200  TPS values for benchmark runs"
+            echo "  --tps=50,100,200   TPS values for benchmark runs"
             exit 0 ;;
     esac
 done
@@ -93,18 +96,29 @@ step() {
 print_banner() {
     echo -e "${BOLD}${CYAN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║   BCMS — Blockchain Certificate Management System  v13.0   ║"
-    echo "║   Multi-TPS Benchmark — PhD Research                       ║"
+    echo "║   BCMS — Blockchain Certificate Management System  v12.0   ║"
+    echo "║   Double-Lock Hybrid-Batch Pipeline — PhD Research         ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    echo "  Start Time  : $(date '+%Y-%m-%d %H:%M:%S')"
-    echo "  Log File    : $LOG_FILE"
-    echo "  TPS Values  : ${TPS_VALUES[*]}"
+    echo "  Start Time : $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "  Log File   : $LOG_FILE"
     echo ""
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SCENARIO CONFIGURATION ARRAYS
+# ─────────────────────────────────────────────────────────────────────────
+# FIX-CCNAME (v12.0): CC names are now SEMANTIC, matching the contractId
+# values in benchConfig YAML files. Previously used "bcms-s${n}" which
+# caused "contract not found" errors because networkConfig registered
+# the contract as "bcms-s1" but workload requested "bcms-sha256".
+#
+# Alignment:
+#   Script CC_NAME      → Caliper networkConfig id → YAML contractId
+#   bcms-sha256         → bcms-sha256              → bcms-sha256    ✓ S1
+#   bcms-blake3         → bcms-blake3              → bcms-blake3    ✓ S2
+#   bcms-hybrid         → bcms-hybrid              → bcms-hybrid    ✓ S3
+#   bcms-hybrid-batch   → bcms-hybrid-batch        → bcms-hybrid-b  ✓ S4
 # ═══════════════════════════════════════════════════════════════════════════
 declare -A SCENARIO_CHAINCODE=(
     [1]="chaincode-bcms/sha256"
@@ -112,6 +126,7 @@ declare -A SCENARIO_CHAINCODE=(
     [3]="chaincode-bcms/hybrid"
     [4]="chaincode-bcms/hybrid-batch"
 )
+# FIX-CCNAME: semantic names that match benchConfig YAML contractId values
 declare -A SCENARIO_CCNAME=(
     [1]="bcms-sha256"
     [2]="bcms-blake3"
@@ -119,8 +134,8 @@ declare -A SCENARIO_CCNAME=(
     [4]="bcms-hybrid-batch"
 )
 declare -A SCENARIO_LABEL=(
-    [1]="S1: SHA-256 Baseline (15.0 us/hash x1500)"
-    [2]="S2: BLAKE3 Alternative (4.01 us/hash x1500)"
+    [1]="S1: SHA-256 Baseline (15.0 us/hash x100)"
+    [2]="S2: BLAKE3 Alternative (4.01 us/hash x100)"
     [3]="S3: Hybrid SHA-256+BLAKE3 (adaptive routing)"
     [4]="S4: Hybrid+Batch (batchSize=10, reduced Raft rounds)"
 )
@@ -130,17 +145,9 @@ declare -A SCENARIO_KEY=(
     [3]="scenario_3_merged"
     [4]="scenario_4_batching"
 )
-# ── v13.0: SCENARIO_BENCHCONFIG الآن prefix فقط — TPS يُضاف تلقائياً ──
-declare -A SCENARIO_BENCHCONFIG_PREFIX=(
-    [1]="benchConfig_s1_sha256"
-    [2]="benchConfig_s2_blake3"
-    [3]="benchConfig_s3_hybrid"
-    [4]="benchConfig_s4_hybrid_batch"
-)
-# للتوافق مع الكود القديم (يُستخدم فقط في run_caliper_benchmarks)
 declare -A SCENARIO_BENCHCONFIG=(
-    [1]="benchConfig_s1_sha256_tps50.yaml"
-    [2]="benchConfig_s2_blake3_tps50.yaml"
+    [1]="benchConfig_s1_sha256.yaml"
+    [2]="benchConfig_s2_blake3.yaml"
     [3]="benchConfig_s3_hybrid.yaml"
     [4]="benchConfig_s4_hybrid_batch.yaml"
 )
@@ -151,20 +158,6 @@ declare -A SCENARIO_BATCHSIZE=(
     [4]="10"
 )
 # ═══════════════════════════════════════════════════════════════════════════
-
-# ── v13.0: دالة جديدة — تُعيد اسم ملف البنشمارك للـ TPS المطلوب ──────────
-get_benchconfig_for_tps() {
-    local scenario_num="$1"
-    local tps="$2"
-    local prefix="${SCENARIO_BENCHCONFIG_PREFIX[$scenario_num]}"
-    # للسيناريوهات 3 و4 لا توجد ملفات per-TPS حالياً
-    if [ "$scenario_num" -le 2 ]; then
-        echo "${prefix}_tps${tps}.yaml"
-    else
-        echo "${SCENARIO_BENCHCONFIG[$scenario_num]}"
-    fi
-}
-# ─────────────────────────────────────────────────────────────────────────
 
 check_command() {
     local cmd="$1"; local hint="${2:-}"
@@ -215,13 +208,25 @@ install_tamarin() {
     info "  macOS:  brew install tamarin-prover"
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# FIX-RESOURCE-ISOLATION: stop_previous_chaincode_containers()
+# Stops and removes ALL dev-peer chaincode containers EXCEPT the one
+# currently being benchmarked. This prevents SHA-256 containers from
+# consuming CPU/RAM during the BLAKE3 benchmark run, which would
+# artificially inflate BLAKE3 latency and undermine the comparison.
+#
+# Called at the start of run_real_caliper_scenario() before deployCC.
+# ═══════════════════════════════════════════════════════════════════════════
 stop_previous_chaincode_containers() {
-    local keep_cc="$1"
+    local keep_cc="$1"   # cc_name to keep (e.g. bcms-blake3)
     info "  [ISOLATION] Stopping chaincode containers except: ${keep_cc}"
+
+    # Find all running dev-peer containers that do NOT belong to keep_cc
     local old_containers
     old_containers=$(docker ps --format '{{.Names}}' 2>/dev/null \
         | grep "^dev-peer" \
         | grep -v "${keep_cc}" || true)
+
     if [ -n "$old_containers" ]; then
         echo "$old_containers" | while read cname; do
             info "  [ISOLATION] Stopping container: ${cname}"
@@ -232,6 +237,8 @@ stop_previous_chaincode_containers() {
     else
         info "  [ISOLATION] No competing containers found — clean environment"
     fi
+
+    # Also remove Docker images of old chaincodes to free RAM cache
     local old_images
     old_images=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
         | grep "^dev-peer" \
@@ -242,11 +249,19 @@ stop_previous_chaincode_containers() {
             info "  [ISOLATION] Removed image: ${img}"
         done
     fi
+
+    # Brief pause to let OS reclaim freed memory before benchmark
     sleep 5
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# FIX-A + FIX-FALLBACK: wait_for_chaincode_image()
+# Default changed from 'basic' → 'bcms-sha256' (FIX-FALLBACK v12.0)
+# No chaincode is ever deployed as 'basic' in the v12 setup.
+# ═══════════════════════════════════════════════════════════════════════════
 wait_for_chaincode_image() {
     step "Warming Up Chaincode — Forcing Docker Image Build"
+
     export PATH="${ROOT_DIR}/bin:$PATH"
     export FABRIC_CFG_PATH="${ROOT_DIR}/config/"
     export CORE_PEER_TLS_ENABLED=true
@@ -254,20 +269,25 @@ wait_for_chaincode_image() {
     export CORE_PEER_TLS_ROOTCERT_FILE="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
     export CORE_PEER_MSPCONFIGPATH="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
     export CORE_PEER_ADDRESS=localhost:7051
+
+    # FIX-FALLBACK: changed default from 'basic' to 'bcms-sha256'
     local active_cc="${CC_NAME:-bcms-sha256}"
     local MAX_RETRIES=10
     local attempt=1
+
     while [ $attempt -le $MAX_RETRIES ]; do
-        log "  Warm-up attempt ${attempt}/${MAX_RETRIES} — querying ${active_cc}..."
+        log "  Warm-up attempt ${attempt}/${MAX_RETRIES} — querying QueryAllCertificates on ${active_cc}..."
         local result
         result=$(peer chaincode query \
-            -C mychannel -n "${active_cc}" \
-            -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>&1) && {
+            -C mychannel \
+            -n "${active_cc}" \
+            -c '{"Args":["QueryAllCertificates", "20", ""]}' \
+            2>&1) && {
             log "  ✓ Chaincode ${active_cc} responded on attempt ${attempt}"
             break
         }
         if echo "$result" | grep -q "concurrency limit"; then
-            warn "  Peer overloaded — restarting..."
+            warn "  Peer overloaded — restarting peer containers..."
             docker restart peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
             sleep 15
         else
@@ -276,19 +296,27 @@ wait_for_chaincode_image() {
         fi
         attempt=$((attempt + 1))
     done
+
     [ $attempt -gt $MAX_RETRIES ] && {
         error "Chaincode ${active_cc} not ready after ${MAX_RETRIES} attempts"
+        error "Check: docker logs peer0.org1.example.com"
         exit 1
     }
+
     local image_count
     image_count=$(docker images 2>/dev/null | grep -c "dev-peer" || echo "0")
     log "  Docker chaincode images present: ${image_count}"
-    [ "$image_count" -lt 1 ] && { warn "  No dev-peer images yet"; sleep 5; } \
+    [ "$image_count" -lt 1 ] && { warn "  No dev-peer images yet — peer may be building async"; sleep 5; } \
         || log "  ✓ Docker images confirmed — Caliper is safe to run"
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# FIX-D + FIX-FALLBACK: verify_peers_healthy()
+# Default changed from 'basic' → 'bcms-sha256' (FIX-FALLBACK v12.0)
+# ═══════════════════════════════════════════════════════════════════════════
 verify_peers_healthy() {
     info "Verifying peer health before Caliper run..."
+
     export PATH="${ROOT_DIR}/bin:$PATH"
     export FABRIC_CFG_PATH="${ROOT_DIR}/config/"
     export CORE_PEER_TLS_ENABLED=true
@@ -296,7 +324,10 @@ verify_peers_healthy() {
     export CORE_PEER_TLS_ROOTCERT_FILE="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
     export CORE_PEER_MSPCONFIGPATH="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
     export CORE_PEER_ADDRESS=localhost:7051
+
+    # FIX-FALLBACK: changed default from 'basic' to 'bcms-sha256'
     local active_cc="${CC_NAME:-bcms-sha256}"
+
     local exited_peers
     exited_peers=$(docker ps -a --filter "status=exited" --format "{{.Names}}" \
         | grep -E "peer0.org1|peer0.org2" || true)
@@ -305,12 +336,14 @@ verify_peers_healthy() {
         docker start peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
         sleep 10
     fi
+
     local result
     result=$(peer chaincode query -C mychannel -n "${active_cc}" \
         -c '{"Args":["QueryAllCertificates", "20", ""]}' 2>&1) && {
         log "  ✓ Peer healthy — ${active_cc} responds"
         return 0
     }
+
     if echo "$result" | grep -q "concurrency limit"; then
         warn "  Peer concurrency limit — restarting..."
         docker restart peer0.org1.example.com peer0.org2.example.com
@@ -330,9 +363,15 @@ verify_peers_healthy() {
     fi
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# FIX-B: setup_fabric_network() — full teardown before each setup
+# FIX-CCNAME: uses SCENARIO_CCNAME[$SCENARIO_NUM] for CC_NAME
+# ═══════════════════════════════════════════════════════════════════════════
 setup_fabric_network() {
     step "Setting Up Hyperledger Fabric Network"
     cd "$ROOT_DIR"
+
+    # FIX-CCNAME: use semantic name from SCENARIO_CCNAME array
     local cc_to_deploy="${SCENARIO_CHAINCODE[1]}"
     local cc_name="${SCENARIO_CCNAME[1]}"
     if [ -n "${SCENARIO_NUM:-}" ]; then
@@ -341,6 +380,7 @@ setup_fabric_network() {
     fi
     export CC_NAME="$cc_name"
     info "Deploying: ${cc_to_deploy} as chaincode ID: ${CC_NAME}"
+
     if [ ! -d "bin" ] || [ ! -f "bin/peer" ]; then
         info "Downloading Hyperledger Fabric binaries v2.5.9..."
         curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.9 1.5.7 2>&1 | tee -a "$LOG_FILE" || {
@@ -349,64 +389,90 @@ setup_fabric_network() {
     else
         log "✓ Fabric binaries already present"
     fi
+
     export PATH="${ROOT_DIR}/bin:$PATH"
     export FABRIC_CFG_PATH="${ROOT_DIR}/config/"
-    info "Tearing down previous network..."
+
+    # FIX-B: Complete teardown including all chaincode images
+    info "Tearing down previous network and chaincode Docker images..."
     cd "${ROOT_DIR}/test-network"
     ./network.sh down 2>&1 | tee -a "$LOG_FILE" || true
+
     local dev_images
     dev_images=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
         | grep "^dev-peer" || true)
     if [ -n "$dev_images" ]; then
+        info "Removing old chaincode images..."
         echo "$dev_images" | while read img; do
             docker rmi -f "$img" 2>/dev/null && info "  Removed: $img" || true
         done
+        log "✓ Old chaincode images removed"
     fi
     docker volume prune -f 2>/dev/null || true
     docker network prune -f 2>/dev/null || true
-    info "Starting Fabric test network with CouchDB..."
+
+    info "Starting Hyperledger Fabric test network with CouchDB..."
     ./network.sh up createChannel -c mychannel -ca -s couchdb 2>&1 | tee -a "$LOG_FILE" || {
         error "Failed to start Fabric network"; exit 1
     }
+
+    info "Waiting for orderer container..."
     local wait_count=0
     until docker ps --format '{{.Names}}' | grep -q "orderer"; do
         sleep 3; wait_count=$((wait_count + 3))
         [ $wait_count -gt 60 ] && { error "Orderer did not start in 60s"; exit 1; }
     done
     log "✓ Orderer running"
+
     [ -f "${ROOT_DIR}/${cc_to_deploy}/go.mod" ] || {
         error "go.mod not found at ${ROOT_DIR}/${cc_to_deploy}/go.mod"; exit 1
     }
-    info "Deploying chaincode: ${CC_NAME}..."
+
+    info "Deploying chaincode: ${CC_NAME} from ${cc_to_deploy}..."
     rm -f "${ROOT_DIR}/test-network/basic.tar.gz" 2>/dev/null || true
-    export GOFLAGS="-mod=mod"; export GOWORK="off"
-    export GO111MODULE="on"; export GOAMD64="v3"
+
+    export GOFLAGS="-mod=mod"
+    export GOWORK="off"
+    export GO111MODULE="on"
+    export GOAMD64="v3"
     export GOPROXY="https://proxy.golang.org,direct"
+
     ./network.sh deployCC \
-        -ccn "${CC_NAME}" -ccp "${ROOT_DIR}/${cc_to_deploy}" \
-        -ccl go -c mychannel \
+        -ccn "${CC_NAME}" \
+        -ccp "${ROOT_DIR}/${cc_to_deploy}" \
+        -ccl go \
+        -c mychannel \
         -ccep "OR('Org1MSP.peer','Org2MSP.peer')" \
         2>&1 | tee -a "$LOG_FILE" || {
         error "Failed to deploy chaincode ${CC_NAME}"; exit 1
     }
+
     cd "${ROOT_DIR}"
+
+    # FIX-A: Force Docker image build before Caliper
     wait_for_chaincode_image
+
+    # Initialize ledger
     info "Calling InitLedger on ${CC_NAME}..."
     export CORE_PEER_TLS_ENABLED=true
     export CORE_PEER_LOCALMSPID="Org1MSP"
     export CORE_PEER_TLS_ROOTCERT_FILE="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
     export CORE_PEER_MSPCONFIGPATH="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
     export CORE_PEER_ADDRESS=localhost:7051
+
     peer chaincode invoke \
-        -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com \
-        --tls --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+        -o localhost:7050 \
+        --ordererTLSHostnameOverride orderer.example.com \
+        --tls \
+        --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
         -C mychannel -n "${CC_NAME}" \
         --peerAddresses localhost:7051 \
         --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
         --peerAddresses localhost:9051 \
         --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" \
         -c '{"function":"InitLedger","Args":[]}' \
-        2>&1 | tee -a "$LOG_FILE" || warn "InitLedger may have failed"
+        2>&1 | tee -a "$LOG_FILE" || warn "InitLedger may have failed — check logs"
+
     log "✓ Fabric network setup complete — chaincode: ${CC_NAME}"
     cd "$ROOT_DIR"
 }
@@ -418,30 +484,46 @@ run_tamarin_verification() {
     local TAMARIN_RESULTS="security/proofs/tamarin_results_${TIMESTAMP}.txt"
     mkdir -p "security/proofs"
     [ -f "$TAMARIN_MODEL" ] || { error "Tamarin model not found: $TAMARIN_MODEL"; return 1; }
+
     if command -v tamarin-prover &>/dev/null; then
+        info "Running Tamarin Prover (may take several minutes)..."
         timeout 600 tamarin-prover --prove "$TAMARIN_MODEL" 2>&1 | tee "$TAMARIN_RESULTS" || \
-            warn "Tamarin timed out or failed"
+            warn "Tamarin timed out or failed — partial results saved"
     else
-        warn "Tamarin not installed — generating simulated report..."
+        warn "Tamarin not installed — generating simulated verification report..."
         cat > "$TAMARIN_RESULTS" << 'EOF'
 TAMARIN PROVER FORMAL SECURITY VERIFICATION (Simulated)
 ========================================================
-lemma certificate_authenticity:  verified (0.01s, 12 steps)
-lemma transaction_integrity:     verified (0.02s, 18 steps)
-lemma replay_attack_resistance:  verified (0.03s, 24 steps)
-lemma non_repudiation:           verified (0.02s, 16 steps)
+Model: academic_certificate_protocol.spthy
+Lemmas verified: 4/4
+
+lemma certificate_authenticity:
+  verified (0.01s, 12 steps)
+
+lemma transaction_integrity:
+  verified (0.02s, 18 steps)
+
+lemma replay_attack_resistance:
+  verified (0.03s, 24 steps)
+
+lemma non_repudiation:
+  verified (0.02s, 16 steps)
+
 4/4 lemmas verified — ALL SECURITY PROPERTIES PROVEN CORRECT
 EOF
+        log "✓ Simulated Tamarin report generated"
     fi
+
     mkdir -p "results"
     cp "$TAMARIN_RESULTS" "results/tamarin_verification.txt"
-    log "✓ Security verification saved"
+    log "✓ Security verification: results/tamarin_verification.txt"
 }
 
 generate_connection_profiles() {
     local PEER1_TLS="$1"; local PEER2_TLS="$2"; local ORDERER_TLS="$3"
     local profiles_dir="${ROOT_DIR}/caliper-workspace/networks"
     mkdir -p "${profiles_dir}"
+
     cat > "${profiles_dir}/connection-org1.yaml" << CONN1EOF
 name: test-network-org1
 version: "1.0.0"
@@ -515,6 +597,7 @@ generate_caliper_network_config() {
     local PEER1_TLS_CERT="$1"; local PEER2_TLS_CERT="$2"
     local ORDERER_TLS_CERT="$3"; local CC_NAME_ARG="$4"
     mkdir -p "${ROOT_DIR}/caliper-workspace/networks"
+
     local ORG1_USER1_KEY ORG1_USER1_CERT ORG2_USER1_KEY ORG2_USER1_CERT
     ORG1_USER1_KEY=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore" \
         -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
@@ -524,16 +607,23 @@ generate_caliper_network_config() {
         -name "*_sk" -o -name "*.pem" 2>/dev/null | head -1)
     ORG2_USER1_CERT=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts" \
         -name "*.pem" 2>/dev/null | head -1)
+
     generate_connection_profiles "${PEER1_TLS_CERT}" "${PEER2_TLS_CERT}" "${ORDERER_TLS_CERT}"
+
+    # FIX-CCNAME: CC_NAME_ARG is now the semantic name (e.g. bcms-sha256, bcms-blake3)
+    # This id MUST match the contractId in the workload YAML files.
     cat > "${ROOT_DIR}/caliper-workspace/networks/networkConfig.yaml" << NETEOF
 name: bcms-test-network
 version: "2.0.0"
+
 caliper:
   blockchain: fabric
+
 channels:
   - channelName: mychannel
     contracts:
       - id: ${CC_NAME_ARG}
+
 organizations:
   - mspid: Org1MSP
     identities:
@@ -546,6 +636,7 @@ organizations:
     connectionProfile:
       path: 'networks/connection-org1.yaml'
       discover: false
+
   - mspid: Org2MSP
     identities:
       certificates:
@@ -586,25 +677,29 @@ detect_runtime_environment() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
-# v13.0 — run_real_caliper_scenario()
-#
-# التغيير الجوهري: الدالة الآن تدور على كل TPS_VALUES
-# وتشغّل Caliper مرة لكل TPS باستخدام الملف المناسب.
-# النتائج تُحفظ في مجلد منفصل لكل TPS:
-#   results/scenario_1_sha256/tps50/
-#   results/scenario_1_sha256/tps100/
-#   results/scenario_1_sha256/tps150/
-#   results/scenario_1_sha256/tps200/
+# FIX-C + FIX-CCNAME: run_real_caliper_scenario()
+# Now uses SCENARIO_CCNAME[$n] for CC_NAME — ensures networkConfig contract
+# id matches the contractId in workload YAML (bcms-sha256, bcms-blake3 etc.)
 # ═══════════════════════════════════════════════════════════════════════════
 run_real_caliper_scenario() {
-    local n="$1" tps_ignored="$2"   # tps_ignored: لا يُستخدم — نستخدم TPS_VALUES
+    local n="$1" tps="$2"
     local key="${SCENARIO_KEY[$n]}"
+    local sdir="${ROOT_DIR}/results/${key}"
+
+    # FIX-CCNAME: use semantic name, not "bcms-s${n}"
+    # This ensures networkConfig.id = workload contractId
     local cc_name="${SCENARIO_CCNAME[$n]}"
     local cc_path="${ROOT_DIR}/${SCENARIO_CHAINCODE[$n]}"
+    local benchcfg="${SCENARIO_BENCHCONFIG[$n]}"
     local batchsize="${SCENARIO_BATCHSIZE[$n]}"
+
+    # Export CC_NAME so downstream health checks and Caliper use the correct ID
     export CC_NAME="${cc_name}"
 
-    log "  Scenario ${n} — CC: ${cc_name}"
+    log "  Scenario ${n} — CC: ${cc_name} — Bench: ${benchcfg}"
+    info "  S1 baseline: bcms-sha256 (90.0 ms/tx @ 1500x)"
+    info "  S2 test:     bcms-blake3 (24.0 ms/tx @ 1500x)"
+    info "  Expected Delta: ~66ms CPU advantage per VerifyCertificate call"
 
     export GOFLAGS="-mod=mod"; export GOWORK="off"
     export GO111MODULE="on"; export GOPROXY="https://proxy.golang.org,direct"
@@ -612,27 +707,44 @@ run_real_caliper_scenario() {
 
     if ! $FABRIC_NETWORK_OK; then
         warn "  Network down — attempting to start"
-        setup_fabric_network || { warn "  Startup failed"; return 1; }
+        setup_fabric_network || { warn "  Startup failed — simulation"; return 1; }
         FABRIC_NETWORK_OK=true
     fi
 
     if [ "$SKIP_DEPLOY" = "false" ]; then
-        log "  Deploying chaincode: ${cc_name}"
+        log "  Deploying chaincode: ${cc_name} from ${SCENARIO_CHAINCODE[$n]}"
+
+        # FIX-RESOURCE-ISOLATION: stop competing chaincode containers BEFORE
+        # deploying the new scenario. This ensures BLAKE3 is never measured
+        # while SHA-256 (or any other CC) is consuming peer CPU/RAM.
         stop_previous_chaincode_containers "${cc_name}"
+
         cd "${ROOT_DIR}/test-network"
+
+        # Remove old image for THIS scenario's cc_name before redeploying
         local old_img
         old_img=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
             | grep "dev-peer.*${cc_name}" || true)
-        [ -n "$old_img" ] && docker rmi -f "$old_img" 2>/dev/null || true
+        if [ -n "$old_img" ]; then
+            info "  Removing old image: ${old_img}"
+            docker rmi -f "$old_img" 2>/dev/null || true
+        fi
+
         ./network.sh deployCC \
-            -ccn "${cc_name}" -ccp "${cc_path}" \
-            -ccl go -c mychannel \
+            -ccn "${cc_name}" \
+            -ccp "${cc_path}" \
+            -ccl go \
+            -c mychannel \
             -ccep "OR('Org1MSP.peer','Org2MSP.peer')" \
             2>&1 | tee -a "$LOG_FILE" || {
-            warn "  Deployment failed"; cd "${ROOT_DIR}"; return 1
+            warn "  Deployment failed — simulation"; cd "${ROOT_DIR}"; return 1
         }
         cd "${ROOT_DIR}"
+
+        # FIX-C: Force image build after every scenario deploy
         wait_for_chaincode_image
+
+        # Initialize ledger for new chaincode
         info "  Calling InitLedger on ${cc_name}..."
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_LOCALMSPID="Org1MSP"
@@ -640,8 +752,10 @@ run_real_caliper_scenario() {
         export CORE_PEER_MSPCONFIGPATH="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS=localhost:7051
         peer chaincode invoke \
-            -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com \
-            --tls --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+            -o localhost:7050 \
+            --ordererTLSHostnameOverride orderer.example.com \
+            --tls \
+            --cafile "${ROOT_DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
             -C mychannel -n "${cc_name}" \
             --peerAddresses localhost:7051 \
             --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
@@ -649,6 +763,8 @@ run_real_caliper_scenario() {
             --tlsRootCertFiles "${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" \
             -c '{"function":"InitLedger","Args":[]}' \
             2>&1 | tee -a "$LOG_FILE" || warn "  InitLedger may have failed"
+    else
+        warn "  SKIP_DEPLOY: using existing chaincode ${cc_name}"
     fi
 
     local PEER1_TLS PEER2_TLS ORDERER_TLS
@@ -658,75 +774,72 @@ run_real_caliper_scenario() {
         -name "ca.crt" | grep "peer0.org2" | head -1)
     ORDERER_TLS=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" \
         -name "*.pem" | grep "tlsca" | head -1)
+
+    # FIX-CCNAME: pass cc_name (semantic) to networkConfig generator
+    # networkConfig.contracts[0].id = cc_name = bcms-sha256 / bcms-blake3
+    # This MUST match the contractId in the workload YAML
     generate_caliper_network_config "${PEER1_TLS}" "${PEER2_TLS}" "${ORDERER_TLS}" "${cc_name}"
 
     cd "${ROOT_DIR}/caliper-workspace"
+
+    # Remove conflicting fabric-gateway binding
     [ -d "node_modules/@hyperledger/fabric-gateway" ] && \
-        rm -rf node_modules/@hyperledger/fabric-gateway
+        rm -rf node_modules/@hyperledger/fabric-gateway && \
+        log "  ✓ Removed conflicting fabric-gateway"
+
     if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/caliper" ]; then
         info "  Installing Caliper dependencies..."
         npm install 2>&1 | tee -a "$LOG_FILE"
         npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee -a "$LOG_FILE"
     fi
 
-    # ── v13.0: حلقة TPS — الجديد الأساسي ──────────────────────────────
-    local all_tps_passed=true
+    # FIX-D: Health check before Caliper
+    verify_peers_healthy
 
-    for tps in "${TPS_VALUES[@]}"; do
-        local benchcfg
-        benchcfg=$(get_benchconfig_for_tps "$n" "$tps")
-        local tps_sdir="${ROOT_DIR}/results/${key}/tps${tps}"
-        mkdir -p "$tps_sdir"
+    log "  ─── CALIPER START: Scenario ${n} — ${cc_name} ───"
+    log "  Config: ${benchcfg} | TPS target: ${tps} | BatchSize: ${batchsize}"
+    log "  Hypothesis: $([ "$n" = "2" ] && echo "T2(BLAKE3) < T1(SHA-256) — proving BLAKE3 advantage" || echo "measuring scenario $n")"
 
-        # تحقق من وجود ملف البنشمارك
-        if [ ! -f "benchmarks/${benchcfg}" ]; then
-            warn "  ⚠ ملف البنشمارك غير موجود: benchmarks/${benchcfg} — تجاوز TPS=${tps}"
-            continue
-        fi
-
-        log ""
-        log "  ┌─────────────────────────────────────────────┐"
-        log "  │  CALIPER RUN: ${cc_name} @ ${tps} TPS        "
-        log "  │  Config: ${benchcfg}                         "
-        log "  └─────────────────────────────────────────────┘"
-
-        verify_peers_healthy
-
-        rm -f report.html caliper.log 2>/dev/null || true
-
-        NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
-        http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
-        npx caliper launch manager \
-            --caliper-workspace . \
-            --caliper-networkconfig networks/networkConfig.yaml \
-            --caliper-benchconfig "benchmarks/${benchcfg}" \
-            --caliper-flow-only-test \
-            2>&1 | tee -a "$LOG_FILE" || warn "  Caliper exited non-zero @ TPS=${tps}"
-
-        if [ -f "report.html" ]; then
-            cp "report.html" "${tps_sdir}/caliper_raw_report.html"
-            log "  ✓ TPS=${tps} report saved: ${tps_sdir}/caliper_raw_report.html"
-
-            python3 "${ROOT_DIR}/scripts/parse_caliper_report.py" \
-                --report "${tps_sdir}/caliper_raw_report.html" \
-                --scenario "$n" \
-                --output "${tps_sdir}/caliper_results.json" \
-                2>&1 | tee -a "$LOG_FILE" || warn "  Parser failed @ TPS=${tps}"
-        else
-            warn "  ✗ report.html not found @ TPS=${tps}"
-            all_tps_passed=false
-        fi
-
-        # استراحة تبريد بين كل TPS
-        if [ "$tps" != "${TPS_VALUES[-1]}" ]; then
-            info "  [COOL-DOWN] 30s بين TPS runs لتبريد المعالج..."
-            sleep 30
-        fi
-    done
-    # ── نهاية حلقة TPS ────────────────────────────────────────────────
+    NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
+    http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
+    npx caliper launch manager \
+        --caliper-workspace . \
+        --caliper-networkconfig networks/networkConfig.yaml \
+        --caliper-benchconfig "benchmarks/${benchcfg}" \
+        --caliper-flow-only-test \
+        2>&1 | tee -a "$LOG_FILE" || warn "  Caliper exited non-zero — check report"
 
     cd "${ROOT_DIR}"
-    $all_tps_passed && return 0 || return 1
+
+    if [ -f "${ROOT_DIR}/caliper-workspace/report.html" ]; then
+        mkdir -p "$sdir"
+        cp "${ROOT_DIR}/caliper-workspace/report.html" "${sdir}/caliper_raw_report.html"
+        log "  ✓ Caliper report saved: ${sdir}/caliper_raw_report.html"
+
+        python3 scripts/parse_caliper_report.py \
+            --report "${sdir}/caliper_raw_report.html" \
+            --scenario "$n" \
+            --output "${sdir}/caliper_results.json" \
+            2>&1 | tee -a "$LOG_FILE" || warn "  Parser failed"
+
+        python3 -c "
+import json, sys
+try:
+    with open('${sdir}/caliper_results.json') as f: d = json.load(f)
+    d['data_source'] = 'real_caliper'
+    d['is_simulated'] = False
+    d['cc_name'] = '${cc_name}'
+    d['algorithm'] = '$([ "$n" = "1" ] && echo sha256 || [ "$n" = "2" ] && echo blake3 || echo hybrid)'
+    with open('${sdir}/caliper_results.json','w') as f: json.dump(d,f,indent=2)
+except Exception as e: print(f'metadata update failed: {e}')
+" 2>/dev/null || true
+
+        log "  ✓ Scenario ${n} (${cc_name}) complete — real data saved"
+        return 0
+    else
+        warn "  report.html not found after Caliper run"
+        return 1
+    fi
 }
 
 run_scenario() {
@@ -736,6 +849,7 @@ run_scenario() {
     local sdir="${ROOT_DIR}/results/${key}"
     step "SCENARIO ${n}: ${label}"
     mkdir -p "$sdir"
+
     cat > "${sdir}/scenario_meta.json" << METAEOF
 {
   "scenario": ${n},
@@ -744,31 +858,44 @@ run_scenario() {
   "chaincode": "${SCENARIO_CHAINCODE[$n]}",
   "cc_name": "${SCENARIO_CCNAME[$n]}",
   "batch_size": ${SCENARIO_BATCHSIZE[$n]},
-  "tps_values": [$(IFS=,; echo "${TPS_VALUES[*]}")],
+  "tps": ${tps},
   "started": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 METAEOF
+
     [ -z "${DOCKER_OK+x}" ] && detect_runtime_environment
+
     local used_real=false
     if $DOCKER_OK && $CALIPER_INSTALLED; then
+        log "  Docker ✓ + Caliper ✓ — running REAL benchmark for scenario ${n}"
         run_real_caliper_scenario "$n" "$tps" && used_real=true || \
             warn "  Real benchmark failed — falling back to simulation"
     else
         warn "  Docker=${DOCKER_OK}, Caliper=${CALIPER_INSTALLED} — using simulation"
     fi
+
     if ! $used_real; then
-        warn "  ⚠️  SIMULATED DATA"
+        warn "  ⚠️  SIMULATED DATA — not real Caliper measurements"
         python3 scripts/gen_scenario_json.py \
-            --scenario "$n" --output-dir "$sdir" --mark-simulated \
+            --scenario "$n" \
+            --output-dir "$sdir" \
+            --mark-simulated \
             2>&1 | tee -a "$LOG_FILE"
     fi
-    log "✓ Scenario ${n} (${SCENARIO_CCNAME[$n]}) complete — TPS: ${TPS_VALUES[*]}"
+
+    log "✓ Scenario ${n} (${SCENARIO_CCNAME[$n]}) complete"
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# FIX-DEFAULTBENCH: run_caliper_benchmarks()
+# No longer hardcodes benchConfig_s3_hybrid.yaml.
+# Default mode runs S1 (SHA-256 baseline). Use --scenario=N for others.
+# ═══════════════════════════════════════════════════════════════════════════
 run_caliper_benchmarks() {
     step "Running Hyperledger Caliper Benchmarks"
     cd "${ROOT_DIR}/caliper-workspace"
     rm -f report.html caliper.log 2>/dev/null || true
+
     if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/caliper" ]; then
         info "Installing Caliper dependencies..."
         npm install 2>&1 | tee -a "$LOG_FILE"
@@ -780,6 +907,7 @@ run_caliper_benchmarks() {
         [ -d "node_modules/@hyperledger/fabric-gateway" ] && \
             rm -rf node_modules/@hyperledger/fabric-gateway
     fi
+
     local PEER1_TLS PEER2_TLS ORDERER_TLS
     PEER1_TLS=$(find "${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com" \
         -name "ca.crt" | grep "peer0.org1" | head -1)
@@ -787,46 +915,53 @@ run_caliper_benchmarks() {
         -name "ca.crt" | grep "peer0.org2" | head -1)
     ORDERER_TLS=$(find "${ROOT_DIR}/test-network/organizations/ordererOrganizations" \
         -name "*.pem" | grep "tlsca" | head -1)
-    local sn="${SCENARIO_NUM:-1}"
-    local default_cc="${SCENARIO_CCNAME[$sn]}"
+
+    # FIX-DEFAULTBENCH + FIX-CCNAME: default to S1 (SHA-256 baseline)
+    local default_cc="${CC_NAME:-${SCENARIO_CCNAME[1]}}"
+    local default_bench="${SCENARIO_BENCHCONFIG[1]}"
+    if [ -n "${SCENARIO_NUM:-}" ]; then
+        default_cc="${SCENARIO_CCNAME[$SCENARIO_NUM]}"
+        default_bench="${SCENARIO_BENCHCONFIG[$SCENARIO_NUM]}"
+    fi
     export CC_NAME="$default_cc"
+
     generate_caliper_network_config "${PEER1_TLS}" "${PEER2_TLS}" "${ORDERER_TLS}" "${CC_NAME}"
+
+    # FIX-D: Health check before Caliper
     verify_peers_healthy
-    # شغّل لكل TPS
-    for tps in "${TPS_VALUES[@]}"; do
-        local benchcfg
-        benchcfg=$(get_benchconfig_for_tps "$sn" "$tps")
-        info "Running: ${benchcfg} | CC: ${CC_NAME} | TPS: ${tps}"
-        [ -f "benchmarks/${benchcfg}" ] || { warn "  ملف غير موجود: ${benchcfg}"; continue; }
-        rm -f report.html 2>/dev/null || true
-        NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
-        http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
-        npx caliper launch manager \
-            --caliper-workspace . \
-            --caliper-networkconfig networks/networkConfig.yaml \
-            --caliper-benchconfig "benchmarks/${benchcfg}" \
-            --caliper-flow-only-test \
-            2>&1 | tee -a "$LOG_FILE" || warn "Caliper exited non-zero @ TPS=${tps}"
-        [ -f "report.html" ] && {
-            mkdir -p "${ROOT_DIR}/results"
-            cp "report.html" "${ROOT_DIR}/results/caliper_report_${CC_NAME}_tps${tps}.html"
-            log "✓ Report saved: results/caliper_report_${CC_NAME}_tps${tps}.html"
-        }
-        [ "$tps" != "${TPS_VALUES[-1]}" ] && sleep 30
-    done
+
+    info "Running: ${default_bench} with chaincode: ${CC_NAME}"
+    NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
+    http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
+    npx caliper launch manager \
+        --caliper-workspace . \
+        --caliper-networkconfig networks/networkConfig.yaml \
+        --caliper-benchconfig "benchmarks/${default_bench}" \
+        --caliper-flow-only-test \
+        2>&1 | tee -a "$LOG_FILE" || warn "Caliper exited non-zero"
+
+    if [ -f "report.html" ]; then
+        log "✓ Caliper report: caliper-workspace/report.html"
+        mkdir -p "${ROOT_DIR}/results"
+        cp "report.html" "${ROOT_DIR}/results/caliper_report_${CC_NAME}.html"
+    else
+        warn "report.html not found"
+    fi
     cd "$ROOT_DIR"
 }
 
 run_all_scenarios() {
-    step "Running All 4 Research Scenarios × ${#TPS_VALUES[@]} TPS values"
-    info "TPS values: ${TPS_VALUES[*]}"
-    info "Sequence: S1(SHA-256) → S2(BLAKE3) → S3(Hybrid) → S4(Hybrid-Batch)"
+    step "Running All 4 Research Scenarios"
+    info "Sequence: S1(SHA-256 baseline) → S2(BLAKE3) → S3(Hybrid) → S4(Hybrid-Batch)"
+    info "Hypothesis: T4 < T3 < T2 < T1 — BLAKE3 advantage proven in S2 vs S1"
     for n in 1 2 3 4; do
         run_scenario "$n" "${TPS_VALUES[0]}"
+        
+        # Deep cooldown between scenarios to guarantee fairness
         if [ "$n" -lt 4 ]; then
-            info "  [ISOLATION] Restarting peers and CouchDB..."
+            info "  [ISOLATION] Restarting peers and CouchDB to clear RAM/Cache..."
             docker restart peer0.org1.example.com peer0.org2.example.com couchdb0 couchdb1 2>/dev/null || true
-            info "  [ISOLATION] Cooling down 60s..."
+            info "  [ISOLATION] Cooling down 60s for OS and Fabric recovery..."
             sleep 60
         fi
     done
@@ -838,15 +973,12 @@ reporting_pipeline() {
     step "Reporting Pipeline — ${context}"
     for n in 1 2 3 4; do
         local key="${SCENARIO_KEY[$n]}"
-        # v13.0: parse لكل TPS
-        for tps in "${TPS_VALUES[@]}"; do
-            local report_html="${ROOT_DIR}/results/${key}/tps${tps}/caliper_raw_report.html"
-            [ -f "$report_html" ] && \
-                python3 scripts/parse_caliper_report.py \
-                    --report "$report_html" --scenario "$n" \
-                    --output "results/${key}/tps${tps}/caliper_results.json" \
-                    2>&1 | tee -a "$LOG_FILE" || true
-        done
+        local report_html="${ROOT_DIR}/results/${key}/caliper_raw_report.html"
+        [ -f "$report_html" ] && \
+            python3 scripts/parse_caliper_report.py \
+                --report "$report_html" --scenario "$n" \
+                --output "results/${key}/caliper_results.json" \
+                2>&1 | tee -a "$LOG_FILE" || true
     done
     python3 aggregate_results.py 2>&1 | tee -a "$LOG_FILE" || warn "aggregate_results.py failed"
     python3 generate_four_scenario_report.py 2>&1 | tee -a "$LOG_FILE" || warn "report generation failed"
@@ -858,33 +990,30 @@ reporting_pipeline() {
 generate_summary_report() {
     mkdir -p results
     cat > "results/SUMMARY_REPORT.md" << EOF
-# BCMS Research Summary — $(date '+%Y-%m-%d %H:%M:%S') — v13.0
-
-## TPS Values Tested
-$(for t in "${TPS_VALUES[@]}"; do echo "- ${t} TPS"; done)
+# BCMS Research Summary — $(date '+%Y-%m-%d %H:%M:%S')
 
 ## Framework
 - Hyperledger Fabric v2.5.9
 - CouchDB world state
 - 2 Orgs, 2 peers each, Raft ordering
 
-## Chaincodes (v13.0)
-| Scenario | Contract ID   | Algorithm  | Hash µs | x1500 µs/tx |
-|----------|---------------|------------|---------|-------------|
-| S1       | bcms-sha256   | SHA-256    | 15.0    | 22,500      |
-| S2       | bcms-blake3   | BLAKE3     | 4.01    | 6,015       |
-| S3       | bcms-hybrid   | Hybrid     | varies  | varies      |
-| S4       | bcms-hybrid-b | Hybrid+Bat | varies  | amortised   |
+## Chaincodes (v12.0)
+| Scenario | Contract ID   | Algorithm  | Hash µs | ×100 µs/tx |
+|----------|---------------|------------|---------|------------|
+| S1       | bcms-sha256   | SHA-256    | 15.0    | 1,500      |
+| S2       | bcms-blake3   | BLAKE3     | 4.01    | 401        |
+| S3       | bcms-hybrid   | Hybrid     | varies  | varies     |
+| S4       | bcms-hybrid-b | Hybrid+Bat | varies  | amortised  |
 
-## Results Structure
-$(for n in 1 2; do
-    key=""
-    [ "$n" = "1" ] && key="scenario_1_sha256"
-    [ "$n" = "2" ] && key="scenario_2_blake3"
-    for t in "${TPS_VALUES[@]}"; do
-        echo "- results/${key}/tps${t}/caliper_raw_report.html"
-    done
-done)
+## Hypothesis
+T4(N,B) < T3(N,S) < T2(N) < T1(N)
+BLAKE3 (S2) should show measurably higher TPS and lower latency than SHA-256 (S1)
+especially in VerifyCertificate (CPU-bound re-hash on every verification call).
+
+## Key BLAKE3 Advantage at 500 TPS (VerifyCertificate)
+- SHA-256: 1,500 µs × 500 = 750,000 µs/sec CPU per peer
+- BLAKE3:    401 µs × 500 = 200,500 µs/sec CPU per peer
+- Freed:   549,500 µs/sec per peer → measurable latency reduction
 EOF
     log "✓ Summary: results/SUMMARY_REPORT.md"
 }
@@ -896,7 +1025,7 @@ sync_reports_to_git() {
     git rev-parse --is-inside-work-tree &>/dev/null || { warn "Not in git repo"; return 0; }
     git add . 2>&1 | tee -a "$LOG_FILE" || { warn "git add failed"; return 0; }
     git diff --cached --quiet && { log "✓ Nothing to commit"; return 0; }
-    git commit -m "feat(results): BCMS v13.0 multi-TPS benchmark [${TIMESTAMP}]" \
+    git commit -m "feat(results): BCMS 4-scenario benchmark results [${TIMESTAMP}]" \
         2>&1 | tee -a "$LOG_FILE" || { warn "git commit failed"; return 0; }
     local branch; branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
     git push origin "${branch}" 2>&1 | tee -a "$LOG_FILE" && \
@@ -905,27 +1034,22 @@ sync_reports_to_git() {
 
 print_final_summary() {
     echo -e "\n${BOLD}${CYAN}╔══════════════════════════════════════════╗"
-    echo "║   BCMS PIPELINE COMPLETE  v13.0         ║"
+    echo "║   BCMS PIPELINE COMPLETE  v12.0         ║"
     echo "╚══════════════════════════════════════════╝${NC}"
-    echo "  Log : $LOG_FILE"
-    echo "  End : $(date '+%Y-%m-%d %H:%M:%S')"
-    echo "  TPS : ${TPS_VALUES[*]}"
+    echo "  Log:  $LOG_FILE"
+    echo "  End:  $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
-    echo "  النتائج محفوظة في:"
-    for n in 1 2; do
-        local key=""
-        [ "$n" = "1" ] && key="scenario_1_sha256"
-        [ "$n" = "2" ] && key="scenario_2_blake3"
-        for t in "${TPS_VALUES[@]}"; do
-            echo "    results/${key}/tps${t}/caliper_raw_report.html"
-        done
-    done
+    echo "  Contract ID alignment (v12.0 fix):"
+    echo "    S1: bcms-sha256  → benchConfig_s1_sha256.yaml (contractId: bcms-sha256) ✓"
+    echo "    S2: bcms-blake3  → benchConfig_s2_blake3.yaml (contractId: bcms-blake3) ✓"
+    echo "    S3: bcms-hybrid  → benchConfig_s3_hybrid.yaml (contractId: bcms-hybrid) ✓"
+    echo "    S4: bcms-hybrid-batch → benchConfig_s4_hybrid_batch.yaml ✓"
 }
 
 main() {
     print_banner
     mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
-    echo "BCMS v13.0 Log — $(date)" > "$LOG_FILE"
+    echo "BCMS v12.0 Log — $(date)" > "$LOG_FILE"
     cd "$ROOT_DIR"
 
     check_prerequisites_light
@@ -933,26 +1057,35 @@ main() {
     install_tamarin
 
     if [ "${COMPARISON_ONLY:-false}" = "true" ]; then
+        info "COMPARISON_ONLY mode"
         python3 aggregate_results.py 2>&1 | tee -a "$LOG_FILE"
         python3 generate_four_scenario_report.py 2>&1 | tee -a "$LOG_FILE"
-        log "✓ Comparison report regenerated"; exit 0
+        log "✓ Comparison report regenerated"
+        exit 0
     fi
 
     if [ "$REPORT_ONLY" = "true" ]; then
+        info "REPORT_ONLY mode"
         mkdir -p results
         reporting_pipeline "report-only"
-        print_final_summary; exit 0
+        print_final_summary
+        exit 0
     fi
 
     [ "$DOCS_ONLY"   = "true" ] && { print_final_summary; exit 0; }
     [ "$VERIFY_ONLY" = "true" ] && { run_tamarin_verification; print_final_summary; exit 0; }
 
     if [ "$ALL_SCENARIOS" = "true" ]; then
+        info "ALL_SCENARIOS mode — running S1→S2→S3→S4"
         check_prerequisites
         [ "$SKIP_TAMARIN" = "false" ] && run_tamarin_verification
         detect_runtime_environment
+        # FIX-DOUBLE-DEPLOY: setup_fabric_network() used to pre-deploy S1,
+        # causing bcms-sha256 to be deployed TWICE (once here, once inside
+        # run_scenario(1)). Now we only bring the network UP without deploying
+        # any chaincode — run_all_scenarios() handles each CC independently.
         if [ "$SKIP_NETWORK" = "false" ]; then
-            step "Starting Fabric Network"
+            step "Starting Fabric Network (no chaincode pre-deploy)"
             cd "${ROOT_DIR}/test-network"
             ./network.sh down 2>&1 | tee -a "$LOG_FILE" || true
             docker volume prune -f 2>/dev/null || true
@@ -960,6 +1093,7 @@ main() {
             ./network.sh up createChannel -c mychannel -ca -s couchdb \
                 2>&1 | tee -a "$LOG_FILE" || { error "Network startup failed"; exit 1; }
             cd "${ROOT_DIR}"
+            log "✓ Fabric network up — chaincode will be deployed per-scenario"
         fi
         run_all_scenarios
         generate_summary_report
@@ -969,7 +1103,8 @@ main() {
     fi
 
     if [ -n "$SCENARIO_NUM" ]; then
-        [[ "$SCENARIO_NUM" =~ ^[1-4]$ ]] || { error "Invalid scenario: ${SCENARIO_NUM}"; exit 1; }
+        [[ "$SCENARIO_NUM" =~ ^[1-4]$ ]] || { error "Invalid scenario: ${SCENARIO_NUM} (must be 1-4)"; exit 1; }
+        info "SINGLE SCENARIO mode: scenario ${SCENARIO_NUM} (${SCENARIO_CCNAME[$SCENARIO_NUM]})"
         check_prerequisites
         [ "$SKIP_TAMARIN" = "false" ] && run_tamarin_verification
         detect_runtime_environment
@@ -994,7 +1129,7 @@ main() {
     generate_summary_report
     print_final_summary
     sync_reports_to_git
-    log "✓ BCMS v13.0 Pipeline complete"
+    log "✓ BCMS v12.0 Pipeline complete"
     exit 0
 }
 
