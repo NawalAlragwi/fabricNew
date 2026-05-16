@@ -1,0 +1,5 @@
+*.exe
+sha256
+blake3
+hybrid
+hybrid-batch
