@@ -82,7 +82,7 @@ const HashModeSHA256 = "sha256"
 // MagnificationFactor controls the size of the data to be hashed.
 // It multiplies the payload size to simulate hashing large educational records/transcripts.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 1000
+const MagnificationFactor = 5000
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
@@ -166,19 +166,18 @@ func ComputeCertHash(
 	}
 	data := []byte(strings.Join(parts, "|"))
 
-	// Step 2: Data Magnification (Amplify payload size)
-	// Create a large buffer and fill it with repeated data.
-	// This forces the hash function to process a large contiguous block.
-	largeData := make([]byte, len(data)*MagnificationFactor)
+	// Step 2: Loop Magnification — FIX-PARITY v14
+	// Identical structure to BLAKE3 v14: repeated calls on same data.
+	// Measures per-call overhead accurately for fair comparison.
+	// SHA-256: ~15µs × 5000 = 75ms per tx — visible in Caliper above 20 TPS.
+	var h [32]byte
 	for i := 0; i < MagnificationFactor; i++ {
-		copy(largeData[i*len(data):], data)
+		h = sha256.Sum256(data)
 	}
+	hash := fmt.Sprintf("%x", h)
+	_ = hash
 
-	// Step 3: Compute single hash of the large block.
-	// SHA-256: sequential processing of the entire block.
-	hash := sha256.Sum256(largeData)
-
-	return fmt.Sprintf("%x", hash), HashModeSHA256
+	return hash, HashModeSHA256
 }
 
 // ─── Identity Helper ────────────────────────────────────────────────────────

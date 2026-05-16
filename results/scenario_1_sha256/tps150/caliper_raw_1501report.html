@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-tps50</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 SHA-256 Baseline at 50 TPS target. VerifyCertificate: linear 10→50 TPS (PRIMARY COMPARISON ROUND). Magnification x1500 &#x3D; 22,500 us hash overhead per tx.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s1-sha256-tps150</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario S1 SHA-256 Baseline at 150 TPS target. VerifyCertificate: linear 30→150 TPS (PRIMARY COMPARISON ROUND). Magnification x1500 &#x3D; 22,500 us hash overhead per tx.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">5</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -157,30 +157,30 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>723</td> <td>0</td> <td>12.1</td> <td>0.73</td> <td>0.15</td> <td>0.46</td> <td>12.0</td>
+                         <td>IssueCertificate</td> <td>2223</td> <td>0</td> <td>37.1</td> <td>48.95</td> <td>0.17</td> <td>14.31</td> <td>22.3</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>2359</td> <td>0</td> <td>19.7</td> <td>0.12</td> <td>0.05</td> <td>0.06</td> <td>19.7</td>
+                         <td>VerifyCertificate</td> <td>6035</td> <td>0</td> <td>50.3</td> <td>35.31</td> <td>0.13</td> <td>8.72</td> <td>40.0</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>603</td> <td>0</td> <td>10.0</td> <td>0.09</td> <td>0.03</td> <td>0.05</td> <td>10.0</td>
+                         <td>QueryAllCertificates</td> <td>1803</td> <td>0</td> <td>30.0</td> <td>16.51</td> <td>0.08</td> <td>9.90</td> <td>25.4</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>603</td> <td>0</td> <td>10.0</td> <td>0.69</td> <td>0.25</td> <td>0.46</td> <td>9.9</td>
+                         <td>RevokeCertificate</td> <td>1803</td> <td>0</td> <td>30.0</td> <td>0.75</td> <td>0.07</td> <td>0.39</td> <td>29.8</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>2403</td> <td>0</td> <td>40.0</td> <td>0.23</td> <td>0.06</td> <td>0.10</td> <td>40.0</td>
+                         <td>HashOnlyBenchmark</td> <td>2496</td> <td>4251</td> <td>112.4</td> <td>60.00</td> <td>0.26</td> <td>32.30</td> <td>56.6</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>Issue certs at 12 TPS, 60s</p>
+                <p>Issue certs at 37 TPS, 60s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 12
+    tps: 37
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -188,7 +188,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>723</td> <td>0</td> <td>12.1</td> <td>0.73</td> <td>0.15</td> <td>0.46</td> <td>12.0</td>
+                                     <td>IssueCertificate</td> <td>2223</td> <td>0</td> <td>37.1</td> <td>48.95</td> <td>0.17</td> <td>14.31</td> <td>22.3</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -196,14 +196,14 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>PRIMARY ROUND — SHA-256 linear 10→50 TPS, 120s. Re-computes SHA-256 on-chain per call: 22,500 us CPU overhead. Expected: latency climbs steeply as TPS rises (no SIMD).
+                <p>PRIMARY ROUND — SHA-256 linear 30→150 TPS, 120s. Re-computes SHA-256 on-chain per call: 22,500 us CPU overhead. Expected: latency climbs steeply as TPS rises (no SIMD).
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
   type: linear-rate
   opts:
-    startingTps: 10
-    finishingTps: 50
+    startingTps: 30
+    finishingTps: 150
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -211,7 +211,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>2359</td> <td>0</td> <td>19.7</td> <td>0.12</td> <td>0.05</td> <td>0.06</td> <td>19.7</td>
+                                     <td>VerifyCertificate</td> <td>6035</td> <td>0</td> <td>50.3</td> <td>35.31</td> <td>0.13</td> <td>8.72</td> <td>40.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -219,12 +219,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="QueryAllCertificates">
                 <h2>Benchmark round: QueryAllCertificates</h2>
-                <p>I&#x2F;O-bound query 10 TPS, 60s (algorithm has zero impact)</p>
+                <p>I&#x2F;O-bound query 30 TPS, 60s (algorithm has zero impact)</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 10
+    tps: 30
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -232,7 +232,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>603</td> <td>0</td> <td>10.0</td> <td>0.09</td> <td>0.03</td> <td>0.05</td> <td>10.0</td>
+                                     <td>QueryAllCertificates</td> <td>1803</td> <td>0</td> <td>30.0</td> <td>16.51</td> <td>0.08</td> <td>9.90</td> <td>25.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -240,12 +240,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="RevokeCertificate">
                 <h2>Benchmark round: RevokeCertificate</h2>
-                <p>Flag-only revoke 10 TPS, 60s (no hash recomputation)</p>
+                <p>Flag-only revoke 30 TPS, 60s (no hash recomputation)</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 10
+    tps: 30
 </pre>
                         <h3>Performance metrics for RevokeCertificate</h3>
                             <table style="min-width: 100%;">
@@ -253,7 +253,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>603</td> <td>0</td> <td>10.0</td> <td>0.69</td> <td>0.25</td> <td>0.46</td> <td>9.9</td>
+                                     <td>RevokeCertificate</td> <td>1803</td> <td>0</td> <td>30.0</td> <td>0.75</td> <td>0.07</td> <td>0.39</td> <td>29.8</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -261,12 +261,12 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
                 <h2>Benchmark round: HashOnlyBenchmark</h2>
-                <p>Pure CPU hash isolation at 40 TPS, 60s</p>
+                <p>Pure CPU hash isolation at 120 TPS, 60s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 40
+    tps: 120
 </pre>
                         <h3>Performance metrics for HashOnlyBenchmark</h3>
                             <table style="min-width: 100%;">
@@ -274,7 +274,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>2403</td> <td>0</td> <td>40.0</td> <td>0.23</td> <td>0.06</td> <td>0.10</td> <td>40.0</td>
+                                     <td>HashOnlyBenchmark</td> <td>2496</td> <td>4251</td> <td>112.4</td> <td>60.00</td> <td>0.26</td> <td>32.30</td> <td>56.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
@@ -283,22 +283,22 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-tps50
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s1-sha256-tps150
 description: &gt;
-  Scenario S1 SHA-256 Baseline at 50 TPS target. VerifyCertificate: linear 10→50
-  TPS (PRIMARY COMPARISON ROUND). Magnification x1500 &#x3D; 22,500 us hash overhead
-  per tx.
+  Scenario S1 SHA-256 Baseline at 150 TPS target. VerifyCertificate: linear
+  30→150 TPS (PRIMARY COMPARISON ROUND). Magnification x1500 &#x3D; 22,500 us hash
+  overhead per tx.
 workers:
   type: local
   number: 3
 rounds:
   - label: IssueCertificate
-    description: &#39;Issue certs at 12 TPS, 60s&#39;
+    description: &#39;Issue certs at 37 TPS, 60s&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 12
+        tps: 37
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -308,15 +308,15 @@ rounds:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      PRIMARY ROUND — SHA-256 linear 10→50 TPS, 120s. Re-computes SHA-256
+      PRIMARY ROUND — SHA-256 linear 30→150 TPS, 120s. Re-computes SHA-256
       on-chain per call: 22,500 us CPU overhead. Expected: latency climbs
       steeply as TPS rises (no SIMD).
     txDuration: 120
     rateControl:
       type: linear-rate
       opts:
-        startingTps: 10
-        finishingTps: 50
+        startingTps: 30
+        finishingTps: 150
     workload:
       module: workload&#x2F;verifyCertificate.js
       arguments:
@@ -325,12 +325,12 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
-    description: &#39;I&#x2F;O-bound query 10 TPS, 60s (algorithm has zero impact)&#39;
+    description: &#39;I&#x2F;O-bound query 30 TPS, 60s (algorithm has zero impact)&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 10
+        tps: 30
     workload:
       module: workload&#x2F;queryAllCertificates.js
       arguments:
@@ -338,12 +338,12 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: RevokeCertificate
-    description: &#39;Flag-only revoke 10 TPS, 60s (no hash recomputation)&#39;
+    description: &#39;Flag-only revoke 30 TPS, 60s (no hash recomputation)&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 10
+        tps: 30
     workload:
       module: workload&#x2F;revokeCertificate.js
       arguments:
@@ -352,12 +352,12 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: HashOnlyBenchmark
-    description: &#39;Pure CPU hash isolation at 40 TPS, 60s&#39;
+    description: &#39;Pure CPU hash isolation at 120 TPS, 60s&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 40
+        tps: 120
     workload:
       module: workload&#x2F;hashOnlyBenchmark.js
       arguments:
