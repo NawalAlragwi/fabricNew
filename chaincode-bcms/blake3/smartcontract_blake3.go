@@ -3,7 +3,7 @@
 //  Chaincode Implementation — BLAKE3 Mode  (v14.0 — FIX-PARITY)
 //
 //  FIXES IN v14.0:
-//  ─────────────────────────────────────────────────────────────────────────
+//  -------------------------------------------------------------------------
 //  FIX-PARITY-1: ComputeCertHash now uses LOOP magnification (not data size).
 //    Before (v13): largeData = data × 1000 → blake3.Sum256(largeData) once
 //    After  (v14): blake3.Sum256(data) × 5000 times in a loop
@@ -55,7 +55,7 @@ const HashModeBLAKE3 = "blake3"
 // FIX-PARITY-3: raised from 1000 → 5000 for visible 55ms signal per tx
 const MagnificationFactor = 5000
 
-// ─── Data Structures ────────────────────────────────────────────────────────
+// --- Data Structures --------------------------------------------------------
 
 type Certificate struct {
 	DocType     string `json:"docType"`
@@ -107,7 +107,7 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-// ─── BLAKE3 Hash Engine (v14.0 — FIX-PARITY) ────────────────────────────────
+// --- BLAKE3 Hash Engine (v14.0 - FIX-PARITY) --------------------------------
 //
 // FIX-PARITY-1: Loop magnification — IDENTICAL structure to SHA-256 v14.
 //
@@ -146,7 +146,7 @@ func ComputeCertHash(
 	return fmt.Sprintf("%x", h), HashModeBLAKE3
 }
 
-// ─── Identity Helper ────────────────────────────────────────────────────────
+// --- Identity Helper --------------------------------------------------------
 
 func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
@@ -156,7 +156,7 @@ func getCallerMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	return mspID, nil
 }
 
-// ─── Audit Trail ────────────────────────────────────────────────────────────
+// --- Audit Trail ------------------------------------------------------------
 
 func (s *SmartContract) writeAudit(
 	ctx contractapi.TransactionContextInterface,
@@ -184,7 +184,7 @@ func (s *SmartContract) writeAudit(
 	}
 }
 
-// ─── InitLedger ─────────────────────────────────────────────────────────────
+// --- InitLedger -------------------------------------------------------------
 
 func (s *SmartContract) InitLedger(
 	ctx contractapi.TransactionContextInterface,
@@ -235,7 +235,7 @@ func (s *SmartContract) InitLedger(
 	return nil
 }
 
-// ─── IssueCertificate ───────────────────────────────────────────────────────
+// --- IssueCertificate -------------------------------------------------------
 
 func (s *SmartContract) IssueCertificate(
 	ctx contractapi.TransactionContextInterface,
@@ -290,7 +290,7 @@ func (s *SmartContract) IssueCertificate(
 	return nil
 }
 
-// ─── VerifyCertificate ──────────────────────────────────────────────────────
+// --- VerifyCertificate ------------------------------------------------------
 
 func (s *SmartContract) VerifyCertificate(
 	ctx contractapi.TransactionContextInterface,
@@ -347,7 +347,7 @@ func (s *SmartContract) VerifyCertificateByID(
 	return s.VerifyCertificate(ctx, id, cert.CertHash)
 }
 
-// ─── GetCertificate ─────────────────────────────────────────────────────────
+// --- GetCertificate ---------------------------------------------------------
 
 func (s *SmartContract) GetCertificate(
 	ctx contractapi.TransactionContextInterface, id string,
@@ -372,7 +372,7 @@ func (s *SmartContract) ReadCertificate(
 	return s.GetCertificate(ctx, id)
 }
 
-// ─── RevokeCertificate ──────────────────────────────────────────────────────
+// --- RevokeCertificate ------------------------------------------------------
 
 func (s *SmartContract) RevokeCertificate(
 	ctx contractapi.TransactionContextInterface, id string,
@@ -414,7 +414,7 @@ func (s *SmartContract) RevokeCertificate(
 	return nil
 }
 
-// ─── QueryAllCertificates ───────────────────────────────────────────────────
+// --- QueryAllCertificates ---------------------------------------------------
 
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface, pageSize string, bookmark string,
@@ -485,7 +485,7 @@ func (s *SmartContract) queryAllByRange(
 	return string(resJSON), nil
 }
 
-// ─── GetCertificatesByStudent ────────────────────────────────────────────────
+// --- GetCertificatesByStudent ------------------------------------------------
 
 func (s *SmartContract) GetCertificatesByStudent(
 	ctx contractapi.TransactionContextInterface, studentID string,
@@ -516,7 +516,7 @@ func (s *SmartContract) GetCertificatesByStudent(
 	return certificates, nil
 }
 
-// ─── GetAuditLogs ────────────────────────────────────────────────────────────
+// --- GetAuditLogs ------------------------------------------------------------
 
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
@@ -567,7 +567,7 @@ func (s *SmartContract) getAuditLogsByRange(
 	return logs, nil
 }
 
-// ─── Utility Functions ───────────────────────────────────────────────────────
+// --- Utility Functions -------------------------------------------------------
 
 func (s *SmartContract) ComputeHash(
 	ctx contractapi.TransactionContextInterface,
@@ -611,15 +611,4 @@ func (s *SmartContract) HashOnlyBenchmark(
 	return fmt.Sprintf("%x", h), nil
 }
 
-// ─── main ────────────────────────────────────────────────────────────────────
-
-func main() {
-	chaincode, err := contractapi.NewChaincode(&SmartContract{})
-	if err != nil {
-		fmt.Printf("Error creating BLAKE3 chaincode: %v\n", err)
-		return
-	}
-	if err := chaincode.Start(); err != nil {
-		fmt.Printf("Error starting BLAKE3 chaincode: %v\n", err)
-	}
-}
+// --- End of SmartContract ----------------------------------------------------
