@@ -158,22 +158,22 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>1496</td> <td>0</td> <td>50.3</td> <td>1.87</td> <td>0.16</td> <td>0.79</td> <td>49.5</td>
+                         <td>IssueCertificate</td> <td>1496</td> <td>0</td> <td>50.3</td> <td>1.00</td> <td>0.17</td> <td>0.51</td> <td>49.2</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>100.2</td> <td>0.25</td> <td>0.01</td> <td>0.03</td> <td>100.1</td>
+                         <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>100.2</td> <td>0.13</td> <td>0.01</td> <td>0.02</td> <td>100.1</td>
                     </tr>
                     <tr>
-                         <td>QueryAllCertificates</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>55.06</td> <td>35.01</td> <td>37.71</td> <td>19.2</td>
+                         <td>QueryAllCertificates</td> <td>200</td> <td>0</td> <td>10.4</td> <td>35.05</td> <td>35.00</td> <td>35.02</td> <td>3.7</td>
                     </tr>
                     <tr>
-                         <td>RevokeCertificate</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>1.54</td> <td>0.12</td> <td>0.64</td> <td>49.2</td>
+                         <td>RevokeCertificate</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>0.90</td> <td>0.14</td> <td>0.48</td> <td>49.6</td>
                     </tr>
                     <tr>
-                         <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>75.2</td> <td>0.28</td> <td>0.01</td> <td>0.03</td> <td>75.2</td>
+                         <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>74.9</td> <td>0.37</td> <td>0.01</td> <td>0.02</td> <td>74.9</td>
                     </tr>
                     <tr>
-                         <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>30.2</td> <td>0.11</td> <td>0.01</td> <td>0.02</td> <td>30.2</td>
+                         <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>30.2</td> <td>0.09</td> <td>0.01</td> <td>0.03</td> <td>30.2</td>
                     </tr>
                 </table>
             </div>
@@ -191,7 +191,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>1496</td> <td>0</td> <td>50.3</td> <td>1.87</td> <td>0.16</td> <td>0.79</td> <td>49.5</td>
+                                     <td>IssueCertificate</td> <td>1496</td> <td>0</td> <td>50.3</td> <td>1.00</td> <td>0.17</td> <td>0.51</td> <td>49.2</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -211,7 +211,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>100.2</td> <td>0.25</td> <td>0.01</td> <td>0.03</td> <td>100.1</td>
+                                     <td>VerifyCertificate</td> <td>3000</td> <td>0</td> <td>100.2</td> <td>0.13</td> <td>0.01</td> <td>0.02</td> <td>100.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -223,7 +223,7 @@
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
   type: fixed-rate
   opts:
-    tps: 50
+    tps: 10
 </pre>
                         <h3>Performance metrics for QueryAllCertificates</h3>
                             <table style="min-width: 100%;">
@@ -231,7 +231,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>QueryAllCertificates</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>55.06</td> <td>35.01</td> <td>37.71</td> <td>19.2</td>
+                                     <td>QueryAllCertificates</td> <td>200</td> <td>0</td> <td>10.4</td> <td>35.05</td> <td>35.00</td> <td>35.02</td> <td>3.7</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for QueryAllCertificates</h3>
@@ -251,7 +251,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>RevokeCertificate</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>1.54</td> <td>0.12</td> <td>0.64</td> <td>49.2</td>
+                                     <td>RevokeCertificate</td> <td>1496</td> <td>0</td> <td>50.2</td> <td>0.90</td> <td>0.14</td> <td>0.48</td> <td>49.6</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for RevokeCertificate</h3>
@@ -271,7 +271,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>75.2</td> <td>0.28</td> <td>0.01</td> <td>0.03</td> <td>75.2</td>
+                                     <td>GetCertificatesByStudent</td> <td>2248</td> <td>0</td> <td>74.9</td> <td>0.37</td> <td>0.01</td> <td>0.02</td> <td>74.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetCertificatesByStudent</h3>
@@ -291,7 +291,7 @@
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>30.2</td> <td>0.11</td> <td>0.01</td> <td>0.02</td> <td>30.2</td>
+                                     <td>GetAuditLogs</td> <td>896</td> <td>0</td> <td>30.2</td> <td>0.09</td> <td>0.01</td> <td>0.03</td> <td>30.2</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for GetAuditLogs</h3>
@@ -329,11 +329,11 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: QueryAllCertificates
-    txNumber: 1500
+    txNumber: 200
     rateControl:
       type: fixed-rate
       opts:
-        tps: 50
+        tps: 10
     workload:
       module: workload&#x2F;queryAllCertificates.js
     txOptions:

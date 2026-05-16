@@ -41,6 +41,27 @@ log "Project root: ${PROJECT_ROOT}"
 log "peer binary: $(which peer)"
 log "Log file: ${LOG_FILE}"
 
+# ─── الخطوة 0: مزامنة ساعة WSL لمنع Clock Drift (قيم سالبة) ─────────────────
+log "Step 0: Checking and syncing WSL2 clock..."
+# تصحيح مسار getcwd() إذا كان المجلد قد تغير
+cd "${PROJECT_ROOT}"
+
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    info "Syncing time with pool.ntp.org to ensure positive latency..."
+    # طلب sudo مسبقاً إذا لزم الأمر
+    if ! sudo -n true 2>/dev/null; then
+        warn "Please enter your sudo password to sync system clock:"
+    fi
+    
+    if sudo ntpdate -u pool.ntp.org; then
+        log "✅ WSL2 clock successfully synced."
+    else
+        warn "Clock sync failed. If you see negative latency, run 'sudo ntpdate -u pool.ntp.org' manually."
+    fi
+else
+    log "Not running in WSL2 — skipping clock sync"
+fi
+
 # ─── تنظيف التقارير القديمة ───────────────────────────────────────────────────
 log "Cleaning old reports and logs..."
 rm -f "${PROJECT_ROOT}/caliper-workspace/report.html" \
@@ -143,7 +164,7 @@ info "Org2 Cert: ${CERT_FILE2}"
 
 mkdir -p networks
 
-cat > networks/connection-org1.yaml << 'CONNEOF'
+cat > networks/connection-org1.yaml << CONNEOF
 name: connection-org1
 version: "1.0.0"
 client:
@@ -161,13 +182,13 @@ peers:
   peer0.org1.example.com:
     url: grpcs://localhost:7051
     tlsCACerts:
-      path: /workspaces/fabricNew/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+      path: ${ABS_ROOT}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
       hostnameOverride: peer0.org1.example.com
 CONNEOF
 
-cat > networks/connection-org2.yaml << 'CONNEOF'
+cat > networks/connection-org2.yaml << CONNEOF
 name: connection-org2
 version: "1.0.0"
 client:
@@ -185,7 +206,7 @@ peers:
   peer0.org2.example.com:
     url: grpcs://localhost:9051
     tlsCACerts:
-      path: /workspaces/fabricNew/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+      path: ${ABS_ROOT}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
     grpcOptions:
       ssl-target-name-override: peer0.org2.example.com
       hostnameOverride: peer0.org2.example.com

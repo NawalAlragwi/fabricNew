@@ -50,13 +50,13 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # --- Round 3: QueryAllCertificates (Fixed 50 TPS) ---
+    # --- Round 3: QueryAllCertificates (Reduced — each query fetches full ledger) ---
     - label: QueryAllCertificates
-      txNumber: 1500  # مطابق للتقرير الأصلي
+      txNumber: 200
       rateControl:
         type: fixed-rate
         opts:
-          tps: 50
+          tps: 10
       workload:
         module: workload/queryAllCertificates.js
       txOptions:

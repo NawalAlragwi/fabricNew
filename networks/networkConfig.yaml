@@ -1,39 +1,30 @@
-name: bcms-blake3-test-network
-version: "2.0.0"
-
-# ── REQUIRED BY CALIPER 0.6.0 ─────────────────────────────────────────────
-# Caliper throws: "missing its caliper.blockchain string attribute" without this
-caliper:
+name: Caliper-BLAKE3
+version: \2.0.0caliper:
   blockchain: fabric
-
-# ── CHANNELS ──────────────────────────────────────────────────────────────
 channels:
   - channelName: mychannel
     contracts:
       - id: basic
-
-# ── ORGANIZATIONS (Caliper 0.6.0 array format) ────────────────────────────
 organizations:
   - mspid: Org1MSP
     identities:
       certificates:
         - name: 'User1@org1.example.com'
           clientPrivateKey:
-            path: '/workspaces/fabricNew/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/c6eea4496c5e1181b09bf4d0612e763a7147891eaa778c4392b5949d93c998fa_sk'
+            path: '\'
           clientSignedCert:
-            path: '/workspaces/fabricNew/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem'
+            path: '\'
     connectionProfile:
       path: 'networks/connection-org1.yaml'
       discover: false
-
   - mspid: Org2MSP
     identities:
       certificates:
         - name: 'User1@org2.example.com'
           clientPrivateKey:
-            path: '/workspaces/fabricNew/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/84f31eb6a1e7d079551ebdc207b12761a194a7f525cff3d62f2a9bdfe6aa60c1_sk'
+            path: '\'
           clientSignedCert:
-            path: '/workspaces/fabricNew/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts/cert.pem'
+            path: '\'
     connectionProfile:
       path: 'networks/connection-org2.yaml'
       discover: false

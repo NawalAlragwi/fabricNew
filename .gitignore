@@ -42,3 +42,5 @@ setup_run_*.log
 chaincode-bcms/hybrid-batch/hybrid-batch
 chaincode-bcms/sha256/sha256
 chaincode-bcms/blake3/blake3
+
+*.tar.gz
