@@ -209,6 +209,52 @@ install_tamarin() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
+# FIX-RESOURCE-ISOLATION: stop_previous_chaincode_containers()
+# Stops and removes ALL dev-peer chaincode containers EXCEPT the one
+# currently being benchmarked. This prevents SHA-256 containers from
+# consuming CPU/RAM during the BLAKE3 benchmark run, which would
+# artificially inflate BLAKE3 latency and undermine the comparison.
+#
+# Called at the start of run_real_caliper_scenario() before deployCC.
+# ═══════════════════════════════════════════════════════════════════════════
+stop_previous_chaincode_containers() {
+    local keep_cc="$1"   # cc_name to keep (e.g. bcms-blake3)
+    info "  [ISOLATION] Stopping chaincode containers except: ${keep_cc}"
+
+    # Find all running dev-peer containers that do NOT belong to keep_cc
+    local old_containers
+    old_containers=$(docker ps --format '{{.Names}}' 2>/dev/null \
+        | grep "^dev-peer" \
+        | grep -v "${keep_cc}" || true)
+
+    if [ -n "$old_containers" ]; then
+        echo "$old_containers" | while read cname; do
+            info "  [ISOLATION] Stopping container: ${cname}"
+            docker stop "$cname" 2>/dev/null || true
+            docker rm   "$cname" 2>/dev/null || true
+        done
+        log "  ✓ [ISOLATION] Competing chaincode containers removed"
+    else
+        info "  [ISOLATION] No competing containers found — clean environment"
+    fi
+
+    # Also remove Docker images of old chaincodes to free RAM cache
+    local old_images
+    old_images=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
+        | grep "^dev-peer" \
+        | grep -v "${keep_cc}" || true)
+    if [ -n "$old_images" ]; then
+        echo "$old_images" | while read img; do
+            docker rmi -f "$img" 2>/dev/null || true
+            info "  [ISOLATION] Removed image: ${img}"
+        done
+    fi
+
+    # Brief pause to let OS reclaim freed memory before benchmark
+    sleep 5
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
 # FIX-A + FIX-FALLBACK: wait_for_chaincode_image()
 # Default changed from 'basic' → 'bcms-sha256' (FIX-FALLBACK v12.0)
 # No chaincode is ever deployed as 'basic' in the v12 setup.
@@ -667,6 +713,12 @@ run_real_caliper_scenario() {
 
     if [ "$SKIP_DEPLOY" = "false" ]; then
         log "  Deploying chaincode: ${cc_name} from ${SCENARIO_CHAINCODE[$n]}"
+
+        # FIX-RESOURCE-ISOLATION: stop competing chaincode containers BEFORE
+        # deploying the new scenario. This ensures BLAKE3 is never measured
+        # while SHA-256 (or any other CC) is consuming peer CPU/RAM.
+        stop_previous_chaincode_containers "${cc_name}"
+
         cd "${ROOT_DIR}/test-network"
 
         # Remove old image for THIS scenario's cc_name before redeploying
@@ -904,8 +956,14 @@ run_all_scenarios() {
     info "Hypothesis: T4 < T3 < T2 < T1 — BLAKE3 advantage proven in S2 vs S1"
     for n in 1 2 3 4; do
         run_scenario "$n" "${TPS_VALUES[0]}"
-        # Brief pause between scenarios to let peers recover
-        [ "$n" -lt 4 ] && { info "  Cooling down 30s before next scenario..."; sleep 30; }
+        
+        # Deep cooldown between scenarios to guarantee fairness
+        if [ "$n" -lt 4 ]; then
+            info "  [ISOLATION] Restarting peers and CouchDB to clear RAM/Cache..."
+            docker restart peer0.org1.example.com peer0.org2.example.com couchdb0 couchdb1 2>/dev/null || true
+            info "  [ISOLATION] Cooling down 60s for OS and Fabric recovery..."
+            sleep 60
+        fi
     done
     reporting_pipeline "all-scenarios"
 }
@@ -1022,10 +1080,20 @@ main() {
         check_prerequisites
         [ "$SKIP_TAMARIN" = "false" ] && run_tamarin_verification
         detect_runtime_environment
-        # If skipping network, assume it is up. Otherwise, do a clean setup for S1 first.
+        # FIX-DOUBLE-DEPLOY: setup_fabric_network() used to pre-deploy S1,
+        # causing bcms-sha256 to be deployed TWICE (once here, once inside
+        # run_scenario(1)). Now we only bring the network UP without deploying
+        # any chaincode — run_all_scenarios() handles each CC independently.
         if [ "$SKIP_NETWORK" = "false" ]; then
-            SCENARIO_NUM=1
-            setup_fabric_network
+            step "Starting Fabric Network (no chaincode pre-deploy)"
+            cd "${ROOT_DIR}/test-network"
+            ./network.sh down 2>&1 | tee -a "$LOG_FILE" || true
+            docker volume prune -f 2>/dev/null || true
+            docker network prune -f 2>/dev/null || true
+            ./network.sh up createChannel -c mychannel -ca -s couchdb \
+                2>&1 | tee -a "$LOG_FILE" || { error "Network startup failed"; exit 1; }
+            cd "${ROOT_DIR}"
+            log "✓ Fabric network up — chaincode will be deployed per-scenario"
         fi
         run_all_scenarios
         generate_summary_report
