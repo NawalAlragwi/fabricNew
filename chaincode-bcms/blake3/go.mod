@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0
-	lukechampine.com/blake3 v1.3.0
+	github.com/zeebo/blake3 v0.2.4
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/hyperledger/fabric-chaincode-go/v2 v2.0.0 // indirect
 	github.com/hyperledger/fabric-protos-go-apiv2 v0.3.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
