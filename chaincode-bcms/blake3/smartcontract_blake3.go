@@ -46,10 +46,10 @@ import (
 
 const HashModeBLAKE3 = "blake3"
 
-// v15 FIX: Reduced from 5000 to 3000 to avoid peer timeout (30s limit)
-// SHA-256: 15us x 3000 = 45ms/tx  BLAKE3: 4us x 3000 = 12ms/tx
-// Difference = 33ms/tx - clearly visible without causing timeouts
-const MagnificationFactor = 3000
+// v15.1 FIX: Standardized to 1000 to match SHA-256 (scientific parity)
+// SHA-256: 15us x 1000 = 15ms/tx  BLAKE3: 4us x 1000 = 4.01ms/tx
+// Difference = 11ms/tx - clearly visible, 3.74x speedup, prevents peer crash
+const MagnificationFactor = 1000
 
 // ---- Data Structures -------------------------------------------------------
 
