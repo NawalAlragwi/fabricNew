@@ -1,6 +1,17 @@
 # ============================================================
 #  S1 — SHA-256 Baseline  |  Target TPS: 150
-#  VerifyCertificate: 30 → 150 TPS (PRIMARY ROUND)
+#  VerifyCertificate: 30 -> 150 TPS (PRIMARY ROUND)
+#
+#  PARITY with benchConfig_s2_blake3_tps150.yaml:
+#  - workers: 2 (same as BLAKE3)
+#  - IssueCertificate: 22 TPS (same as BLAKE3)
+#  - QueryAllCertificates: 12 TPS (same as BLAKE3)
+#  - RevokeCertificate: 12 TPS (same as BLAKE3)
+#  - HashOnlyBenchmark: 75 TPS (same as BLAKE3)
+#  - VerifyCertificate: 30->150 TPS (same as BLAKE3 - PRIMARY ROUND)
+#
+#  ONLY DIFFERENCE vs BLAKE3: contractId = bcms-sha256
+#  This guarantees any performance gap = algorithm difference only.
 # ============================================================
 
 monitors:
@@ -19,21 +30,23 @@ test:
   name: bcms-s1-sha256-tps150
   description: >
     Scenario S1 SHA-256 Baseline at 150 TPS target.
-    VerifyCertificate: linear 30→150 TPS (PRIMARY COMPARISON ROUND).
-    Magnification x1500 = 22,500 us hash overhead per tx.
+    VerifyCertificate: linear 30->150 TPS (PRIMARY COMPARISON ROUND).
+    MagnificationFactor x3000 = 45ms per tx (3.74x slower than BLAKE3 12ms).
+    Expected: SHA-256 saturates before 150 TPS while BLAKE3 stays stable.
   workers:
     type: local
-    number: 3
+    number: 2
 
   rounds:
 
+    # ── Round 1: Issue (identical to BLAKE3 config) ──────────────────
     - label: IssueCertificate
-      description: Issue certs at 37 TPS, 60s
+      description: Issue certs at 22 TPS, 60s (parity with BLAKE3 config)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 37
+          tps: 22
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -42,12 +55,13 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── الجولة الأساسية للمقارنة ──────────────────────────────────────
+    # ── Round 2: PRIMARY COMPARISON ROUND (identical range to BLAKE3) ──
     - label: VerifyCertificate
       description: >
-        PRIMARY ROUND — SHA-256 linear 30→150 TPS, 120s.
-        Re-computes SHA-256 on-chain per call: 22,500 us CPU overhead.
-        Expected: latency climbs steeply as TPS rises (no SIMD).
+        PRIMARY ROUND — SHA-256 linear 30->150 TPS, 120s.
+        MagnificationFactor x3000 = 45ms per tx (no SIMD).
+        Expected: latency climbs steeply, peer saturates before 150 TPS.
+        Compare directly with BLAKE3 which uses same 30->150 TPS range.
       txDuration: 120
       rateControl:
         type: linear-rate
@@ -58,17 +72,18 @@ test:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-sha256
-          totalIssued: 1000
+          totalIssued: 1320
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 3: Query (identical to BLAKE3 config) ──────────────────
     - label: QueryAllCertificates
-      description: I/O-bound query 30 TPS, 60s (algorithm has zero impact)
+      description: I/O-bound query 12 TPS, 60s (parity with BLAKE3 config)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 12
       workload:
         module: workload/queryAllCertificates.js
         arguments:
@@ -76,28 +91,33 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 4: Revoke (identical to BLAKE3 config) ─────────────────
     - label: RevokeCertificate
-      description: Flag-only revoke 30 TPS, 60s (no hash recomputation)
+      description: Flag-only revoke 12 TPS, 60s (no hash recomputation)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 12
       workload:
         module: workload/revokeCertificate.js
         arguments:
           contractId: bcms-sha256
-          totalIssued: 1000
+          totalIssued: 1320
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 5: HashOnly (identical TPS to BLAKE3 — key comparison) ─
     - label: HashOnlyBenchmark
-      description: Pure CPU hash isolation at 120 TPS, 60s
+      description: >
+        Pure CPU hash isolation at 75 TPS, 60s (parity with BLAKE3 config).
+        SHA-256 x3000 = 45ms/tx -> 75 TPS = 3375ms CPU/s -> saturates.
+        BLAKE3 x3000 = 12ms/tx -> 75 TPS = 900ms CPU/s -> stable.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 120
+          tps: 75
       workload:
         module: workload/hashOnlyBenchmark.js
         arguments:

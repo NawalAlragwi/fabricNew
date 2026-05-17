@@ -1,6 +1,13 @@
 # ============================================================
 #  S2 — BLAKE3 Alternative  |  Target TPS: 100
 #  VerifyCertificate: 20 → 100 TPS (PRIMARY ROUND)
+#
+#  FIXES vs previous version:
+#  - IssueCertificate: 25 → 15 TPS (avoid overloading peer before Verify)
+#  - QueryAllCertificates: 20 → 8 TPS (CouchDB recovery after heavy Verify)
+#  - RevokeCertificate: 20 → 8 TPS (reduce post-Verify pressure)
+#  - HashOnlyBenchmark: 80 → 50 TPS (within BLAKE3 safe zone x3000 mag)
+#  - workers: 3 → 2 (reduce concurrency pressure on i7-1255U)
 # ============================================================
 
 monitors:
@@ -19,21 +26,23 @@ test:
   name: bcms-s2-blake3-tps100
   description: >
     Scenario S2 BLAKE3 Alternative at 100 TPS target.
-    VerifyCertificate: linear 20→100 TPS (PRIMARY COMPARISON ROUND).
-    Magnification x1500 = 6,015 us hash overhead per tx (3.74x faster than SHA-256).
+    VerifyCertificate: linear 20->100 TPS (PRIMARY COMPARISON ROUND).
+    MagnificationFactor x3000 = 12ms per tx (3.74x faster than SHA-256 45ms).
+    Expected: BLAKE3 stable at 100 TPS while SHA-256 saturates.
   workers:
     type: local
-    number: 3
+    number: 2
 
   rounds:
 
+    # ── Round 1: Issue (reduced to avoid pre-loading the peer) ──────────
     - label: IssueCertificate
-      description: Issue certs at 25 TPS, 60s
+      description: Issue certs at 15 TPS, 60s (reduced from 25 to protect peer)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 25
+          tps: 15
       workload:
         module: workload/issueCertificate.js
         arguments:
@@ -42,12 +51,12 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── الجولة الأساسية للمقارنة ──────────────────────────────────────
+    # ── Round 2: PRIMARY COMPARISON ROUND ───────────────────────────────
     - label: VerifyCertificate
       description: >
-        PRIMARY ROUND — BLAKE3 linear 20→100 TPS, 120s.
-        AVX2 SIMD: 6,015 us per tx vs SHA-256 22,500 us.
-        Expected: BLAKE3 latency stays low while SHA-256 saturates.
+        PRIMARY ROUND — BLAKE3 linear 20->100 TPS, 120s.
+        MagnificationFactor x3000 = 12ms per tx.
+        BLAKE3 should handle 100 TPS while SHA-256 saturates at ~80 TPS.
       txDuration: 120
       rateControl:
         type: linear-rate
@@ -58,17 +67,18 @@ test:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-blake3
-          totalIssued: 1000
+          totalIssued: 900
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 3: Query (reduced — CouchDB needs recovery after heavy Verify)
     - label: QueryAllCertificates
-      description: I/O-bound query 20 TPS, 60s
+      description: I/O-bound query 8 TPS, 60s (reduced to allow CouchDB recovery)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 8
       workload:
         module: workload/queryAllCertificates.js
         arguments:
@@ -76,28 +86,34 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 4: Revoke (flag-only, reduced post-Verify pressure) ───────
     - label: RevokeCertificate
-      description: Flag-only revoke 20 TPS, 60s
+      description: Flag-only revoke 8 TPS, 60s (no hash recomputation)
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 8
       workload:
         module: workload/revokeCertificate.js
         arguments:
           contractId: bcms-blake3
-          totalIssued: 1000
+          totalIssued: 900
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    # ── Round 5: HashOnly (pure CPU — BLAKE3 safe zone at x3000) ────────
     - label: HashOnlyBenchmark
-      description: Pure CPU hash isolation at 80 TPS, 60s
+      description: >
+        Pure CPU hash isolation at 50 TPS, 60s.
+        BLAKE3 x3000 = 12ms/tx -> 50 TPS = 600ms CPU/s per worker -> safe.
+        SHA-256 x3000 = 45ms/tx -> 50 TPS = 2250ms CPU/s -> saturates.
+        This round provides the clearest algorithm comparison.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 80
+          tps: 50
       workload:
         module: workload/hashOnlyBenchmark.js
         arguments:

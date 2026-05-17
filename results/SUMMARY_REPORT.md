@@ -1,6 +1,7 @@
-# BCMS Research Summary — 2026-05-17 12:04:25 — v13.0
+# BCMS Research Summary — 2026-05-17 14:22:53 — v13.0
 
 ## TPS Values Tested
+- 50 TPS
 - 100 TPS
 
 ## Framework
@@ -17,5 +18,7 @@
 | S4       | bcms-hybrid-b | Hybrid+Bat | varies  | amortised   |
 
 ## Results Structure
+- results/scenario_1_sha256/tps50/caliper_raw_report.html
 - results/scenario_1_sha256/tps100/caliper_raw_report.html
+- results/scenario_2_blake3/tps50/caliper_raw_report.html
 - results/scenario_2_blake3/tps100/caliper_raw_report.html
