@@ -379,9 +379,8 @@ setup_fabric_network() {
     }
     info "Deploying chaincode: ${CC_NAME}..."
     rm -f "${ROOT_DIR}/test-network/basic.tar.gz" 2>/dev/null || true
-    export GOFLAGS="-mod=mod"; export GOWORK="off"
-    export GO111MODULE="on"; export GOAMD64="v3"
-    export GOPROXY="https://proxy.golang.org,direct"
+    export GOFLAGS="-mod=vendor"; export GOWORK="off"
+    export GOPROXY="off"
     ./network.sh deployCC \
         -ccn "${CC_NAME}" -ccp "${ROOT_DIR}/${cc_to_deploy}" \
         -ccl go -c mychannel \
@@ -606,9 +605,8 @@ run_real_caliper_scenario() {
 
     log "  Scenario ${n} — CC: ${cc_name}"
 
-    export GOFLAGS="-mod=mod"; export GOWORK="off"
-    export GO111MODULE="on"; export GOPROXY="https://proxy.golang.org,direct"
-    export GOAMD64="v3"
+    export GOFLAGS="-mod=vendor"; export GOWORK="off"
+    export GO111MODULE="on"; export GOPROXY="off"
 
     if ! $FABRIC_NETWORK_OK; then
         warn "  Network down — attempting to start"

@@ -53,7 +53,7 @@ import (
 const HashModeBLAKE3 = "blake3"
 
 // FIX-PARITY-3: raised from 1000 → 5000 for visible 55ms signal per tx
-const MagnificationFactor = 5000
+const MagnificationFactor = 3000
 
 // --- Data Structures --------------------------------------------------------
 
