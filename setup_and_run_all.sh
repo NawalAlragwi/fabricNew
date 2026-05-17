@@ -694,11 +694,13 @@ run_real_caliper_scenario() {
 
         NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
         http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
+        CALIPER_FABRIC_TIMEOUT_INVOKEORQUERY=120000 \
         npx caliper launch manager \
             --caliper-workspace . \
             --caliper-networkconfig networks/networkConfig.yaml \
             --caliper-benchconfig "benchmarks/${benchcfg}" \
             --caliper-flow-only-test \
+            --caliper-fabric-timeout-invokeorquery 120000 \
             2>&1 | tee -a "$LOG_FILE" || warn "  Caliper exited non-zero @ TPS=${tps}"
 
         if [ -f "report.html" ]; then
@@ -799,11 +801,13 @@ run_caliper_benchmarks() {
         rm -f report.html 2>/dev/null || true
         NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
         http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
+        CALIPER_FABRIC_TIMEOUT_INVOKEORQUERY=120000 \
         npx caliper launch manager \
             --caliper-workspace . \
             --caliper-networkconfig networks/networkConfig.yaml \
             --caliper-benchconfig "benchmarks/${benchcfg}" \
             --caliper-flow-only-test \
+            --caliper-fabric-timeout-invokeorquery 120000 \
             2>&1 | tee -a "$LOG_FILE" || warn "Caliper exited non-zero @ TPS=${tps}"
         [ -f "report.html" ] && {
             mkdir -p "${ROOT_DIR}/results"

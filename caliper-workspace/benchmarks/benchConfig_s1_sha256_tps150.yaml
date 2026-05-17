@@ -42,7 +42,7 @@ test:
     # ── Round 1: Issue (identical to BLAKE3 config) ──────────────────
     - label: IssueCertificate
       description: Issue certs at 22 TPS, 60s (parity with BLAKE3 config)
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
@@ -62,7 +62,7 @@ test:
         MagnificationFactor x3000 = 45ms per tx (no SIMD).
         Expected: latency climbs steeply, peer saturates before 150 TPS.
         Compare directly with BLAKE3 which uses same 30->150 TPS range.
-      txDuration: 120
+      txDuration: 30
       rateControl:
         type: linear-rate
         opts:
@@ -79,7 +79,7 @@ test:
     # ── Round 3: Query (identical to BLAKE3 config) ──────────────────
     - label: QueryAllCertificates
       description: I/O-bound query 12 TPS, 60s (parity with BLAKE3 config)
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
@@ -94,7 +94,7 @@ test:
     # ── Round 4: Revoke (identical to BLAKE3 config) ─────────────────
     - label: RevokeCertificate
       description: Flag-only revoke 12 TPS, 60s (no hash recomputation)
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
@@ -113,7 +113,7 @@ test:
         Pure CPU hash isolation at 75 TPS, 60s (parity with BLAKE3 config).
         SHA-256 x3000 = 45ms/tx -> 75 TPS = 3375ms CPU/s -> saturates.
         BLAKE3 x3000 = 12ms/tx -> 75 TPS = 900ms CPU/s -> stable.
-      txDuration: 60
+      txDuration: 30
       rateControl:
         type: fixed-rate
         opts:
