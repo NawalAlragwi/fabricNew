@@ -82,7 +82,7 @@ const HashModeSHA256 = "sha256"
 // MagnificationFactor controls the size of the data to be hashed.
 // It multiplies the payload size to simulate hashing large educational records/transcripts.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 5000
+const MagnificationFactor = 3000
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
