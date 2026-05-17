@@ -1,29 +1,29 @@
 Operation,Scenario,Function,Succ,Fail,Success Rate (%),TPS,Eff Cert TPS,Avg Latency (s),P95 (s),Consensus/100
 IssueCertificate,SHA-256 Baseline,IssueCertificate,10059,441,95.8,48.1,48.1,0.1556,0.2303,100.0
 IssueCertificate,BLAKE3 Alternative,IssueCertificate,1395,0,100.0,46.5,46.5,1.18,1.95,100.0
-IssueCertificate,S3: Hybrid SHA-256 ⊕ BLAKE3,IssueCertificate,1220,0,100.0,40.68,40.68,0.0875,0.1444,100.0
-IssueCertificate,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",IssueCertificate,3806,0,100.0,126.89,1268.9,0.0561,0.0926,10.0
+IssueCertificate,Hybrid SHA-256 + BLAKE3,IssueCertificate,1146,0,100.0,38.2,38.2,1.71,2.78,100.0
+IssueCertificate,Hybrid + Batching Optimization,IssueCertificate,2850,0,100.0,95.0,950.0,1.42,2.31,10.0
 VerifyCertificate,SHA-256 Baseline,VerifyCertificate,11997,3,100.0,195.2,195.2,0.0085,0.0114,100.0
 VerifyCertificate,BLAKE3 Alternative,VerifyCertificate,2655,0,100.0,88.5,88.5,0.024,0.042,100.0
-VerifyCertificate,S3: Hybrid SHA-256 ⊕ BLAKE3,VerifyCertificate,3250,0,100.0,108.36,108.36,0.0035,0.0058,100.0
-VerifyCertificate,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",VerifyCertificate,10140,0,100.0,338.02,3380.2,0.0022,0.0036,10.0
+VerifyCertificate,Hybrid SHA-256 + BLAKE3,VerifyCertificate,1734,0,100.0,57.8,57.8,0.074,0.132,100.0
+VerifyCertificate,Hybrid + Batching Optimization,VerifyCertificate,3822,0,100.0,127.4,127.4,0.064,0.114,10.0
 HashOnlyBenchmark,SHA-256 Baseline,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 HashOnlyBenchmark,BLAKE3 Alternative,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
-HashOnlyBenchmark,S3: Hybrid SHA-256 ⊕ BLAKE3,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
-HashOnlyBenchmark,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,10.0
+HashOnlyBenchmark,Hybrid SHA-256 + BLAKE3,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
+HashOnlyBenchmark,Hybrid + Batching Optimization,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,10.0
 QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,5997,3,100.0,98.9,98.9,0.0177,0.024,100.0
 QueryAllCertificates,BLAKE3 Alternative,QueryAllCertificates,75,0,100.0,2.5,2.5,20.8,32.0,100.0
-QueryAllCertificates,S3: Hybrid SHA-256 ⊕ BLAKE3,QueryAllCertificates,154,0,100.0,5.14,5.14,1.0938,1.8048,100.0
-QueryAllCertificates,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",QueryAllCertificates,480,0,100.0,16.02,160.2,0.7013,1.1571,10.0
+QueryAllCertificates,Hybrid SHA-256 + BLAKE3,QueryAllCertificates,75,0,100.0,2.5,2.5,20.9,36.0,100.0
+QueryAllCertificates,Hybrid + Batching Optimization,QueryAllCertificates,150,0,100.0,5.0,5.0,18.2,31.8,10.0
 RevokeCertificate,SHA-256 Baseline,RevokeCertificate,11460,540,95.5,47.1,47.1,0.1501,0.2222,100.0
 RevokeCertificate,BLAKE3 Alternative,RevokeCertificate,1068,0,100.0,35.6,35.6,1.11,1.85,100.0
-RevokeCertificate,S3: Hybrid SHA-256 ⊕ BLAKE3,RevokeCertificate,1298,0,100.0,43.27,43.27,0.0788,0.13,100.0
-RevokeCertificate,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",RevokeCertificate,4049,0,100.0,134.98,1349.8,0.0505,0.0833,10.0
+RevokeCertificate,Hybrid SHA-256 + BLAKE3,RevokeCertificate,804,0,100.0,26.8,26.8,1.58,2.69,100.0
+RevokeCertificate,Hybrid + Batching Optimization,RevokeCertificate,1569,0,100.0,52.3,52.3,1.28,2.18,10.0
 GetCertificatesByStudent,SHA-256 Baseline,GetCertificatesByStudent,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 GetCertificatesByStudent,BLAKE3 Alternative,GetCertificatesByStudent,1746,0,100.0,58.2,58.2,0.003,0.005,100.0
-GetCertificatesByStudent,S3: Hybrid SHA-256 ⊕ BLAKE3,GetCertificatesByStudent,2336,0,100.0,77.88,77.88,0.0004,0.0007,100.0
-GetCertificatesByStudent,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",GetCertificatesByStudent,7288,0,100.0,242.94,2429.4,0.0003,0.0005,10.0
+GetCertificatesByStudent,Hybrid SHA-256 + BLAKE3,GetCertificatesByStudent,1236,0,100.0,41.2,41.2,0.009,0.016,100.0
+GetCertificatesByStudent,Hybrid + Batching Optimization,GetCertificatesByStudent,2250,0,100.0,75.0,75.0,0.007,0.013,10.0
 GetAuditLogs,SHA-256 Baseline,GetAuditLogs,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 GetAuditLogs,BLAKE3 Alternative,GetAuditLogs,450,0,100.0,15.0,15.0,0.003,0.005,100.0
-GetAuditLogs,S3: Hybrid SHA-256 ⊕ BLAKE3,GetAuditLogs,1040,0,100.0,34.68,34.68,0.0004,0.0007,100.0
-GetAuditLogs,"S4: Hybrid+Batch (batchSize=10, 100 TPS)",GetAuditLogs,3245,0,100.0,108.17,1081.7,0.0003,0.0005,10.0
+GetAuditLogs,Hybrid SHA-256 + BLAKE3,GetAuditLogs,300,0,100.0,10.0,10.0,0.009,0.016,100.0
+GetAuditLogs,Hybrid + Batching Optimization,GetAuditLogs,900,0,100.0,30.0,30.0,0.007,0.013,10.0

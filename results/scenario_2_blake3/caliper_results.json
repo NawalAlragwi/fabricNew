@@ -2,7 +2,7 @@
   "scenario": 2,
   "title": "BLAKE3 Alternative",
   "description": "Single-cert issuance, BLAKE3 only (~3.7x faster hash). 4 workers.",
-  "timestamp": "2026-05-17T18:43:49Z",
+  "timestamp": "2026-05-17T21:16:46Z",
   "framework": "Hyperledger Fabric v2.5",
   "caliper_version": "0.6.0",
   "chaincode": "chaincode-bcms/blake3",
