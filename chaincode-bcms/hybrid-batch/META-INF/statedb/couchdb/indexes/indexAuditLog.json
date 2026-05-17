@@ -1,8 +1,11 @@
 {
-    "index": {
-        "fields": ["docType", "timestamp"]
-    },
-    "ddoc": "indexAuditLogValue",
-    "name": "indexAuditLog",
-    "type": "json"
+  "index": {
+    "fields": [
+      {"docType": "asc"},
+      {"timestamp": "desc"}
+    ]
+  },
+  "ddoc": "indexAuditLogValue",
+  "name": "indexAuditLog",
+  "type": "json"
 }

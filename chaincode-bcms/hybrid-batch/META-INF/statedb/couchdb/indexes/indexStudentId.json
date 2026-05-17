@@ -1,8 +1,12 @@
 {
-    "index": {
-        "fields": ["docType", "studentID", "issueDate"]
-    },
-    "ddoc": "indexStudentIdValue",
-    "name": "indexStudentId",
-    "type": "json"
+  "index": {
+    "fields": [
+      {"docType": "asc"},
+      {"studentID": "asc"},
+      {"issueDate": "desc"}
+    ]
+  },
+  "ddoc": "indexStudentIdValue",
+  "name": "indexStudentId",
+  "type": "json"
 }

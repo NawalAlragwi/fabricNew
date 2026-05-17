@@ -689,7 +689,7 @@ func (s *SmartContract) QueryAllCertificatesPaginated(
 	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
 	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
 	// Sort: [ {"issueDate": "desc"} ]
-	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"asc"},{"issueDate":"desc"}]}`
 
 	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
 		queryString, pageSize, bookmark)
@@ -899,7 +899,7 @@ func (s *SmartContract) GetBatchRecord(
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
-	qs := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
+	qs := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"docType":"asc"},{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
 	iter, err := ctx.GetStub().GetQueryResult(qs)
 	if err != nil {
 		return s.rangeAuditLogs(ctx)
