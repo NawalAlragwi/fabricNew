@@ -1,0 +1,13 @@
+{
+  "index": {
+    "fields": [
+      {"issueDate": "desc"}
+    ],
+    "partial_filter_selector": {
+      "docType": "certificate"
+    }
+  },
+  "ddoc": "indexCertificatesByDate",
+  "name": "indexCertificatesByDate",
+  "type": "json"
+}

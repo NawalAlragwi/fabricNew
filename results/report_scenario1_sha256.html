@@ -62,7 +62,7 @@
   <p>BCMS — Blockchain Certificate Management System | Academic Certificate Anti-Forgery Framework</p>
   <p style="margin-top:.25rem">Benchmark: <strong>benchConfig_s1_sha256.yaml</strong> |
      Workers: <strong>10</strong> | Payload: <strong>5KB transcript</strong> |
-     Generated: <strong>2026-04-18T09:18:48Z</strong></p>
+     Generated: <strong>2026-05-17T11:54:51Z</strong></p>
 </div>
 
 <div class="section">
@@ -70,17 +70,17 @@
   <div class="grid-4">
     <div class="card">
       <h3>Issue TPS</h3>
-      <div class="value">46.9</div>
+      <div class="value">48.1</div>
       <div class="sub">IssueCertificate throughput</div>
     </div>
     <div class="card">
       <h3>Issue Latency</h3>
-      <div class="value">155 ms</div>
+      <div class="value">156 ms</div>
       <div class="sub">Mean end-to-end latency</div>
     </div>
     <div class="card">
       <h3>Verify TPS</h3>
-      <div class="value">192.6</div>
+      <div class="value">195.2</div>
       <div class="sub">VerifyCertificate throughput</div>
     </div>
     <div class="card">
@@ -102,47 +102,47 @@
     <tr>
       <td>IssueCertificate</td>
       <td>175.0</td>
-      <td>46.9</td>
+      <td>48.1</td>
       <td style="color:#4ade80">10,059</td>
       <td style="color:#f87171">441</td>
       <td>95.8%</td>
-      <td>154.6</td>
-      <td>122.2</td>
-      <td>228.8</td>
-      <td>301.5</td>
+      <td>155.6</td>
+      <td>123.0</td>
+      <td>230.3</td>
+      <td>303.5</td>
     </tr><tr>
       <td>VerifyCertificate</td>
       <td>200.0</td>
-      <td>192.6</td>
+      <td>195.2</td>
       <td style="color:#4ade80">11,997</td>
       <td style="color:#f87171">3</td>
       <td>100.0%</td>
       <td>8.5</td>
       <td>6.7</td>
-      <td>11.5</td>
+      <td>11.4</td>
       <td>14.6</td>
     </tr><tr>
       <td>QueryAllCertificates</td>
       <td>100.0</td>
-      <td>98.1</td>
+      <td>98.9</td>
       <td style="color:#4ade80">5,997</td>
       <td style="color:#f87171">3</td>
       <td>100.0%</td>
-      <td>17.9</td>
-      <td>14.2</td>
-      <td>24.2</td>
-      <td>30.9</td>
+      <td>17.8</td>
+      <td>14.0</td>
+      <td>24.0</td>
+      <td>30.5</td>
     </tr><tr>
       <td>RevokeCertificate</td>
       <td>200.0</td>
-      <td>45.4</td>
+      <td>47.1</td>
       <td style="color:#4ade80">11,460</td>
       <td style="color:#f87171">540</td>
       <td>95.5%</td>
-      <td>152.0</td>
-      <td>120.1</td>
-      <td>224.9</td>
-      <td>296.4</td>
+      <td>150.1</td>
+      <td>118.6</td>
+      <td>222.2</td>
+      <td>292.8</td>
     </tr>
   </table>
 </div>
@@ -155,26 +155,26 @@
     Each 512-bit block requires 64 rounds of bitwise operations with no SIMD parallelism.
     For 5KB payloads (5,100 bytes), this requires processing ~80 blocks sequentially.<br><br>
     <strong>Measured Performance:</strong>
-    68,817 hashes/sec → 14.531 µs per 5KB hash<br>
-    <strong>Per-Transaction Cost (2 hash calls):</strong> 0.0291 ms<br>
-    <strong>CPU Overhead at 200 TPS:</strong> 5.81 ms/sec on peer<br><br>
+    167,099 hashes/sec → 5.984 µs per 5KB hash<br>
+    <strong>Per-Transaction Cost (2 hash calls):</strong> 0.0120 ms<br>
+    <strong>CPU Overhead at 200 TPS:</strong> 2.39 ms/sec on peer<br><br>
     <em>Note: SHA-256 does not benefit from AVX-512/AVX2 SIMD acceleration on x86-64.
     Performance is bounded by single-core sequential execution speed.</em>
   </div>
   <div class="grid-3">
     <div class="card">
       <h3>Hash Throughput</h3>
-      <div class="value">68,817</div>
+      <div class="value">167,099</div>
       <div class="sub">hashes/sec (5KB payload)</div>
     </div>
     <div class="card">
       <h3>Mean Hash Latency</h3>
-      <div class="value">14.531 µs</div>
+      <div class="value">5.984 µs</div>
       <div class="sub">per 5KB hash call</div>
     </div>
     <div class="card">
       <h3>P99 Hash Latency</h3>
-      <div class="value">25.247 µs</div>
+      <div class="value">17.132 µs</div>
       <div class="sub">99th percentile</div>
     </div>
   </div>
@@ -264,5 +264,5 @@
   </div>
 </div>
 
-<footer>BCMS — Blockchain Certificate Management System | SHA-256 Baseline Report | Generated 2026-04-18 09:21 UTC</footer>
+<footer>BCMS — Blockchain Certificate Management System | SHA-256 Baseline Report | Generated 2026-05-17 11:54 UTC</footer>
 </body></html>

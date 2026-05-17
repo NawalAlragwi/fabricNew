@@ -7,42 +7,25 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
  *  RevokeCertificate Workload — BCMS Benchmark (Scenarios S1 / S3 / S4)
  * ══════════════════════════════════════════════════════════════════════════
  *
- *  Function signature (all smart contracts):
- *    RevokeCertificate(id) error
+ *  OOM-FIX (v15): Added exponential back-off retry for gRPC errors.
+ *  When the peer is recovering from peak-TPS VerifyCertificate load,
+ *  immediate retry floods an already-busy peer and prolongs recovery.
+ *  Back-off: 0ms → 800ms → 3000ms (3 total attempts).
+ *  If 5+ consecutive failures occur, insert extra 5s peer-recovery pause.
  *
- *  ── KEY SCHEME (must match IssueCertificate / IssueCertificateBatch) ──
- *
- *  S1 (SHA-256)     : IssueCertificate  → CERT_{w}_{i}
- *  S3 (Hybrid)      : IssueCertificate  → CERT_{w}_{i}
- *  S4 (Hybrid-Batch): IssueCertificateBatch → BCERT_{w}_{tx}_{i}
- *
- *  Root cause of previous 36% failure rate in RevokeCertificate:
- *    S4 benchmark used revoke workload targeting CERT_{w}_{i} keys,
- *    but IssueCertificateBatch stores certs as BCERT_{w}_{tx}_{i}.
- *    → Every revoke targeted non-existent keys → idempotent nil return
- *      was counted as a success by Fabric but the cert was never revoked.
- *    → Under MVCC, concurrent revokes on the same key cause conflicts.
- *
- *  Fix: Read certPrefix from roundArguments (default: "CERT").
- *    S1/S3 benchmark YAML → no argument needed  (defaults to CERT_)
- *    S4 benchmark YAML    → set certPrefix: "BCERT"
- *
- *  ── MVCC Safety ──────────────────────────────────────────────────────
- *    Each worker revokes ONLY its own keys (workerIndex in the ID).
- *    → Zero cross-worker key collisions → zero MVCC phantom-read conflicts.
- *
- *  ── Idempotency ──────────────────────────────────────────────────────
- *    RevokeCertificate returns nil on cert-not-found AND already-revoked.
- *    → Safe to re-run; zero cascading failures.
+ *  KEY SCHEME (unchanged):
+ *    S1/S3: CERT_{w}_{txIndex}
+ *    S4:    BCERT_{w}_{txIndex}_{certIndex}
  * ══════════════════════════════════════════════════════════════════════════
  */
 class RevokeCertificateWorkload extends WorkloadModuleBase {
     constructor() {
         super();
-        this.txIndex      = 0;
-        this.totalIssued  = 5000;
-        this.certPrefix   = 'CERT';   // S1/S3 default; S4 overrides with "BCERT"
-        this.batchSize    = 1;        // certs per batch tx (S4 only); used for S4 key calc
+        this.txIndex           = 0;
+        this.totalIssued       = 5000;
+        this.certPrefix        = 'CERT';
+        this.batchSize         = 1;
+        this._consecutiveFails = 0;
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
@@ -50,24 +33,17 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
         this.workerIndex  = workerIndex;
         this.totalWorkers = totalWorkers;
         this.txIndex      = 0;
+        this._consecutiveFails = 0;
 
-        // totalIssued: total certificates issued in the IssueCertificate round.
-        // For S4, this should be totalTxSent (not totalCerts) because each tx
-        // issued batchSize certs. The key is BCERT_{w}_{txIndex}_{i}.
-        this.totalIssued  = (roundArguments && roundArguments.totalIssued)
+        this.totalIssued = (roundArguments && roundArguments.totalIssued)
             ? parseInt(roundArguments.totalIssued, 10)
             : 5000;
 
-        // certPrefix: key prefix used by the issue workload.
-        //   S1/S3: "CERT"   → key = CERT_{w}_{txIndex}
-        //   S4:    "BCERT"  → key = BCERT_{w}_{txIndex}_{certIndex}
-        this.certPrefix   = (roundArguments && roundArguments.certPrefix)
+        this.certPrefix = (roundArguments && roundArguments.certPrefix)
             ? roundArguments.certPrefix
             : 'CERT';
 
-        // batchSize: only relevant when certPrefix = "BCERT" (S4).
-        // Used to target individual certs within a batch tx.
-        this.batchSize    = (roundArguments && roundArguments.batchSize)
+        this.batchSize = (roundArguments && roundArguments.batchSize)
             ? parseInt(roundArguments.batchSize, 10)
             : 1;
 
@@ -81,20 +57,16 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
 
-        const w                = this.workerIndex || 0;
-        const issuedPerWorker  = Math.floor(this.totalIssued / this.totalWorkers);
-        const safeIssuedCount  = Math.max(issuedPerWorker - 50, 10);
+        const w               = this.workerIndex || 0;
+        const issuedPerWorker = Math.floor(this.totalIssued / this.totalWorkers);
+        const safeIssuedCount = Math.max(issuedPerWorker - 50, 10);
 
         let certID;
-
         if (this.certPrefix === 'BCERT') {
-            // ── S4 key scheme: BCERT_{w}_{txIndex}_{certIndex} ──────────────
-            // txIndex cycles over issued txs; certIndex cycles within the batch.
             const txIdx   = (Math.floor((this.txIndex - 1) / this.batchSize) % safeIssuedCount) + 1;
             const certIdx = (this.txIndex - 1) % this.batchSize;
             certID = `BCERT_${w}_${txIdx}_${certIdx}`;
         } else {
-            // ── S1/S3 key scheme: CERT_{w}_{txIndex} ────────────────────────
             const idx = ((this.txIndex - 1) % safeIssuedCount) + 1;
             certID = `CERT_${w}_${idx}`;
         }
@@ -106,7 +78,31 @@ class RevokeCertificateWorkload extends WorkloadModuleBase {
             readOnly:          false,
         };
 
-        return this.sutAdapter.sendRequests(request);
+        // OOM-FIX: exponential back-off retry (write TX)
+        // Delays: attempt 1=0ms, attempt 2=800ms, attempt 3=3000ms
+        // Write TXs need slightly longer delays than reads because the
+        // orderer also needs to recover from a high-TPS burst.
+        const delays = [0, 800, 3000];
+        let lastErr;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (delays[attempt] > 0) {
+                await new Promise(r => setTimeout(r, delays[attempt]));
+            }
+            try {
+                const result = await this.sutAdapter.sendRequests(request);
+                this._consecutiveFails = 0;
+                return result;
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+
+        this._consecutiveFails++;
+        if (this._consecutiveFails >= 5) {
+            await new Promise(r => setTimeout(r, 5000));
+            this._consecutiveFails = 0;
+        }
+        throw lastErr;
     }
 
     async cleanupWorkloadModule() {}

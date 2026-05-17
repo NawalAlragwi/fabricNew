@@ -810,7 +810,17 @@ run_caliper_benchmarks() {
             cp "report.html" "${ROOT_DIR}/results/caliper_report_${CC_NAME}_tps${tps}.html"
             log "✓ Report saved: results/caliper_report_${CC_NAME}_tps${tps}.html"
         }
-        [ "$tps" != "${TPS_VALUES[-1]}" ] && sleep 30
+        # OOM-FIX: restart peers + CouchDB between TPS runs to flush gRPC queues,
+        # release Go GC memory, and let CouchDB compact. Without this, memory from
+        # the VerifyCertificate peak (100 TPS for 120s) bleeds into the next round.
+        if [ "$tps" != "${TPS_VALUES[-1]}" ]; then
+            info "  [RECOVERY] Restarting peers + CouchDB after TPS=${tps} run..."
+            docker restart peer0.org1.example.com peer0.org2.example.com \
+                           couchdb0 couchdb1 2>/dev/null || true
+            info "  [RECOVERY] Cooling down 90s for peer state to stabilize..."
+            sleep 90
+            verify_peers_healthy || warn "  Peer health check failed — continuing anyway"
+        fi
     done
     cd "$ROOT_DIR"
 }

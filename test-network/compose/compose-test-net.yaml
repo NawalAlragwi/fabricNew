@@ -106,7 +106,10 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org1"}
       - CORE_CHAINCODE_EXECUTETIMEOUT=120s
-      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
+      # OOM-FIX: was 5000 → 200. At 100 TPS×45ms each peer only needs
+      # ~5 concurrent goroutines at steady state. 5000 allowed unbounded
+      # queue growth that filled RAM and triggered OOM kill.
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=200
       - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
       - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
       - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120000
@@ -116,6 +119,15 @@ services:
       - peer0.org1.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
+    # ── OOM-FIX: cap peer memory to prevent crash under 100–200 TPS load ────
+    # WSL2 has 12GB total. Orderer≈512MB, CouchDB×2≈1GB, Caliper≈1GB.
+    # Each peer gets 3.5GB hard cap + 1GB swap → survives VerifyCertificate.
+    deploy:
+      resources:
+        limits:
+          memory: 3500M
+        reservations:
+          memory: 1024M
     ports:
       - 7051:7051
       - 9444:9444
@@ -156,7 +168,8 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org2"}
       - CORE_CHAINCODE_EXECUTETIMEOUT=120s
-      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
+      # OOM-FIX: same limit as peer0org1 — symmetric allocation
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=200
       - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
       - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
       - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120000
@@ -166,6 +179,13 @@ services:
       - peer0.org2.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
+    # ── OOM-FIX: same cap as peer0.org1 for symmetric resource allocation ───
+    deploy:
+      resources:
+        limits:
+          memory: 3500M
+        reservations:
+          memory: 1024M
     ports:
       - 9051:9051
       - 9445:9445

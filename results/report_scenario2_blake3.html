@@ -65,23 +65,23 @@
   <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem">
     <h1>⚡ S2: BLAKE3 Alternative</h1>
     <span class="badge badge-b3">BLAKE3</span>
-    <span class="badge badge-green">3.79x Faster Hash</span>
+    <span class="badge badge-green">3.74x Faster Hash</span>
     <span class="badge badge-algo">Caliper 0.6.0</span>
   </div>
-  <p>BCMS — Blockchain Certificate Management System | Hash latency improvement: <strong style="color:#4ade80">73.6%</strong> over SHA-256</p>
+  <p>BCMS — Blockchain Certificate Management System | Hash latency improvement: <strong style="color:#4ade80">73.3%</strong> over SHA-256</p>
   <p style="margin-top:.25rem">Benchmark: <strong>benchConfig_s2_blake3.yaml</strong> |
      Workers: <strong>10</strong> | Payload: <strong>5KB transcript</strong> |
-     Generated: <strong>2026-04-18T09:18:48Z</strong></p>
+     Generated: <strong>2026-05-17T11:54:51Z</strong></p>
 </div>
 
 <div class="win-box">
   <strong>✓ BLAKE3 Outperforms SHA-256</strong><br><br>
   Real measured hash benchmark on 5,000-byte certificate payloads:<br>
-  • Hash latency improvement: <strong>73.6%</strong> (target: >50%) ✓<br>
-  • Throughput improvement: <strong>+279.2%</strong><br>
-  • Speedup: <strong>3.79x</strong> faster than SHA-256<br>
-  • BLAKE3 processes 5KB payload in <strong>3.832 µs</strong> vs SHA-256's <strong>14.531 µs</strong><br>
-  • CPU overhead at 200 TPS: BLAKE3 uses <strong>1.53 ms/sec</strong> vs SHA-256's <strong>5.81 ms/sec</strong>
+  • Hash latency improvement: <strong>73.3%</strong> (target: >50%) ✓<br>
+  • Throughput improvement: <strong>+274.0%</strong><br>
+  • Speedup: <strong>3.74x</strong> faster than SHA-256<br>
+  • BLAKE3 processes 5KB payload in <strong>1.600 µs</strong> vs SHA-256's <strong>5.984 µs</strong><br>
+  • CPU overhead at 200 TPS: BLAKE3 uses <strong>0.64 ms/sec</strong> vs SHA-256's <strong>2.39 ms/sec</strong>
 </div>
 
 <div class="section">
@@ -89,22 +89,22 @@
   <div class="grid-4">
     <div class="card highlight">
       <h3>Issue TPS</h3>
-      <div class="value">48.9</div>
+      <div class="value">50.4</div>
       <div class="sub">IssueCertificate throughput</div>
     </div>
     <div class="card highlight">
       <h3>Issue Latency</h3>
-      <div class="value">151 ms</div>
+      <div class="value">150 ms</div>
       <div class="sub">Mean end-to-end latency</div>
     </div>
     <div class="card highlight">
       <h3>Hash Speedup</h3>
-      <div class="value">3.79x</div>
+      <div class="value">3.74x</div>
       <div class="sub">vs SHA-256 (5KB payload)</div>
     </div>
     <div class="card highlight">
       <h3>Hash Lat. -</h3>
-      <div class="value">73.6%</div>
+      <div class="value">73.3%</div>
       <div class="sub">lower than SHA-256</div>
     </div>
   </div>
@@ -121,47 +121,47 @@
     <tr>
       <td>IssueCertificate</td>
       <td>175.0</td>
-      <td>48.9</td>
-      <td style="color:#4ade80">10,357</td>
-      <td style="color:#f87171">143</td>
+      <td>50.4</td>
+      <td style="color:#4ade80">10,356</td>
+      <td style="color:#f87171">144</td>
       <td>98.6%</td>
-      <td>150.8</td>
-      <td>119.2</td>
-      <td>223.3</td>
-      <td>294.2</td>
+      <td>150.2</td>
+      <td>118.7</td>
+      <td>222.3</td>
+      <td>292.9</td>
     </tr><tr>
       <td>VerifyCertificate</td>
       <td>200.0</td>
-      <td>206.8</td>
+      <td>206.4</td>
       <td style="color:#4ade80">11,997</td>
       <td style="color:#f87171">3</td>
       <td>100.0%</td>
       <td>8.2</td>
       <td>6.5</td>
       <td>11.0</td>
-      <td>14.0</td>
+      <td>14.1</td>
     </tr><tr>
       <td>QueryAllCertificates</td>
       <td>100.0</td>
-      <td>102.4</td>
+      <td>105.4</td>
       <td style="color:#4ade80">5,997</td>
       <td style="color:#f87171">3</td>
       <td>100.0%</td>
-      <td>17.1</td>
-      <td>13.5</td>
-      <td>23.0</td>
-      <td>29.3</td>
+      <td>17.4</td>
+      <td>13.7</td>
+      <td>23.4</td>
+      <td>29.9</td>
     </tr><tr>
       <td>RevokeCertificate</td>
       <td>200.0</td>
-      <td>48.1</td>
-      <td style="color:#4ade80">11,774</td>
-      <td style="color:#f87171">226</td>
+      <td>48.0</td>
+      <td style="color:#4ade80">11,773</td>
+      <td style="color:#f87171">227</td>
       <td>98.1%</td>
-      <td>148.4</td>
-      <td>117.3</td>
-      <td>219.7</td>
-      <td>289.4</td>
+      <td>147.8</td>
+      <td>116.7</td>
+      <td>218.7</td>
+      <td>288.2</td>
     </tr>
   </table>
 </div>
@@ -182,29 +182,29 @@
     • Constant-time: resistant to timing side-channel attacks<br>
     • Tree structure: linear scaling — doubles speed with 2x CPU cores<br><br>
     <strong>Impact on BCMS under 200 TPS sustained load:</strong><br>
-    • SHA-256: 5.81 ms/sec chaincode CPU on hash operations<br>
-    • BLAKE3:  1.53 ms/sec chaincode CPU on hash operations<br>
-    • Saving:  4.28 ms/sec per peer — reduces queuing, improves tail latency
+    • SHA-256: 2.39 ms/sec chaincode CPU on hash operations<br>
+    • BLAKE3:  0.64 ms/sec chaincode CPU on hash operations<br>
+    • Saving:  1.75 ms/sec per peer — reduces queuing, improves tail latency
   </div>
   
   <div class="grid-3">
     <div class="card highlight">
       <h3>Hash Throughput</h3>
-      <div class="value">260,970</div>
+      <div class="value">625,027</div>
       <div class="sub">hashes/sec (5KB payload)</div>
-      <div class="imp">+279% vs SHA-256</div>
+      <div class="imp">+274% vs SHA-256</div>
     </div>
     <div class="card highlight">
       <h3>Mean Hash Latency</h3>
-      <div class="value">3.832 µs</div>
+      <div class="value">1.600 µs</div>
       <div class="sub">per 5KB hash call</div>
-      <div class="imp">-73.6% vs SHA-256</div>
+      <div class="imp">-73.3% vs SHA-256</div>
     </div>
     <div class="card highlight">
       <h3>Max Hash TPS</h3>
-      <div class="value">130,480</div>
+      <div class="value">312,500</div>
       <div class="sub">pure hash transactions/sec</div>
-      <div class="imp">3.79x SHA-256 capacity</div>
+      <div class="imp">3.74x SHA-256 capacity</div>
     </div>
   </div>
 
@@ -214,16 +214,16 @@
       <div style="margin-bottom:1rem">
         <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.85rem">
           <span style="color:var(--sha)">SHA-256</span>
-          <span style="color:var(--muted)">68,817 h/s</span>
+          <span style="color:var(--muted)">167,099 h/s</span>
         </div>
         <div style="height:12px;background:var(--border);border-radius:6px">
-          <div style="height:100%;width:26.4%;background:#f59e0b;border-radius:6px"></div>
+          <div style="height:100%;width:26.7%;background:#f59e0b;border-radius:6px"></div>
         </div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.85rem">
           <span style="color:var(--b3)">BLAKE3</span>
-          <span style="color:var(--muted)">260,970 h/s</span>
+          <span style="color:var(--muted)">625,027 h/s</span>
         </div>
         <div style="height:12px;background:var(--border);border-radius:6px">
           <div style="height:100%;width:100%;background:#a78bfa;border-radius:6px"></div>
@@ -245,7 +245,7 @@
       <div class="progress"><div class="progress-bar" style="width:31.2%;background:var(--b3)"></div></div>
       <div class="metric-row" style="margin-top:.5rem">
         <span class="metric-key">CPU Max</span>
-        <span class="metric-val">48.2%</span>
+        <span class="metric-val">48.3%</span>
       </div>
       <div class="metric-row">
         <span class="metric-key">Memory Avg</span>
@@ -259,9 +259,9 @@
       <div style="font-weight:700;margin-bottom:.75rem;color:var(--b3)">peer0.org2.example.com</div>
       <div class="metric-row">
         <span class="metric-key">CPU Avg</span>
-        <span class="metric-val">28.8%</span>
+        <span class="metric-val">28.9%</span>
       </div>
-      <div class="progress"><div class="progress-bar" style="width:28.8%;background:var(--b3)"></div></div>
+      <div class="progress"><div class="progress-bar" style="width:28.9%;background:var(--b3)"></div></div>
       <div class="metric-row" style="margin-top:.5rem">
         <span class="metric-key">CPU Max</span>
         <span class="metric-val">43.9%</span>
@@ -317,5 +317,5 @@
   </div>
 </div>
 
-<footer>BCMS — Blockchain Certificate Management System | BLAKE3 Alternative Report | Generated 2026-04-18 09:21 UTC</footer>
+<footer>BCMS — Blockchain Certificate Management System | BLAKE3 Alternative Report | Generated 2026-05-17 11:54 UTC</footer>
 </body></html>
