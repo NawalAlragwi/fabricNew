@@ -1,6 +1,6 @@
 {
   "title": "BCMS Four-Scenario Comparison",
-  "generated_at": "2026-05-18 14:05:11",
+  "generated_at": "2026-05-18 14:21:14",
   "framework": "Hyperledger Caliper 0.6.0",
   "fabric_version": "2.5.9",
   "data_warning": "Values may be SIMULATED if Docker/Fabric was unavailable. Check is_simulated and data_source fields in each scenario.",
