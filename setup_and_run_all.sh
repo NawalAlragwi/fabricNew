@@ -44,8 +44,8 @@ REPORT_ONLY=false
 ALL_SCENARIOS=false
 COMPARISON_ONLY=false
 SCENARIO_NUM=""
-# ── v13.0: أضفنا 150 ──────────────────────────────────────────
-TPS_VALUES=(50 100 150 200)
+# ── v13.0: أضفنا 150 | v14.0: أضفنا 250 ──────────────────────
+TPS_VALUES=(50 100 150 200 250)
 # ──────────────────────────────────────────────────────────────
 
 for arg in "$@"; do
@@ -71,7 +71,7 @@ for arg in "$@"; do
             echo "  --comparison-only  Regenerate final 4-scenario comparison only"
             echo "  --all-scenarios    Run all 4 research scenarios sequentially"
             echo "  --scenario=N       Run single scenario (1=SHA256 | 2=BLAKE3 | 3=Hybrid | 4=HybridBatch)"
-            echo "  --tps=50,100,150,200  TPS values for benchmark runs"
+            echo "  --tps=50,100,150,200,250  TPS values for benchmark runs"
             exit 0 ;;
     esac
 done
