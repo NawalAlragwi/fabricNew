@@ -154,10 +154,10 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>913</td> <td>0</td> <td>29.5</td> <td>18.21</td> <td>2.20</td> <td>10.48</td> <td>23.3</td>
+                         <td>IssueCertificate</td> <td>910</td> <td>0</td> <td>29.8</td> <td>6.81</td> <td>1.82</td> <td>4.70</td> <td>28.1</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>2186</td> <td>0</td> <td>71.8</td> <td>0.90</td> <td>0.03</td> <td>0.14</td> <td>71.3</td>
+                         <td>VerifyCertificate</td> <td>2199</td> <td>0</td> <td>73.4</td> <td>0.67</td> <td>0.03</td> <td>0.10</td> <td>73.1</td>
                     </tr>
                 </table>
             </div>
@@ -176,7 +176,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>913</td> <td>0</td> <td>29.5</td> <td>18.21</td> <td>2.20</td> <td>10.48</td> <td>23.3</td>
+                                     <td>IssueCertificate</td> <td>910</td> <td>0</td> <td>29.8</td> <td>6.81</td> <td>1.82</td> <td>4.70</td> <td>28.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -199,7 +199,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>2186</td> <td>0</td> <td>71.8</td> <td>0.90</td> <td>0.03</td> <td>0.14</td> <td>71.3</td>
+                                     <td>VerifyCertificate</td> <td>2199</td> <td>0</td> <td>73.4</td> <td>0.67</td> <td>0.03</td> <td>0.10</td> <td>73.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -216,7 +216,7 @@ description: &gt;
   while BLAKE3 stays stable.
 workers:
   type: local
-  number: 15
+  number: 10
 rounds:
   - label: IssueCertificate
     description: &#39;Issue certs at 30 TPS, 60s (parity with BLAKE3 config)&#39;
