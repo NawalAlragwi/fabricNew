@@ -1,13 +1,17 @@
 # ============================================================
 #  S2 — BLAKE3 Alternative  |  Target TPS: 100
-#  VerifyCertificate: 20 → 100 TPS (PRIMARY ROUND)
+#  VerifyCertificate: 20 -> 100 TPS (PRIMARY ROUND)
 #
-#  FIXES vs previous version:
-#  - IssueCertificate: 25 → 15 TPS (avoid overloading peer before Verify)
-#  - QueryAllCertificates: 20 → 8 TPS (CouchDB recovery after heavy Verify)
-#  - RevokeCertificate: 20 → 8 TPS (reduce post-Verify pressure)
-#  - HashOnlyBenchmark: 80 → 50 TPS (within BLAKE3 safe zone x3000 mag)
-#  - workers: 3 → 2 (reduce concurrency pressure on i7-1255U)
+#  PARITY with benchConfig_s1_sha256_tps100.yaml:
+#  - workers: 4 (same as SHA-256)
+#  - IssueCertificate: 15 TPS (same as SHA-256)
+#  - QueryAllCertificates: 8 TPS (same as SHA-256)
+#  - RevokeCertificate: 8 TPS (same as SHA-256)
+#  - HashOnlyBenchmark: 50 TPS (same as SHA-256)
+#  - VerifyCertificate: 20->100 TPS (same as SHA-256 - PRIMARY ROUND)
+#
+#  ONLY DIFFERENCE vs SHA-256: contractId = bcms-blake3
+#  This guarantees any performance gap = algorithm difference only.
 # ============================================================
 
 monitors:
@@ -31,13 +35,13 @@ test:
     Expected: BLAKE3 stable at 100 TPS while SHA-256 saturates.
   workers:
     type: local
-    number: 2
+    number: 4
 
   rounds:
 
-    # ── Round 1: Issue (reduced to avoid pre-loading the peer) ──────────
+    # ── Round 1: Issue (identical to SHA-256 config) ──────────────────
     - label: IssueCertificate
-      description: Issue certs at 15 TPS, 60s (reduced from 25 to protect peer)
+      description: Issue certs at 15 TPS, 60s (parity with SHA-256 config)
       txDuration: 30
       rateControl:
         type: fixed-rate
@@ -51,12 +55,13 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── Round 2: PRIMARY COMPARISON ROUND ───────────────────────────────
+    # ── Round 2: PRIMARY COMPARISON ROUND (identical range to SHA-256) ──
     - label: VerifyCertificate
       description: >
         PRIMARY ROUND — BLAKE3 linear 20->100 TPS, 120s.
-        MagnificationFactor x3000 = 12ms per tx.
-        BLAKE3 should handle 100 TPS while SHA-256 saturates at ~80 TPS.
+        MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
+        Expected: BLAKE3 remains extremely fast and stable.
+        Compare directly with SHA-256 which uses same 20->100 TPS range.
       txDuration: 30
       rateControl:
         type: linear-rate

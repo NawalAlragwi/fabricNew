@@ -3,7 +3,7 @@
 #  VerifyCertificate: 20 -> 100 TPS (PRIMARY ROUND)
 #
 #  PARITY with benchConfig_s2_blake3_tps100.yaml:
-#  - workers: 2 (same as BLAKE3)
+#  - workers: 4 (same as BLAKE3)
 #  - IssueCertificate: 15 TPS (same as BLAKE3)
 #  - QueryAllCertificates: 8 TPS (same as BLAKE3)
 #  - RevokeCertificate: 8 TPS (same as BLAKE3)
@@ -35,7 +35,7 @@ test:
     Expected: SHA-256 saturates before 100 TPS while BLAKE3 stays stable.
   workers:
     type: local
-    number: 4
+    number: 8
 
   rounds:
 
