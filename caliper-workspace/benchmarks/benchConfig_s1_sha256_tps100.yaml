@@ -3,7 +3,7 @@
 #  VerifyCertificate: 20 -> 100 TPS (PRIMARY ROUND)
 #
 #  PARITY with benchConfig_s2_blake3_tps100.yaml:
-#  - workers: 4 (same as BLAKE3)
+#  - workers: 8 (same as BLAKE3)
 #  - IssueCertificate: 15 TPS (same as BLAKE3)
 #  - QueryAllCertificates: 8 TPS (same as BLAKE3)
 #  - RevokeCertificate: 8 TPS (same as BLAKE3)
