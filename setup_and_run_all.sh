@@ -282,8 +282,9 @@ wait_for_chaincode_image() {
     }
     local image_count
     image_count=$(docker images 2>/dev/null | grep -c "dev-peer" || echo "0")
+    image_count=$(echo "$image_count" | tr -d '[:space:]')
     log "  Docker chaincode images present: ${image_count}"
-    [ "$image_count" -lt 1 ] && { warn "  No dev-peer images yet"; sleep 5; } \
+    [ "${image_count:-0}" -lt 1 ] && { warn "  No dev-peer images yet"; sleep 5; } \
         || log "  ✓ Docker images confirmed — Caliper is safe to run"
 }
 

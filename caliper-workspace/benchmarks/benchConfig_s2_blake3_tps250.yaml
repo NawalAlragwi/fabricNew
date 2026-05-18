@@ -32,7 +32,7 @@ test:
     Expected: BLAKE3 stable at 250 TPS while SHA-256 saturates.
   workers:
     type: local
-    number: 8
+    number: 4
 
   rounds:
 
