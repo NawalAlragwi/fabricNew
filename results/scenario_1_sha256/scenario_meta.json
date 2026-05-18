@@ -5,6 +5,6 @@
   "chaincode": "chaincode-bcms/sha256",
   "cc_name": "bcms-sha256",
   "batch_size": 1,
-  "tps_values": [100],
-  "started": "2026-05-18T12:06:31Z"
+  "tps_values": [200],
+  "started": "2026-05-18T15:14:38Z"
 }
