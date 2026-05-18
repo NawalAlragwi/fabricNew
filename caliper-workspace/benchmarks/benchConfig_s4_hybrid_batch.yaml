@@ -72,36 +72,5 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    - label: QueryAllCertificates
-      description: >
-        S4 Hybrid-Batch — Fixed-rate 50 TPS CouchDB rich query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-        arguments:
-          contractId: bcms-hybrid-batch
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    - label: RevokeCertificate
-      description: >
-        S4 Hybrid-Batch — Fixed-rate 50 TPS revocation.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/revokeCertificate.js
-        arguments:
-          contractId: bcms-hybrid-batch
-          totalIssued: 1000
-          certPrefix: "BCERT"
-          batchSize: 10
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 

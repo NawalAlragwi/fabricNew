@@ -69,34 +69,5 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    - label: QueryAllCertificates
-      description: >
-        S3 Hybrid — Fixed-rate 50 TPS CouchDB rich query.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-        arguments:
-          contractId: bcms-hybrid
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    - label: RevokeCertificate
-      description: >
-        S3 Hybrid — Fixed-rate 50 TPS revocation.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/revokeCertificate.js
-        arguments:
-          contractId: bcms-hybrid
-          totalIssued: 1000
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 

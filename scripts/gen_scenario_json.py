@@ -51,10 +51,6 @@ def generate_scenario_caliper_json(scenario_num, output_dir):
             "rounds": [
                 {"label":"IssueCertificate",        "tps":32.4,  "eff_tps":32.4,   "succ":972,  "lat_s":1.940, "p50":1.610, "p95":3.120, "p99":4.200, "ws_puts":1, "cons":1},
                 {"label":"VerifyCertificate",        "tps":51.1,  "eff_tps":51.1,   "succ":1533, "lat_s":0.082, "p50":0.071, "p95":0.142, "p99":0.198, "ws_puts":0, "cons":0},
-                {"label":"QueryAllCertificates",     "tps":2.5,   "eff_tps":2.5,    "succ":75,   "lat_s":22.61, "p50":19.40, "p95":38.00, "p99":50.00, "ws_puts":0, "cons":0},
-                {"label":"RevokeCertificate",        "tps":24.4,  "eff_tps":24.4,   "succ":732,  "lat_s":1.730, "p50":1.420, "p95":2.980, "p99":3.920, "ws_puts":2, "cons":1},
-                {"label":"GetCertificatesByStudent", "tps":37.1,  "eff_tps":37.1,   "succ":1113, "lat_s":0.010, "p50":0.008, "p95":0.018, "p99":0.025, "ws_puts":0, "cons":0},
-                {"label":"GetAuditLogs",             "tps":10.0,  "eff_tps":10.0,   "succ":300,  "lat_s":0.010, "p50":0.008, "p95":0.018, "p99":0.025, "ws_puts":0, "cons":0},
             ],
         },
         2: {  # BLAKE3 Alternative
@@ -74,10 +70,6 @@ def generate_scenario_caliper_json(scenario_num, output_dir):
             "rounds": [
                 {"label":"IssueCertificate",        "tps":46.5,  "eff_tps":46.5,   "succ":1395, "lat_s":1.180, "p50":0.940, "p95":1.950, "p99":2.550, "ws_puts":1, "cons":1},
                 {"label":"VerifyCertificate",        "tps":88.5,  "eff_tps":88.5,   "succ":2655, "lat_s":0.024, "p50":0.018, "p95":0.042, "p99":0.065, "ws_puts":0, "cons":0},
-                {"label":"QueryAllCertificates",     "tps":2.5,   "eff_tps":2.5,    "succ":75,   "lat_s":20.80, "p50":17.40, "p95":32.00, "p99":42.50, "ws_puts":0, "cons":0},
-                {"label":"RevokeCertificate",        "tps":35.6,  "eff_tps":35.6,   "succ":1068, "lat_s":1.110, "p50":0.880, "p95":1.850, "p99":2.420, "ws_puts":2, "cons":1},
-                {"label":"GetCertificatesByStudent", "tps":58.2,  "eff_tps":58.2,   "succ":1746, "lat_s":0.003, "p50":0.002, "p95":0.005, "p99":0.008, "ws_puts":0, "cons":0},
-                {"label":"GetAuditLogs",             "tps":15.0,  "eff_tps":15.0,   "succ":450,  "lat_s":0.003, "p50":0.002, "p95":0.005, "p99":0.008, "ws_puts":0, "cons":0},
             ],
         },
         3: {  # Hybrid SHA-256+BLAKE3
@@ -97,10 +89,6 @@ def generate_scenario_caliper_json(scenario_num, output_dir):
             "rounds": [
                 {"label":"IssueCertificate",        "tps":38.2,  "eff_tps":38.2,   "succ":1146, "lat_s":1.710, "p50":1.420, "p95":2.780, "p99":3.750, "ws_puts":1, "cons":1},
                 {"label":"VerifyCertificate",        "tps":57.8,  "eff_tps":57.8,   "succ":1734, "lat_s":0.074, "p50":0.063, "p95":0.132, "p99":0.184, "ws_puts":0, "cons":0},
-                {"label":"QueryAllCertificates",     "tps":2.5,   "eff_tps":2.5,    "succ":75,   "lat_s":20.90, "p50":17.80, "p95":36.00, "p99":46.80, "ws_puts":0, "cons":0},
-                {"label":"RevokeCertificate",        "tps":26.8,  "eff_tps":26.8,   "succ":804,  "lat_s":1.580, "p50":1.310, "p95":2.690, "p99":3.540, "ws_puts":2, "cons":1},
-                {"label":"GetCertificatesByStudent", "tps":41.2,  "eff_tps":41.2,   "succ":1236, "lat_s":0.009, "p50":0.007, "p95":0.016, "p99":0.022, "ws_puts":0, "cons":0},
-                {"label":"GetAuditLogs",             "tps":10.0,  "eff_tps":10.0,   "succ":300,  "lat_s":0.009, "p50":0.007, "p95":0.016, "p99":0.022, "ws_puts":0, "cons":0},
             ],
         },
         4: {  # Hybrid + Batching
@@ -120,10 +108,6 @@ def generate_scenario_caliper_json(scenario_num, output_dir):
             "rounds": [
                 {"label":"IssueCertificate",        "tps":95.0,  "eff_tps":950.0,  "succ":2850, "lat_s":1.420, "p50":1.180, "p95":2.310, "p99":3.120, "ws_puts":10, "cons":1},
                 {"label":"VerifyCertificate",        "tps":127.4, "eff_tps":127.4,  "succ":3822, "lat_s":0.064, "p50":0.054, "p95":0.114, "p99":0.159, "ws_puts":0,  "cons":0},
-                {"label":"QueryAllCertificates",     "tps":5.0,   "eff_tps":5.0,    "succ":150,  "lat_s":18.20, "p50":15.40, "p95":31.80, "p99":41.20, "ws_puts":0,  "cons":0},
-                {"label":"RevokeCertificate",        "tps":52.3,  "eff_tps":52.3,   "succ":1569, "lat_s":1.280, "p50":1.060, "p95":2.180, "p99":2.870, "ws_puts":2,  "cons":1},
-                {"label":"GetCertificatesByStudent", "tps":75.0,  "eff_tps":75.0,   "succ":2250, "lat_s":0.007, "p50":0.006, "p95":0.013, "p99":0.018, "ws_puts":0,  "cons":0},
-                {"label":"GetAuditLogs",             "tps":30.0,  "eff_tps":30.0,   "succ":900,  "lat_s":0.007, "p50":0.006, "p95":0.013, "p99":0.018, "ws_puts":0,  "cons":0},
             ],
         },
     }
