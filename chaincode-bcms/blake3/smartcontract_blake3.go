@@ -420,7 +420,7 @@ func (s *SmartContract) RevokeCertificate(
 func (s *SmartContract) QueryAllCertificates(
 	ctx contractapi.TransactionContextInterface, pageSize string, bookmark string,
 ) (string, error) {
-	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"asc"},{"issueDate":"desc"}]}`
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"desc"},{"issueDate":"desc"}]}`
 	ps, err := strconv.ParseInt(pageSize, 10, 32)
 	if err != nil || ps <= 0 {
 		ps = 20

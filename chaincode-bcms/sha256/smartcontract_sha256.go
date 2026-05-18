@@ -603,7 +603,7 @@ func (s *SmartContract) QueryAllCertificates(
 			"docType": "certificate",
 			"issueDate": { "$gt": null }
 		},
-		"sort": [{ "docType": "asc" }, { "issueDate": "desc" }]
+		"sort": [{ "docType": "desc" }, { "issueDate": "desc" }]
 	}`
 
 	ps, err := strconv.ParseInt(pageSize, 10, 32)

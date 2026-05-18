@@ -457,7 +457,7 @@ func (s *SmartContract) QueryAllCertificatesPaginated(
 	pageSize int32,
 	bookmark string,
 ) (*PaginatedQueryResult, error) {
-	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"asc"},{"issueDate":"desc"}]}`
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"desc"},{"issueDate":"desc"}]}`
 
 	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
 		queryString, pageSize, bookmark)

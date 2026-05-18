@@ -1,8 +1,8 @@
 {
   "index": {
     "fields": [
-      {"docType": "asc"},
-      {"studentID": "asc"},
+      {"docType": "desc"},
+      {"studentID": "desc"},
       {"issueDate": "desc"}
     ]
   },

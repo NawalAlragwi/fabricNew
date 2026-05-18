@@ -1,7 +1,7 @@
 {
   "index": {
     "fields": [
-      {"docType": "asc"},
+      {"docType": "desc"},
       {"timestamp": "desc"}
     ]
   },
