@@ -5,6 +5,6 @@
   "chaincode": "chaincode-bcms/hybrid",
   "cc_name": "bcms-hybrid",
   "batch_size": 1,
-  "tps_values": [50,100],
-  "started": "2026-05-17T21:17:54Z"
+  "tps_values": [50,100,150,200],
+  "started": "2026-05-19T09:50:57Z"
 }

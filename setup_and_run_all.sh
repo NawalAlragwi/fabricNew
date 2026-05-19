@@ -157,8 +157,8 @@ get_benchconfig_for_tps() {
     local scenario_num="$1"
     local tps="$2"
     local prefix="${SCENARIO_BENCHCONFIG_PREFIX[$scenario_num]}"
-    # للسيناريوهات 3 و4 لا توجد ملفات per-TPS حالياً
-    if [ "$scenario_num" -le 2 ]; then
+    # للسيناريو 4 لا توجد ملفات per-TPS حالياً
+    if [ "$scenario_num" -le 3 ]; then
         echo "${prefix}_tps${tps}.yaml"
     else
         echo "${SCENARIO_BENCHCONFIG[$scenario_num]}"

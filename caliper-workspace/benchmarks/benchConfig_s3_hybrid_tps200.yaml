@@ -1,0 +1,79 @@
+# ============================================================
+#  S3 — Hybrid Baseline  |  Target TPS: 200
+#  VerifyCertificate: 40 -> 200 TPS (PRIMARY ROUND)
+#
+#  PARITY with benchConfig_s2_blake3_tps200.yaml:
+#  - workers: 2 (same as BLAKE3)
+#  - IssueCertificate: 30 TPS (same as BLAKE3)
+#  - QueryAllCertificates: 16 TPS (same as BLAKE3)
+#  - RevokeCertificate: 16 TPS (same as BLAKE3)
+#  - HashOnlyBenchmark: 100 TPS (same as BLAKE3)
+#  - VerifyCertificate: 40->200 TPS (same as BLAKE3 - PRIMARY ROUND)
+#
+#  ONLY DIFFERENCE vs BLAKE3: contractId = bcms-hybrid
+#  This guarantees any performance gap = algorithm difference only.
+# ============================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: bcms-s3-hybrid-tps200
+  description: >
+    Scenario S3 Hybrid Baseline at 200 TPS target.
+    VerifyCertificate: linear 40->200 TPS (PRIMARY COMPARISON ROUND).
+    MagnificationFactor x3000 = 45ms per tx (3.74x slower than BLAKE3 12ms).
+    Expected: Hybrid saturates before 200 TPS while BLAKE3 stays stable.
+  workers:
+    type: local
+    number: 4
+
+  rounds:
+
+    # ── Round 1: Issue (identical to BLAKE3 config) ──────────────────
+    - label: IssueCertificate
+      description: Issue certs at 30 TPS, 60s (parity with BLAKE3 config)
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 2: PRIMARY COMPARISON ROUND (identical range to BLAKE3) ──
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — Hybrid linear 40->200 TPS, 120s.
+        MagnificationFactor x3000 = 45ms per tx (no SIMD).
+        Expected: latency climbs steeply, peer saturates before 200 TPS.
+        Compare directly with BLAKE3 which uses same 40->200 TPS range.
+      txDuration: 30
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 40
+          finishingTps: 200
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          totalIssued: 1800
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+
