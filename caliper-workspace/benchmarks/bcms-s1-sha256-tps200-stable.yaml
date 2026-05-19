@@ -1,0 +1,70 @@
+# ============================================================
+#  S1 — SHA-256 Baseline  |  Target TPS: 200 (Stable Version)
+#  VerifyCertificate: 40 -> 200 TPS (PRIMARY ROUND)
+# ============================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: bcms-s1-sha256-tps200-stable
+  description: >
+    Scenario S1 SHA-256 Baseline at 200 TPS target with stability enhancements.
+    VerifyCertificate: linear 40->200 TPS (PRIMARY COMPARISON ROUND).
+    Expected: SHA-256 saturates before 200 TPS while BLAKE3 stays stable.
+  workers:
+    type: local
+    number: 4
+
+  rounds:
+
+    # ── Round 1: Issue ───────────────────────────────────────────────
+    - label: IssueCertificate
+      description: Issue certs at 30 TPS, 60s
+      # STABILITY IMPROVEMENT: Increased txDuration from 30s to 60s.
+      # Rationale: 60s provides a longer baseline to absorb environmental noise (disk spikes, GC pressure)
+      # and JIT compilation warm-up overhead, leading to a much more stable and realistic steady-state measurement.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 2: PRIMARY COMPARISON ROUND (linear rate-ramping) ──────
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — SHA-256 linear 40->200 TPS, 120s.
+      # STABILITY IMPROVEMENT: Increased txDuration from 30s to 120s.
+      # Rationale: This is a linear rate-ramping round (40 to 200 TPS).
+      # Ramping over 120s instead of 30s allows the transaction rate to increase much more gradually.
+      # This gives the Fabric peers and consensus mechanism time to stabilize at each throughput level,
+      # smoothing out transient queues and enabling accurate, low-variance saturation point detection.
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 40
+          finishingTps: 200
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          totalIssued: 1800
+      txOptions:
+        invokerIdentity: User1@org1.example.com
