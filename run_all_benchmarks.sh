@@ -18,7 +18,7 @@ RESULTS_DIR="${SCRIPT_DIR}/results/40runs"
 declare -A MODEL_BENCH=(
     [M1]="benchmarks/benchConfig_s1_sha256_tps200.yaml"
     [M2]="benchmarks/benchConfig_s2_blake3_tps200.yaml"
-    [M3]="benchmarks/benchConfig_s3_hybrid.yaml"
+    [M3]="benchmarks/benchConfig_s3_hybrid_tps200.yaml"
     [M4]="benchmarks/benchConfig_s4_hybrid_batch.yaml"
 )
 declare -A MODEL_CCNAME=(
