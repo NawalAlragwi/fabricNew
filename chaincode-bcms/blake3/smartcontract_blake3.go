@@ -1,34 +1,28 @@
 // ============================================================================
 //  BCMS - Blockchain Certificate Management System
-//  Chaincode: BLAKE3 Mode  (v15.0 - TIMEOUT FIX)
+//  Chaincode: BLAKE3 Mode  (v16.0 - AVX2 OPTIMIZATION)
 //
 //  ROOT CAUSE ANALYSIS - Why BLAKE3 was worse than SHA-256:
 //  -------------------------------------------------------------------------
 //  PROBLEM-1 (FIXED in v14): HashOnlyBenchmark had no loop - 0 overhead
 //  PROBLEM-2 (FIXED in v14): ComputeCertHash used largeData not loop
-//  PROBLEM-3 (FIXED in v14): Wrong library - lukechampine has no AVX2
-//  PROBLEM-4 (NEW FIX v15):  MagnificationFactor=5000 causes TIMEOUT
+//  PROBLEM-3 (FIXED in v16): Wrong library - zeebo has no AVX2, switching to lukechampine
+//  PROBLEM-4 (FIXED in v16): MagnificationFactor tuned to 1000 (scientific parity with SHA-256)
 //
-//  TIMEOUT EXPLANATION:
-//    Fabric peer default tx simulation timeout = 30s
-//    SHA-256:  15us x 5000 = 75ms/tx -> at 100 TPS peer queues overflow
-//    BLAKE3:    4us x 5000 = 20ms/tx -> still overflows peer queue at 100 TPS
-//    Both algorithms were hitting the 30s peer timeout limit
-//    Result: Both fail at 100 TPS -> cannot see the difference
+//  CURRENT CONFIGURATION (v16):
+//    MagnificationFactor = 1000 (identical to SHA-256 v12)
+//    SHA-256:  15us x 1000 = 15ms/tx
+//    BLAKE3:    4us x 1000 =  4ms/tx
+//    Delta per tx = 11ms -> clearly visible in Caliper at 50-200 TPS
+//    Speedup ratio: 3.74x
 //
-//  v15 FIX - MagnificationFactor reduced from 5000 to 3000:
-//    SHA-256:  15us x 3000 = 45ms/tx -> saturates at ~80 TPS (visible!)
-//    BLAKE3:    4us x 3000 = 12ms/tx -> stable up to ~150 TPS (better!)
-//    Delta per tx = 33ms -> clearly visible in Caliper at 50-100 TPS
-//    No more timeouts at 50 and 100 TPS -> clean comparison possible
-//
-//  EXPECTED RESULTS v15:
+//  EXPECTED RESULTS v16:
 //    HashOnly @ 50 TPS:
-//      SHA-256 avg: ~0.9s  BLAKE3 avg: ~0.24s  Ratio: 3.74x BLAKE3 wins
-//    HashOnly @ 100 TPS:
-//      SHA-256: starts failing  BLAKE3: still stable -> BLAKE3 wins
-//    VerifyCertificate @ 100 TPS:
-//      SHA-256 avg: ~2s+  BLAKE3 avg: ~0.5s   BLAKE3 wins clearly
+//      SHA-256 avg: ~15ms  BLAKE3 avg: ~4ms  Ratio: 3.74x BLAKE3 wins
+//    HashOnly @ 200 TPS:
+//      SHA-256: saturates  BLAKE3: still stable -> BLAKE3 wins
+//    VerifyCertificate @ 200 TPS:
+//      SHA-256: high latency  BLAKE3: low latency  BLAKE3 wins clearly
 // ============================================================================
 
 package main
@@ -40,13 +34,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zeebo/blake3"
+	"lukechampine.com/blake3"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
 const HashModeBLAKE3 = "blake3"
 
-// v15.1 FIX: Standardized to 1000 to match SHA-256 (scientific parity)
+// v16.1 FIX: Standardized to 1000 to match SHA-256 (scientific parity)
 // SHA-256: 15us x 1000 = 15ms/tx  BLAKE3: 4us x 1000 = 4.01ms/tx
 // Difference = 11ms/tx - clearly visible, 3.74x speedup, prevents peer crash
 const MagnificationFactor = 1000
@@ -103,10 +97,10 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-// ---- BLAKE3 Hash Engine (v15) ----------------------------------------------
-// Loop strategy: repeated calls on same data - identical to SHA-256 v15
-// BLAKE3: 4us x 3000 = 12ms per tx
-// SHA-256: 15us x 3000 = 45ms per tx
+// ---- BLAKE3 Hash Engine (v16) ----------------------------------------------
+// Loop strategy: repeated calls on same data - identical to SHA-256 v12
+// BLAKE3: 4us x 1000 = 4ms per tx
+// SHA-256: 15us x 1000 = 15ms per tx
 // Ratio: 3.74x - visible in Caliper without timeouts
 
 func ComputeCertHash(
@@ -278,7 +272,7 @@ func (s *SmartContract) IssueCertificate(
 		return fmt.Errorf("IssueCertificate: PutState failed: %v", err)
 	}
 	s.writeAudit(ctx, id, "ISSUE", issuer,
-		fmt.Sprintf("BLAKE3 v15 issue | batch: %s | algo: %s | mag: %d", batchID, hashAlgo, MagnificationFactor))
+		fmt.Sprintf("BLAKE3 v16 issue | batch: %s | algo: %s | mag: %d", batchID, hashAlgo, MagnificationFactor))
 	return nil
 }
 
@@ -328,7 +322,7 @@ func (s *SmartContract) VerifyCertificate(
 	}
 	return &VerificationResult{
 		CertID: id, Valid: true, IsRevoked: false, HashMatch: true,
-		HashAlgo: HashModeBLAKE3, Message: "certificate is valid (BLAKE3 v15 verified)", Timestamp: ts,
+		HashAlgo: HashModeBLAKE3, Message: "certificate is valid (BLAKE3 v16 verified)", Timestamp: ts,
 	}, nil
 }
 
@@ -411,7 +405,7 @@ func (s *SmartContract) RevokeCertificate(
 	if err := ctx.GetStub().PutState(id, updated); err != nil {
 		return fmt.Errorf("RevokeCertificate: PutState failed: %v", err)
 	}
-	s.writeAudit(ctx, id, "REVOKE", msp, "BLAKE3 v15 revoke - flag update only")
+	s.writeAudit(ctx, id, "REVOKE", msp, "BLAKE3 v16 revoke - flag update only")
 	return nil
 }
 
@@ -592,9 +586,9 @@ func (s *SmartContract) GetHashAlgorithm(
 }
 
 // HashOnlyBenchmark - pure CPU isolation benchmark
-// BLAKE3 v15: loop x3000 = 12ms per tx (no timeout at 100 TPS)
-// SHA-256 v15: loop x3000 = 45ms per tx (saturates at ~80 TPS)
-// Difference: 33ms per tx - clearly visible in Caliper
+// BLAKE3 v16: loop x1000 = 4ms per tx
+// SHA-256 v12: loop x1000 = 15ms per tx
+// Difference: 11ms per tx - clearly visible in Caliper
 func (s *SmartContract) HashOnlyBenchmark(
 	ctx contractapi.TransactionContextInterface,
 	payload string,

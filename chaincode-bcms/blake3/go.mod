@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0
-	github.com/zeebo/blake3 v0.2.4
+	lukechampine.com/blake3 v1.2.1
 )
 
 require (
