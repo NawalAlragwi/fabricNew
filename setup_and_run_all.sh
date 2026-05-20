@@ -156,12 +156,14 @@ declare -A SCENARIO_BATCHSIZE=(
 get_benchconfig_for_tps() {
     local scenario_num="$1"
     local tps="$2"
-    local prefix="${SCENARIO_BENCHCONFIG_PREFIX[$scenario_num]}"
-    # للسيناريو 4 لا توجد ملفات per-TPS حالياً
-    if [ "$scenario_num" -le 3 ]; then
-        echo "${prefix}_tps${tps}.yaml"
+    if [ "$scenario_num" -eq 1 ]; then
+        echo "All_benchmarks/sha256/bcms-s-sha256-tps${tps}.yaml"
+    elif [ "$scenario_num" -eq 2 ]; then
+        echo "All_benchmarks/blake3/bcms-s-blake3-tps${tps}.yaml"
+    elif [ "$scenario_num" -eq 3 ]; then
+        echo "All_benchmarks/hybrid/bcms-s-hybrid-tps${tps}.yaml"
     else
-        echo "${SCENARIO_BENCHCONFIG[$scenario_num]}"
+        echo "benchmarks/${SCENARIO_BENCHCONFIG[$scenario_num]}"
     fi
 }
 # ─────────────────────────────────────────────────────────────────────────
@@ -678,8 +680,8 @@ run_real_caliper_scenario() {
         mkdir -p "$tps_sdir"
 
         # تحقق من وجود ملف البنشمارك
-        if [ ! -f "benchmarks/${benchcfg}" ]; then
-            warn "  ⚠ ملف البنشمارك غير موجود: benchmarks/${benchcfg} — تجاوز TPS=${tps}"
+        if [ ! -f "${benchcfg}" ]; then
+            warn "  ⚠ ملف البنشمارك غير موجود: ${benchcfg} — تجاوز TPS=${tps}"
             continue
         fi
 
@@ -699,7 +701,7 @@ run_real_caliper_scenario() {
         npx caliper launch manager \
             --caliper-workspace . \
             --caliper-networkconfig networks/networkConfig.yaml \
-            --caliper-benchconfig "benchmarks/${benchcfg}" \
+            --caliper-benchconfig "${benchcfg}" \
             --caliper-flow-only-test \
             --caliper-fabric-timeout-invokeorquery 120000 \
             2>&1 | tee -a "$LOG_FILE" || warn "  Caliper exited non-zero @ TPS=${tps}"
@@ -798,7 +800,7 @@ run_caliper_benchmarks() {
         local benchcfg
         benchcfg=$(get_benchconfig_for_tps "$sn" "$tps")
         info "Running: ${benchcfg} | CC: ${CC_NAME} | TPS: ${tps}"
-        [ -f "benchmarks/${benchcfg}" ] || { warn "  ملف غير موجود: ${benchcfg}"; continue; }
+        [ -f "${benchcfg}" ] || { warn "  ملف غير موجود: ${benchcfg}"; continue; }
         rm -f report.html 2>/dev/null || true
         NO_PROXY="localhost,127.0.0.1" no_proxy="localhost,127.0.0.1" \
         http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" \
@@ -806,7 +808,7 @@ run_caliper_benchmarks() {
         npx caliper launch manager \
             --caliper-workspace . \
             --caliper-networkconfig networks/networkConfig.yaml \
-            --caliper-benchconfig "benchmarks/${benchcfg}" \
+            --caliper-benchconfig "${benchcfg}" \
             --caliper-flow-only-test \
             --caliper-fabric-timeout-invokeorquery 120000 \
             2>&1 | tee -a "$LOG_FILE" || warn "Caliper exited non-zero @ TPS=${tps}"
