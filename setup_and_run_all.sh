@@ -272,6 +272,10 @@ wait_for_chaincode_image() {
             warn "  Peer overloaded — restarting..."
             docker restart peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
             sleep 15
+        elif echo "$result" | grep -q "status:500"; then
+            warn "  Chaincode build stuck on peer (status:500) — restarting peers to clear cache..."
+            docker restart peer0.org1.example.com peer0.org2.example.com 2>/dev/null || true
+            sleep 15
         else
             info "  Chaincode not ready: ${result:0:100}"
             sleep 10

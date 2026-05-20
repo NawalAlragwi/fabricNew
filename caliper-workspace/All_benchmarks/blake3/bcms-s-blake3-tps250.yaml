@@ -1,45 +1,46 @@
-name: bcms-s-blake3-tps250
-description: >
-  Scenario blake3 at 250 TPS target (UNIFIED CONFIG).
-  VerifyCertificate: linear 50->250 TPS (PRIMARY ROUND).
-  MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
-  workers=4, txDuration unified: Issue=60s, Verify=120s.
+test:
+  name: bcms-s-blake3-tps250
+  description: >
+    Scenario blake3 at 250 TPS target (UNIFIED CONFIG).
+    VerifyCertificate: linear 50->250 TPS (PRIMARY ROUND).
+    MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
+    workers=4, txDuration unified: Issue=60s, Verify=120s.
 
-workers:
-  type: local
-  number: 4
+  workers:
+    type: local
+    number: 4
 
-rounds:
-  - label: IssueCertificate
-    description: 'Issue certs at 38 TPS, 60s — unified config'
-    txDuration: 60
-    rateControl:
-      type: fixed-rate
-      opts:
-        tps: 38
-    workload:
-      module: workload/issueCertificate.js
-      arguments:
-        contractId: bcms-blake3
-        payloadSize: 20000
-    txOptions:
-      invokerIdentity: User1@org1.example.com
+  rounds:
+    - label: IssueCertificate
+      description: 'Issue certs at 38 TPS, 60s — unified config'
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 38
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
 
-  - label: VerifyCertificate
-    description: >
-      PRIMARY ROUND — blake3 linear 50->250 TPS, 120s.
-      MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
-      Unified config — compare directly with all algorithms.
-    txDuration: 120
-    rateControl:
-      type: linear-rate
-      opts:
-        startingTps: 50
-        finishingTps: 250
-    workload:
-      module: workload/verifyCertificate.js
-      arguments:
-        contractId: bcms-blake3
-        totalIssued: 2280
-    txOptions:
-      invokerIdentity: User1@org1.example.com
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — blake3 linear 50->250 TPS, 120s.
+        MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
+        Unified config — compare directly with all algorithms.
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 50
+          finishingTps: 250
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          totalIssued: 2280
+      txOptions:
+        invokerIdentity: User1@org1.example.com
