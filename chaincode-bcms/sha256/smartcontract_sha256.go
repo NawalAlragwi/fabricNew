@@ -1,6 +1,6 @@
 // ============================================================================
 //  BCMS — Blockchain Certificate Management System
-//  Chaincode Implementation — SHA-256 Mode  (v12.0 — PhD RESEARCH EDITION)
+//  Chaincode Implementation — SHA-256 Mode  (v12.1 — PhD RESEARCH EDITION)
 //
 //  CHANGES vs v11:
 //  ─────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ const HashModeSHA256 = "sha256"
 // MagnificationFactor controls the number of hash iterations per invocation.
 // Identical to BLAKE3 v12 — ensures symmetric benchmark amplification.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 1000
+const MagnificationFactor = 3000
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
@@ -172,12 +172,12 @@ func ComputeCertHash(
 	}
 	data := []byte(strings.Join(parts, "|"))
 
-	// Step 2: Magnification loop (k = MagnificationFactor = 100).
-	// Identical structure to BLAKE3 v12 — amplifies the per-hash latency
+	// Step 2: Magnification loop (k = MagnificationFactor = 3000).
+	// Identical structure to BLAKE3 v16.1 — amplifies the per-hash latency
 	// differential into a Caliper-detectable signal.
-	// SHA-256: 15.0 µs × 100 = 1,500 µs per transaction
-	// BLAKE3:   4.01 µs × 100 =   401 µs per transaction
-	// Δ = 1,099 µs per transaction — detectable at ≥ 100 TPS
+	// SHA-256: 15.0 µs × 3000 = 45,000 µs (45ms) per transaction
+	// BLAKE3:   4.01 µs × 3000 = 12,030 µs (12ms) per transaction
+	// Δ = 32,970 µs (33ms) per transaction — clearly visible at all TPS levels
 	var hash [32]byte
 	for i := 0; i < MagnificationFactor; i++ {
 		hash = sha256.Sum256(data) // SHA-256: sequential, no SIMD
@@ -385,10 +385,10 @@ func (s *SmartContract) IssueCertificate(
 // VerifyCertificate is the performance-critical read operation — the function
 // where the SHA-256 vs BLAKE3 latency difference is most measurable at high TPS.
 //
-// CPU cost at 800 TPS (with MagnificationFactor = 100):
-//   SHA-256:  1,500 µs × 800 = 1,200,000 µs/sec per peer  ← this function
-//   BLAKE3:     401 µs × 800 =   320,800 µs/sec per peer
-//   Saving:   ≈ 879,200 µs/sec when using BLAKE3 (Scenario 2)
+// CPU cost at 800 TPS (with MagnificationFactor = 3000):
+//   SHA-256:  45,000 µs × 800 = 36,000,000 µs/sec per peer  ← this function
+//   BLAKE3:   12,030 µs × 800 =  9,624,000 µs/sec per peer
+//   Saving:   ≈ 26,376,000 µs/sec when using BLAKE3 (Scenario 2)
 //
 // FIX-PERF (v11): No MSP role check — identical to BLAKE3 v12.
 // Access: open to all participants.
@@ -424,9 +424,9 @@ func (s *SmartContract) VerifyCertificate(
 		}, nil
 	}
 
-	// Re-compute hash from stored plaintext — SHA-256 at 15.0 µs × 100 = 1,500 µs.
-	// vs BLAKE3 at 4.01 µs × 100 = 401 µs. The 1,099 µs difference per call
-	// accumulates to ~879,200 µs/sec CPU freed at 800 TPS when using BLAKE3.
+	// Re-compute hash from stored plaintext — SHA-256 at 15.0 µs × 3000 = 45,000 µs.
+	// vs BLAKE3 at 4.01 µs × 3000 = 12,030 µs. The 32,970 µs difference per call
+	// accumulates to ~26,376,000 µs/sec CPU freed at 800 TPS when using BLAKE3.
 	// v11-PARITY: cert.Transcript is included (real payload, not empty string).
 	computed, _ := ComputeCertHash(
 		cert.StudentID, cert.StudentName,

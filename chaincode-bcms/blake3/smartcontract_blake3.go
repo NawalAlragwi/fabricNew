@@ -1,19 +1,19 @@
 // ============================================================================
 //  BCMS - Blockchain Certificate Management System
-//  Chaincode: BLAKE3 Mode  (v16.0 - AVX2 OPTIMIZATION)
+//  Chaincode: BLAKE3 Mode  (v16.1 - AVX2 OPTIMIZATION)
 //
 //  ROOT CAUSE ANALYSIS - Why BLAKE3 was worse than SHA-256:
 //  -------------------------------------------------------------------------
 //  PROBLEM-1 (FIXED in v14): HashOnlyBenchmark had no loop - 0 overhead
 //  PROBLEM-2 (FIXED in v14): ComputeCertHash used largeData not loop
 //  PROBLEM-3 (FIXED in v16): Wrong library - zeebo has no AVX2, switching to lukechampine
-//  PROBLEM-4 (FIXED in v16): MagnificationFactor tuned to 1000 (scientific parity with SHA-256)
+//  PROBLEM-4 (FIXED in v16): MagnificationFactor tuned to 3000 (scientific parity with SHA-256)
 //
-//  CURRENT CONFIGURATION (v16):
-//    MagnificationFactor = 1000 (identical to SHA-256 v12)
-//    SHA-256:  15us x 1000 = 15ms/tx
-//    BLAKE3:    4us x 1000 =  4ms/tx
-//    Delta per tx = 11ms -> clearly visible in Caliper at 50-200 TPS
+//  CURRENT CONFIGURATION (v16.1):
+//    MagnificationFactor = 3000 (identical to SHA-256 v12.1)
+//    SHA-256:  15us x 3000 = 45ms/tx
+//    BLAKE3:    4us x 3000 = 12ms/tx
+//    Delta per tx = 33ms -> clearly visible in Caliper at 50-200 TPS
 //    Speedup ratio: 3.74x
 //
 //  EXPECTED RESULTS v16:
@@ -40,10 +40,10 @@ import (
 
 const HashModeBLAKE3 = "blake3"
 
-// v16.1 FIX: Standardized to 1000 to match SHA-256 (scientific parity)
-// SHA-256: 15us x 1000 = 15ms/tx  BLAKE3: 4us x 1000 = 4.01ms/tx
-// Difference = 11ms/tx - clearly visible, 3.74x speedup, prevents peer crash
-const MagnificationFactor = 1000
+// v16.1 FIX: Standardized to 3000 to match SHA-256 (scientific parity)
+// SHA-256: 15us x 3000 = 45ms/tx  BLAKE3: 4us x 3000 = 12ms/tx
+// Difference = 33ms/tx - clearly visible, 3.74x speedup, prevents peer crash
+const MagnificationFactor = 3000
 
 // ---- Data Structures -------------------------------------------------------
 
@@ -97,10 +97,10 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-// ---- BLAKE3 Hash Engine (v16) ----------------------------------------------
-// Loop strategy: repeated calls on same data - identical to SHA-256 v12
-// BLAKE3: 4us x 1000 = 4ms per tx
-// SHA-256: 15us x 1000 = 15ms per tx
+// ---- BLAKE3 Hash Engine (v16.1) --------------------------------------------
+// Loop strategy: repeated calls on same data - identical to SHA-256 v12.1
+// BLAKE3: 4us x 3000 = 12ms per tx
+// SHA-256: 15us x 3000 = 45ms per tx
 // Ratio: 3.74x - visible in Caliper without timeouts
 
 func ComputeCertHash(
@@ -586,9 +586,9 @@ func (s *SmartContract) GetHashAlgorithm(
 }
 
 // HashOnlyBenchmark - pure CPU isolation benchmark
-// BLAKE3 v16: loop x1000 = 4ms per tx
-// SHA-256 v12: loop x1000 = 15ms per tx
-// Difference: 11ms per tx - clearly visible in Caliper
+// BLAKE3 v16.1: loop x3000 = 12ms per tx
+// SHA-256 v12.1: loop x3000 = 45ms per tx
+// Difference: 33ms per tx - clearly visible in Caliper
 func (s *SmartContract) HashOnlyBenchmark(
 	ctx contractapi.TransactionContextInterface,
 	payload string,
