@@ -1,7 +1,7 @@
-# BCMS Research Summary — 2026-05-21 23:16:02 — v13.0
+# BCMS Research Summary — 2026-05-22 00:07:48 — v13.0
 
 ## TPS Values Tested
-- 100 TPS
+- 50 TPS
 
 ## Framework
 - Hyperledger Fabric v2.5.9
@@ -17,5 +17,5 @@
 | S4       | bcms-hybrid-b | Hybrid+Bat | varies  | amortised   |
 
 ## Results Structure
-- results/scenario_1_sha256/tps100/caliper_raw_report.html
-- results/scenario_2_blake3/tps100/caliper_raw_report.html
+- results/scenario_1_sha256/tps50/caliper_raw_report.html
+- results/scenario_2_blake3/tps50/caliper_raw_report.html
