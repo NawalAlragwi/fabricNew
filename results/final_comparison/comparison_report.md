@@ -1,6 +1,6 @@
 # BCMS Four-Scenario Academic Benchmark Comparison
 
-> Generated: 2026-05-21 18:53:41  |  Caliper 0.6.0  |  Fabric 2.5.9
+> Generated: 2026-05-21 22:27:14  |  Caliper 0.6.0  |  Fabric 2.5.9
 
 
 > ⚠️  **SIMULATED DATA**: Docker/Fabric unavailable. Run `bash setup_and_run_all.sh --all-scenarios` in a Docker-enabled environment for real measurements.
