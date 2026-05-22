@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-sha256-tps250</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario sha256 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear 50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 45ms per tx (no SIMD). workers&#x3D;4, txDuration unified: Issue&#x3D;60s, Verify&#x3D;120s.
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-blake3-tps250</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">Scenario blake3 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear 50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 12ms per tx (AVX2 SIMD). workers&#x3D;4, txDuration unified: Issue&#x3D;60s, Verify&#x3D;120s.
 </span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">3</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
@@ -155,13 +155,13 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>1.04</td> <td>0.17</td> <td>0.58</td> <td>37.8</td>
+                         <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>103.80</td> <td>1.79</td> <td>80.03</td> <td>18.0</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.06</td> <td>0.03</td> <td>0.04</td> <td>10.1</td>
+                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.17</td> <td>0.07</td> <td>0.09</td> <td>10.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>10723</td> <td>0</td> <td>89.4</td> <td>5.10</td> <td>0.04</td> <td>0.71</td> <td>86.2</td>
+                         <td>VerifyCertificate</td> <td>6676</td> <td>1284</td> <td>66.4</td> <td>112.01</td> <td>0.06</td> <td>35.30</td> <td>37.3</td>
                     </tr>
                 </table>
             </div>
@@ -180,7 +180,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>1.04</td> <td>0.17</td> <td>0.58</td> <td>37.8</td>
+                                     <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>103.80</td> <td>1.79</td> <td>80.03</td> <td>18.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -188,8 +188,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
                 <h2>Benchmark round: HashOnlyBenchmark</h2>
-                <p>PURE CPU ROUND — Hash only, zero ledger I&#x2F;O. Fixed 10 TPS — isolates cryptographic algorithm performance. SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx vs BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx Speedup ratio: 3.74x in favor of BLAKE3.
-</p>
+                <p>PURE CPU — BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
@@ -202,7 +201,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.06</td> <td>0.03</td> <td>0.04</td> <td>10.1</td>
+                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.17</td> <td>0.07</td> <td>0.09</td> <td>10.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
@@ -210,7 +209,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>PRIMARY ROUND — sha256 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000 &#x3D; 45ms per tx (no SIMD). Unified config — compare directly with all algorithms.
+                <p>PRIMARY ROUND — blake3 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000 &#x3D; 12ms per tx (AVX2 SIMD). Unified config — compare directly with all algorithms.
 </p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
@@ -225,7 +224,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>10723</td> <td>0</td> <td>89.4</td> <td>5.10</td> <td>0.04</td> <td>0.71</td> <td>86.2</td>
+                                     <td>VerifyCertificate</td> <td>6676</td> <td>1284</td> <td>66.4</td> <td>112.01</td> <td>0.06</td> <td>35.30</td> <td>37.3</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -234,10 +233,10 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-sha256-tps250
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-blake3-tps250
 description: &gt;
-  Scenario sha256 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear
-  50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 45ms per tx (no
+  Scenario blake3 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear
+  50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 12ms per tx (AVX2
   SIMD). workers&#x3D;4, txDuration unified: Issue&#x3D;60s, Verify&#x3D;120s.
 workers:
   type: local
@@ -253,15 +252,12 @@ rounds:
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
-        contractId: bcms-sha256
+        contractId: bcms-blake3
         payloadSize: 20000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: HashOnlyBenchmark
-    description: &gt;
-      PURE CPU ROUND — Hash only, zero ledger I&#x2F;O. Fixed 10 TPS — isolates
-      cryptographic algorithm performance. SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx vs
-      BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx Speedup ratio: 3.74x in favor of BLAKE3.
+    description: &#39;PURE CPU — BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
@@ -270,14 +266,14 @@ rounds:
     workload:
       module: workload&#x2F;hashOnlyBenchmark.js
       arguments:
-        contractId: bcms-sha256
+        contractId: bcms-blake3
         payload: benchmark-payload-20kb
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
     description: &gt;
-      PRIMARY ROUND — sha256 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000
-      &#x3D; 45ms per tx (no SIMD). Unified config — compare directly with all
+      PRIMARY ROUND — blake3 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000
+      &#x3D; 12ms per tx (AVX2 SIMD). Unified config — compare directly with all
       algorithms.
     txDuration: 120
     rateControl:
@@ -288,7 +284,7 @@ rounds:
     workload:
       module: workload&#x2F;verifyCertificate.js
       arguments:
-        contractId: bcms-sha256
+        contractId: bcms-blake3
         totalIssued: 2280
     txOptions:
       invokerIdentity: User1@org1.example.com
