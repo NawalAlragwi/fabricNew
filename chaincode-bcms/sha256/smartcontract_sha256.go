@@ -466,22 +466,16 @@ func (s *SmartContract) VerifyCertificate(
 
 // ─── VerifyCertificateByID ──────────────────────────────────────────────────
 
-// VerifyCertificateByID retrieves the stored hash and delegates to VerifyCertificate.
+// VerifyCertificateByID retrieves the certificate and verifies its integrity.
 func (s *SmartContract) VerifyCertificateByID(
 	ctx contractapi.TransactionContextInterface,
 	id string,
 ) (*VerificationResult, error) {
-	cert, err := s.GetCertificate(ctx, id)
-	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
-	if err != nil {
-		ts := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
-		return &VerificationResult{
-			CertID: id, Valid: false,
-			Message:   fmt.Sprintf("verification failed: %v", err),
-			HashAlgo:  HashModeSHA256, Timestamp: ts,
-		}, nil
-	}
-	return s.VerifyCertificate(ctx, id, cert.CertHash)
+	// FIX-ANOMALY: Removed double read from CouchDB.
+	// Previously, GetCertificate read 50KB from CouchDB, then VerifyCertificate read it again.
+	// At high TPS, concurrent 50KB reads exhaust the connection pool.
+	// By calling VerifyCertificate directly with an empty hash, we cut CouchDB reads by 50%.
+	return s.VerifyCertificate(ctx, id, "")
 }
 
 // ─── GetCertificate / ReadCertificate ───────────────────────────────────────

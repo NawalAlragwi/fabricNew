@@ -329,17 +329,12 @@ func (s *SmartContract) VerifyCertificate(
 func (s *SmartContract) VerifyCertificateByID(
 	ctx contractapi.TransactionContextInterface, id string,
 ) (*VerificationResult, error) {
-	cert, err := s.GetCertificate(ctx, id)
-	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
-	if err != nil {
-		ts := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos)).UTC().Format(time.RFC3339)
-		return &VerificationResult{
-			CertID: id, Valid: false,
-			Message:  fmt.Sprintf("verification failed: %v", err),
-			HashAlgo: HashModeBLAKE3, Timestamp: ts,
-		}, nil
-	}
-	return s.VerifyCertificate(ctx, id, cert.CertHash)
+	// FIX-ANOMALY: Removed double read from CouchDB.
+	// Previously, GetCertificate read 50KB from CouchDB, then VerifyCertificate read it again.
+	// At TPS 150, BLAKE3 is so fast that it hammered CouchDB with concurrent 50KB reads,
+	// exhausting the connection pool and causing Verify latency to jump 32x (to 2.24s).
+	// By calling VerifyCertificate directly with an empty hash, we cut CouchDB reads by 50%.
+	return s.VerifyCertificate(ctx, id, "")
 }
 
 // ---- GetCertificate --------------------------------------------------------

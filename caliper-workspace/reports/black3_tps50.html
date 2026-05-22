@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<!-- saved from url=(0081)file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script src="./Hyperledger Caliper Report_files/Chart.min.js.تنزيل"></script>
+<!doctype html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
 <script>
     function plotChart(divId, chartData) {
         // Convert from stringified html, to valid JSON
@@ -21,10 +20,10 @@
         });
     }
 </script>
-
-
+<html>
+<head>
     <title>Hyperledger Caliper Report</title>
-    
+    <meta charset="UTF-8"/>
     <style type="text/css">
         .left-column {
             position: fixed;
@@ -123,47 +122,47 @@
 <body style="font-family: IBM Plex Sans; font-weight: 200;">
     <main>
         <div class="left-column">
-            <img src="./Hyperledger Caliper Report_files/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
+            <img src="https://hyperledger.github.io/caliper/assets/img/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
             <ul>
-                <h3>&nbsp;Basic information</h3>
-                <li>DLT: &nbsp;<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp;<span style="font-weight: 500;">bcms-s-blake3-tps50</span></li>
-                <li>Description: &nbsp;<span style="font-weight: 500;">BLAKE3 at 50 TPS. MagnificationFactor x3000 = 12ms per tx.</span></li>
-                <li>Benchmark Rounds: &nbsp;<span style="font-weight: 500;">3</span></li>
-                <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#benchmarkInfo">Details</a></li>
+                <h3>&nbspBasic information</h3>
+                <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-blake3-tps50</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BLAKE3 at 50 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">3</span></li>
+                <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
             <ul>
-                <h3>&nbsp;Benchmark results</h3>
-                <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#benchmarksummary">Summary</a></li>
-                    <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#IssueCertificate">IssueCertificate</a></li>
-                    <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#HashOnlyBenchmark">HashOnlyBenchmark</a></li>
-                    <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#VerifyCertificate">VerifyCertificate</a></li>
+                <h3>&nbspBenchmark results</h3>
+                <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#IssueCertificate">IssueCertificate</a></li>
+                    <li><a href="#HashOnlyBenchmark">HashOnlyBenchmark</a></li>
+                    <li><a href="#VerifyCertificate">VerifyCertificate</a></li>
             </ul>
             <ul>
-                <h3>&nbsp;System under test</h3>
-                <li><a href="file:///C:/Users/USERW/pro1/fabricNew/caliper-workspace/reports/blake3-tps50.html#sutdetails">Details</a></li>
+                <h3>&nbspSystem under test</h3>
+                <li><a href="#sutdetails">Details</a></li>
             </ul>
         </div>
 
         <div class="right-column">
             <h1 style="padding-top: 3em; font-weight: 500;">Caliper report</h1>
             <div style="border-bottom: 1px solid #d9d9d9; margin-bottom: 10px;" id="benchmarksummary">
-                <h3>Summary of performance metrics</h3><table style="min-width: 100%;">
-                    
-                    <tbody><tr>
+                <table style="min-width: 100%;">
+                    <h3>Summary of performance metrics</h3>
+                    <tr>
                          <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>484</td> <td>0</td> <td>8.1</td> <td>3.45</td> <td>0.31</td> <td>1.12</td> <td>8.0</td>
+                         <td>IssueCertificate</td> <td>484</td> <td>0</td> <td>8.1</td> <td>1.97</td> <td>0.29</td> <td>0.74</td> <td>8.0</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.0</td> <td>0.76</td> <td>0.05</td> <td>0.15</td> <td>10.0</td>
+                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.20</td> <td>0.06</td> <td>0.09</td> <td>10.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>450</td> <td>0</td> <td>0.8</td> <td>504.06</td> <td>0.05</td> <td>37.18</td> <td>0.8</td>
+                         <td>VerifyCertificate</td> <td>2335</td> <td>0</td> <td>19.5</td> <td>0.42</td> <td>0.05</td> <td>0.10</td> <td>19.5</td>
                     </tr>
-                </tbody></table>
+                </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
@@ -176,19 +175,19 @@ rateControl:
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
-                                <tbody><tr>
+                                <tr>
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>484</td> <td>0</td> <td>8.1</td> <td>3.45</td> <td>0.31</td> <td>1.12</td> <td>8.0</td>
+                                     <td>IssueCertificate</td> <td>484</td> <td>0</td> <td>8.1</td> <td>1.97</td> <td>0.29</td> <td>0.74</td> <td>8.0</td>
                                 </tr>
-                            </tbody></table>
+                            </table>
                         <h3>Resource utilization for IssueCertificate</h3>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
                 <h2>Benchmark round: HashOnlyBenchmark</h2>
-                <p>PURE CPU — BLAKE3: 4us x 3000 = 12ms/tx</p>
+                <p>PURE CPU — BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
@@ -197,13 +196,13 @@ rateControl:
 </pre>
                         <h3>Performance metrics for HashOnlyBenchmark</h3>
                             <table style="min-width: 100%;">
-                                <tbody><tr>
+                                <tr>
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.0</td> <td>0.76</td> <td>0.05</td> <td>0.15</td> <td>10.0</td>
+                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.20</td> <td>0.06</td> <td>0.09</td> <td>10.0</td>
                                 </tr>
-                            </tbody></table>
+                            </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
             </div>
 
@@ -219,13 +218,13 @@ rateControl:
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
-                                <tbody><tr>
+                                <tr>
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>450</td> <td>0</td> <td>0.8</td> <td>504.06</td> <td>0.05</td> <td>37.18</td> <td>0.8</td>
+                                     <td>VerifyCertificate</td> <td>2335</td> <td>0</td> <td>19.5</td> <td>0.42</td> <td>0.05</td> <td>0.10</td> <td>19.5</td>
                                 </tr>
-                            </tbody></table>
+                            </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
             </div>
 
@@ -233,41 +232,41 @@ rateControl:
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
                 <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-blake3-tps50
-description: BLAKE3 at 50 TPS. MagnificationFactor x3000 = 12ms per tx.
+description: BLAKE3 at 50 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.
 workers:
   type: local
   number: 4
 rounds:
   - label: IssueCertificate
-    description: 'Issue certs at 8 TPS, 60s'
+    description: &#39;Issue certs at 8 TPS, 60s&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
         tps: 8
     workload:
-      module: workload/issueCertificate.js
+      module: workload&#x2F;issueCertificate.js
       arguments:
         contractId: bcms-blake3
         payloadSize: 20000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: HashOnlyBenchmark
-    description: 'PURE CPU — BLAKE3: 4us x 3000 = 12ms/tx'
+    description: &#39;PURE CPU — BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
         tps: 10
     workload:
-      module: workload/hashOnlyBenchmark.js
+      module: workload&#x2F;hashOnlyBenchmark.js
       arguments:
         contractId: bcms-blake3
         payload: benchmark-payload-20kb
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
-    description: 'PRIMARY ROUND — blake3 linear 10-&gt;50 TPS, 120s'
+    description: &#39;PRIMARY ROUND — blake3 linear 10-&gt;50 TPS, 120s&#39;
     txDuration: 120
     rateControl:
       type: linear-rate
@@ -275,7 +274,7 @@ rounds:
         startingTps: 10
         finishingTps: 50
     workload:
-      module: workload/verifyCertificate.js
+      module: workload&#x2F;verifyCertificate.js
       arguments:
         contractId: bcms-blake3
         totalIssued: 480
@@ -287,6 +286,5 @@ rounds:
             </div>
         </div>
     </main>
-
-
-</body></html>
+</body>
+</html>

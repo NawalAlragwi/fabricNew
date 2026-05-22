@@ -126,8 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-blake3-tps100</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">BLAKE3 at 100 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-blake3-tps150</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BLAKE3 at 150 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.</span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">3</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
@@ -154,24 +154,24 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>0.76</td> <td>0.15</td> <td>0.56</td> <td>14.9</td>
+                         <td>IssueCertificate</td> <td>1324</td> <td>0</td> <td>22.1</td> <td>69.30</td> <td>3.06</td> <td>45.51</td> <td>15.4</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.07</td> <td>0.03</td> <td>0.04</td> <td>10.1</td>
+                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.37</td> <td>0.06</td> <td>0.12</td> <td>10.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>4646</td> <td>0</td> <td>38.8</td> <td>0.42</td> <td>0.03</td> <td>0.07</td> <td>38.7</td>
+                         <td>VerifyCertificate</td> <td>6081</td> <td>0</td> <td>50.7</td> <td>50.75</td> <td>0.11</td> <td>18.11</td> <td>36.5</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>Issue certs at 15 TPS, 60s</p>
+                <p>Issue certs at 22 TPS, 60s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 15
+    tps: 22
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -179,7 +179,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>0.76</td> <td>0.15</td> <td>0.56</td> <td>14.9</td>
+                                     <td>IssueCertificate</td> <td>1324</td> <td>0</td> <td>22.1</td> <td>69.30</td> <td>3.06</td> <td>45.51</td> <td>15.4</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -200,7 +200,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.07</td> <td>0.03</td> <td>0.04</td> <td>10.1</td>
+                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.37</td> <td>0.06</td> <td>0.12</td> <td>10.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
@@ -208,13 +208,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>PRIMARY ROUND — blake3 linear 20-&gt;100 TPS, 120s</p>
+                <p>PRIMARY ROUND — blake3 linear 30-&gt;150 TPS, 120s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
   type: linear-rate
   opts:
-    startingTps: 20
-    finishingTps: 100
+    startingTps: 30
+    finishingTps: 150
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -222,7 +222,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>4646</td> <td>0</td> <td>38.8</td> <td>0.42</td> <td>0.03</td> <td>0.07</td> <td>38.7</td>
+                                     <td>VerifyCertificate</td> <td>6081</td> <td>0</td> <td>50.7</td> <td>50.75</td> <td>0.11</td> <td>18.11</td> <td>36.5</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -231,19 +231,19 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-blake3-tps100
-description: BLAKE3 at 100 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-blake3-tps150
+description: BLAKE3 at 150 TPS. MagnificationFactor x3000 &#x3D; 12ms per tx.
 workers:
   type: local
   number: 4
 rounds:
   - label: IssueCertificate
-    description: &#39;Issue certs at 15 TPS, 60s&#39;
+    description: &#39;Issue certs at 22 TPS, 60s&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 15
+        tps: 22
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -266,18 +266,18 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
-    description: &#39;PRIMARY ROUND — blake3 linear 20-&gt;100 TPS, 120s&#39;
+    description: &#39;PRIMARY ROUND — blake3 linear 30-&gt;150 TPS, 120s&#39;
     txDuration: 120
     rateControl:
       type: linear-rate
       opts:
-        startingTps: 20
-        finishingTps: 100
+        startingTps: 30
+        finishingTps: 150
     workload:
       module: workload&#x2F;verifyCertificate.js
       arguments:
         contractId: bcms-blake3
-        totalIssued: 900
+        totalIssued: 1320
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>
