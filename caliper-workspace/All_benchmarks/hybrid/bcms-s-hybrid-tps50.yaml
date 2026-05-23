@@ -1,46 +1,56 @@
 test:
   name: bcms-s-hybrid-tps50
-  description: >
-    Scenario hybrid at 50 TPS target (UNIFIED CONFIG).
-    VerifyCertificate: linear 10->50 TPS (PRIMARY ROUND).
-    MagnificationFactor x3000 = 45ms per tx (SHA-256 + BLAKE3).
-    workers=4, txDuration unified: Issue=60s, Verify=120s.
+  description: 'Scenario hybrid at 50 TPS target (UNIFIED CONFIG). VerifyCertificate:
+    linear 10->50 TPS (PRIMARY ROUND). MagnificationFactor x3000 = 45ms per tx (SHA-256
+    + BLAKE3). workers=4, txDuration unified: Issue=60s, Verify=120s.
 
+    '
   workers:
     type: local
     number: 4
-
   rounds:
-    - label: IssueCertificate
-      description: 'Issue certs at 8 TPS, 60s — unified config'
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 8
-      workload:
-        module: workload/issueCertificate.js
-        arguments:
-          contractId: bcms-hybrid
-          payloadSize: 20000
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: VerifyCertificate
-      description: >
-        PRIMARY ROUND — hybrid linear 10->50 TPS, 120s.
-        MagnificationFactor x3000 = 45ms per tx (SHA-256 + BLAKE3).
-        Unified config — compare directly with all algorithms.
-      txDuration: 120
-      rateControl:
-        type: linear-rate
-        opts:
-          startingTps: 10
-          finishingTps: 50
-      workload:
-        module: workload/verifyCertificate.js
-        arguments:
-          contractId: bcms-hybrid
-          totalIssued: 480
-      txOptions:
-        invokerIdentity: User1@org1.example.com
+  - label: IssueCertificate
+    description: "Issue certs at 8 TPS, 60s \u2014 unified config"
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 8
+    workload:
+      module: workload/issueCertificate.js
+      arguments:
+        contractId: bcms-hybrid
+        payloadSize: 20000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: HashOnlyBenchmark
+    description: HashOnlyBenchmark pure CPU test
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 10
+    workload:
+      module: workload/hashOnlyBenchmark.js
+      arguments:
+        contractId: bcms-hybrid
+        payloadSize: 20000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: VerifyCertificate
+    description: "PRIMARY ROUND \u2014 hybrid linear 10->50 TPS, 120s. MagnificationFactor\
+      \ x3000 = 45ms per tx (SHA-256 + BLAKE3). Unified config \u2014 compare directly\
+      \ with all algorithms.\n"
+    txDuration: 120
+    rateControl:
+      type: linear-rate
+      opts:
+        startingTps: 10
+        finishingTps: 50
+    workload:
+      module: workload/verifyCertificate.js
+      arguments:
+        contractId: bcms-hybrid
+        totalIssued: 480
+    txOptions:
+      invokerIdentity: User1@org1.example.com

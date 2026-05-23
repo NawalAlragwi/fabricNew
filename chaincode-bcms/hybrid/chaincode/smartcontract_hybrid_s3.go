@@ -48,14 +48,16 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
+	"lukechampine.com/blake3"
 )
 
 // --- Constants ---------------------------------------------------------------
 
 const (
-	DocTypeCertificate = "certificate"
-	DocTypeAuditLog    = "auditLog"
-	KeyPrefixAudit     = "AUDIT_"
+	DocTypeCertificate  = "certificate"
+	DocTypeAuditLog     = "auditLog"
+	KeyPrefixAudit      = "AUDIT_"
+	MagnificationFactor = 3000
 )
 
 // --- Data Structures ---------------------------------------------------------
@@ -108,12 +110,13 @@ type PaginatedQueryResult struct {
 // VerificationResult - structured response from VerifyCertificate.
 type VerificationResult struct {
 	CertID        string `json:"certId"`
-	Valid          bool   `json:"valid"`
-	IsRevoked      bool   `json:"isRevoked"`
-	SHA256Match    bool   `json:"sha256Match"`
-	Blake3Present  bool   `json:"blake3Present"`
-	Message        string `json:"message"`
-	Timestamp      string `json:"timestamp"`
+	Valid         bool   `json:"valid"`
+	IsRevoked     bool   `json:"isRevoked"`
+	SHA256Match   bool   `json:"sha256Match"`
+	Blake3Present bool   `json:"blake3Present"`
+	Blake3Match   bool   `json:"blake3Match"`
+	Message       string `json:"message"`
+	Timestamp     string `json:"timestamp"`
 }
 
 // SmartContract - the main Hyperledger Fabric contract for S3.
@@ -123,6 +126,17 @@ type SmartContract struct {
 
 // --- Cryptographic Helpers ---------------------------------------------------
 
+func ComputeHybridHashMagnified(data []byte) [32]byte {
+	var h [32]byte
+	current := make([]byte, len(data)+32)
+	copy(current, data)
+	for i := 0; i < MagnificationFactor; i++ {
+		copy(current[len(data):], h[:])
+		h = sha256.Sum256(current)
+	}
+	return h
+}
+
 // ComputeHybridHash computes H_sha256(C) — the primary on-chain certificate hash.
 // Formula: SHA256(studentID | studentName | degree | issuer | issueDate [| transcript])
 // This is validated on-chain in VerifyCertificate.
@@ -131,9 +145,28 @@ func ComputeHybridHash(studentID, studentName, degree, issuer, issueDate, transc
 	if transcript != "" {
 		parts = append(parts, transcript)
 	}
-	data := strings.Join(parts, "|")
-	h := sha256.Sum256([]byte(data))
+	data := []byte(strings.Join(parts, "|"))
+	h := ComputeHybridHashMagnified(data)
 	return fmt.Sprintf("%x", h)
+}
+
+func ComputeBlake3Magnified(data []byte) string {
+	var h [32]byte
+	current := make([]byte, len(data)+32)
+	copy(current, data)
+	for i := 0; i < MagnificationFactor; i++ {
+		copy(current[len(data):], h[:])
+		h = blake3.Sum256(current)
+	}
+	return fmt.Sprintf("%x", h)
+}
+
+func ComputeBlake3Hash(studentID, studentName, degree, issuer, issueDate, transcript string) string {
+	parts := []string{studentID, studentName, degree, issuer, issueDate}
+	if transcript != "" {
+		parts = append(parts, transcript)
+	}
+	return ComputeBlake3Magnified([]byte(strings.Join(parts, "|")))
 }
 
 // --- Identity Helpers --------------------------------------------------------
@@ -360,6 +393,30 @@ func (s *SmartContract) QueryAllCertificates(
 	return string(resJSON), nil
 }
 
+func (s *SmartContract) HashOnlyBenchmark(
+	ctx contractapi.TransactionContextInterface,
+	payload string,
+) (string, error) {
+	if payload == "" {
+		return "", fmt.Errorf("HashOnlyBenchmark: payload required")
+	}
+	data := []byte(payload)
+
+	// SHA-256 × 3000
+	var sha256Result [32]byte
+	current := make([]byte, len(data)+32)
+	copy(current, data)
+	for i := 0; i < MagnificationFactor; i++ {
+		copy(current[len(data):], sha256Result[:])
+		sha256Result = sha256.Sum256(current)
+	}
+
+	// BLAKE3 × 3000
+	blake3Result := ComputeBlake3Magnified(data)
+
+	return fmt.Sprintf("sha256:%x|blake3:%s", sha256Result, blake3Result), nil
+}
+
 // VerifyCertificate performs deep on-chain SHA-256 integrity verification.
 // S3: validates certHash (SHA-256) and checks blake3Hash presence (advisory).
 // readOnly=true in workload — bypasses orderer for maximum throughput.
@@ -403,41 +460,50 @@ func (s *SmartContract) VerifyCertificate(
 	computed := ComputeHybridHash(cert.StudentID, cert.StudentName, cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
 	sha256HashMatch := cert.CertHash == computed
 
+	// On-chain BLAKE3 integrity check
+	computedBlake3 := ComputeBlake3Hash(cert.StudentID, cert.StudentName,
+		cert.Degree, cert.Issuer, cert.IssueDate, cert.Transcript)
+	blake3Match := cert.Blake3Hash == "" || cert.Blake3Hash == computedBlake3
+
 	if cert.IsRevoked {
 		return &VerificationResult{
 			CertID:        id,
-			Valid:          false,
-			IsRevoked:      true,
-			SHA256Match:    sha256HashMatch,
-			Blake3Present:  cert.Blake3Hash != "",
-			Message:        "certificate has been revoked",
-			Timestamp:      ts,
+			Valid:         false,
+			IsRevoked:     true,
+			SHA256Match:   sha256HashMatch,
+			Blake3Present: cert.Blake3Hash != "",
+			Blake3Match:   blake3Match,
+			Message:       "certificate has been revoked",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	sha256Match := cert.CertHash == certHash && sha256HashMatch
-	if !sha256Match {
+	if !sha256Match || !blake3Match {
 		return &VerificationResult{
 			CertID:        id,
-			Valid:          false,
-			IsRevoked:      false,
-			SHA256Match:    false,
-			Blake3Present:  cert.Blake3Hash != "",
-			Message:        "SHA-256 hash mismatch",
-			Timestamp:      ts,
+			Valid:         false,
+			IsRevoked:     false,
+			SHA256Match:   sha256Match,
+			Blake3Present: cert.Blake3Hash != "",
+			Blake3Match:   blake3Match,
+			Message:       "hash mismatch",
+			Timestamp:     ts,
 		}, nil
 	}
 
 	return &VerificationResult{
 		CertID:        id,
-		Valid:          true,
-		IsRevoked:      false,
-		SHA256Match:    true,
-		Blake3Present:  cert.Blake3Hash != "",
-		Message:        "certificate is valid and authentic",
-		Timestamp:      ts,
+		Valid:         true,
+		IsRevoked:     false,
+		SHA256Match:   true,
+		Blake3Present: cert.Blake3Hash != "",
+		Blake3Match:   blake3Match,
+		Message:       "certificate is valid and authentic",
+		Timestamp:     ts,
 	}, nil
 }
+
 
 // VerifyCertificateByID is a specialized benchmark function that reads a certificate
 // and delegates to VerifyCertificate for deep hash integrity verification.

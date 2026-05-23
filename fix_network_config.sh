@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ROOT_DIR="/mnt/c/Users/USERW/pro1/fabricNew"
-CC_NAME="bcms-sha256"
+CC_NAME="bcms-hybrid"
 
 ORG1_BASE="${ROOT_DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp"
 ORG2_BASE="${ROOT_DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp"

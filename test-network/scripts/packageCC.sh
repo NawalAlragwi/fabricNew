@@ -39,11 +39,11 @@ CC_SRC_LANGUAGE=$(echo "$CC_SRC_LANGUAGE" | tr [:upper:] [:lower:])
 if [ "$CC_SRC_LANGUAGE" = "go" ]; then
   CC_RUNTIME_LANGUAGE=golang
 
-  infoln "Vendoring Go dependencies at $CC_SRC_PATH"
-  pushd $CC_SRC_PATH
-  GO111MODULE=on go mod vendor
-  popd
-  successln "Finished vendoring Go dependencies"
+  infoln "Vendoring Go dependencies at $CC_SRC_PATH (Skipped - already vendored natively)"
+  # pushd $CC_SRC_PATH
+  # GO111MODULE=on go mod vendor
+  # popd
+  # successln "Finished vendoring Go dependencies"
 
 elif [ "$CC_SRC_LANGUAGE" = "java" ]; then
   CC_RUNTIME_LANGUAGE=java
