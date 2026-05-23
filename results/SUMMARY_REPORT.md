@@ -1,11 +1,7 @@
-# BCMS Research Summary — 2026-05-23 23:02:03 — v13.0
+# BCMS Research Summary — 2026-05-23 23:27:26 — v13.0
 
 ## TPS Values Tested
 - 50 TPS
-- 100 TPS
-- 150 TPS
-- 200 TPS
-- 250 TPS
 
 ## Framework
 - Hyperledger Fabric v2.5.9
@@ -22,12 +18,4 @@
 
 ## Results Structure
 - results/scenario_1_sha256/tps50/caliper_raw_report.html
-- results/scenario_1_sha256/tps100/caliper_raw_report.html
-- results/scenario_1_sha256/tps150/caliper_raw_report.html
-- results/scenario_1_sha256/tps200/caliper_raw_report.html
-- results/scenario_1_sha256/tps250/caliper_raw_report.html
 - results/scenario_2_blake3/tps50/caliper_raw_report.html
-- results/scenario_2_blake3/tps100/caliper_raw_report.html
-- results/scenario_2_blake3/tps150/caliper_raw_report.html
-- results/scenario_2_blake3/tps200/caliper_raw_report.html
-- results/scenario_2_blake3/tps250/caliper_raw_report.html
