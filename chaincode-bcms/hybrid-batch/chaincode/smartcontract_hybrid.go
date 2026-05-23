@@ -659,6 +659,28 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+func (s *SmartContract) HashOnlyBenchmark(
+	ctx contractapi.TransactionContextInterface,
+	payload string,
+) (string, error) {
+	if payload == "" {
+		return "", fmt.Errorf("HashOnlyBenchmark: payload required")
+	}
+	data := []byte(payload)
+
+	// SHA-256 × 3000 (Hardcoded since MagnificationFactor is removed in S4)
+	var sha256Result [32]byte
+	current := make([]byte, len(data)+32)
+	copy(current, data)
+	for i := 0; i < 3000; i++ {
+		copy(current[len(data):], sha256Result[:])
+		sha256Result = sha256.Sum256(current)
+	}
+
+	// S4 uses off-chain BLAKE3, so we only benchmark SHA-256 here
+	return fmt.Sprintf("sha256:%x", sha256Result), nil
+}
+
 // VerifyCertificateByID is a specialized benchmark function that reads a certificate
 // and delegates to VerifyCertificate for deep hash integrity verification.
 func (s *SmartContract) VerifyCertificateByID(ctx contractapi.TransactionContextInterface, id string) (*VerificationResult, error) {

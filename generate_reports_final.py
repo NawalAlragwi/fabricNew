@@ -520,7 +520,7 @@ def generate_comparison_report(s1_data, s2_data, hash_data):
     lat_imp  = cmp["latency_improvement_pct"]
     thr_imp  = cmp["throughput_improvement_pct"]
     
-    labels = ["IssueCertificate", "VerifyCertificate", "QueryAllCertificates", "RevokeCertificate"]
+    labels = ["IssueCertificate", "VerifyCertificate", "HashOnlyBenchmark", "QueryAllCertificates", "RevokeCertificate"]
     
     rows = []
     for i, lbl in enumerate(labels):

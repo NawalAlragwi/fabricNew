@@ -162,6 +162,8 @@ get_benchconfig_for_tps() {
         echo "All_benchmarks/blake3/bcms-s-blake3-tps${tps}.yaml"
     elif [ "$scenario_num" -eq 3 ]; then
         echo "All_benchmarks/hybrid/bcms-s-hybrid-tps${tps}.yaml"
+    elif [ "$scenario_num" -eq 4 ]; then
+        echo "All_benchmarks/hybrid-batch/bcms-s-hybrid-batch-tps${tps}.yaml"
     else
         echo "benchmarks/${SCENARIO_BENCHCONFIG[$scenario_num]}"
     fi

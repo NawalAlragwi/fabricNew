@@ -1,0 +1,53 @@
+test:
+  name: bcms-s-hybrid-batch-tps100
+  description: 'Scenario S4 Hybrid-Batch at 100 TPS target (UNIFIED CONFIG)'
+  workers:
+    type: local
+    number: 4
+  rounds:
+    - label: IssueCertificate
+      description: 'Issue batch certs at 15 TPS, 60s'
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 15
+      workload:
+        module: workload/issueCertificateBatch.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          batchSize: 10
+          payloadSize: 5000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+    - label: HashOnlyBenchmark
+      description: 'PURE CPU ROUND - isolate crypto overhead'
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+    - label: VerifyCertificate
+      description: 'PRIMARY ROUND - linear 20->100 TPS, 120s'
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 20
+          finishingTps: 100
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          totalIssued: 900
+          certPrefix: BCERT
+          batchSize: 10
+      txOptions:
+        invokerIdentity: User1@org1.example.com
