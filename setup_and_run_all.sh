@@ -38,6 +38,7 @@ SKIP_NETWORK=false
 SKIP_DEPLOY=false
 SKIP_CALIPER=false
 SKIP_TAMARIN=false
+SKIP_REPORT=false
 DOCS_ONLY=false
 VERIFY_ONLY=false
 REPORT_ONLY=false
@@ -54,6 +55,7 @@ for arg in "$@"; do
         --skip-deploy)     SKIP_DEPLOY=true ;;
         --skip-caliper)    SKIP_CALIPER=true ;;
         --skip-tamarin)    SKIP_TAMARIN=true ;;
+        --skip-report)     SKIP_REPORT=true ;;
         --docs-only)       DOCS_ONLY=true; SKIP_NETWORK=true; SKIP_CALIPER=true ;;
         --verify-only)     VERIFY_ONLY=true; SKIP_NETWORK=true; SKIP_CALIPER=true ;;
         --report-only)     REPORT_ONLY=true; SKIP_NETWORK=true; SKIP_CALIPER=true; SKIP_TAMARIN=true ;;
@@ -67,6 +69,7 @@ for arg in "$@"; do
             echo "  --skip-deploy      Skip chaincode deployment"
             echo "  --skip-caliper     Skip Caliper benchmarks"
             echo "  --skip-tamarin     Skip Tamarin verification"
+            echo "  --skip-report      Skip report generation and Python scripts"
             echo "  --report-only      Regenerate reports (no Docker needed)"
             echo "  --comparison-only  Regenerate final 4-scenario comparison only"
             echo "  --all-scenarios    Run all 4 research scenarios sequentially"
@@ -851,7 +854,11 @@ run_all_scenarios() {
             sleep 60
         fi
     done
-    reporting_pipeline "all-scenarios"
+    if [ "$SKIP_REPORT" = "false" ]; then
+        reporting_pipeline "all-scenarios"
+    else
+        log "Skipping reporting pipeline as requested."
+    fi
 }
 
 reporting_pipeline() {
@@ -983,9 +990,11 @@ main() {
             cd "${ROOT_DIR}"
         fi
         run_all_scenarios
-        generate_summary_report
-        print_final_summary
-        sync_reports_to_git
+        if [ "$SKIP_REPORT" = "false" ]; then
+            generate_summary_report
+            print_final_summary
+            sync_reports_to_git
+        fi
         exit 0
     fi
 
@@ -996,10 +1005,12 @@ main() {
         detect_runtime_environment
         [ "$SKIP_NETWORK" = "false" ] && setup_fabric_network
         run_scenario "$SCENARIO_NUM" "${TPS_VALUES[0]}"
-        reporting_pipeline "scenario-${SCENARIO_NUM}"
-        generate_summary_report
-        print_final_summary
-        sync_reports_to_git
+        if [ "$SKIP_REPORT" = "false" ]; then
+            reporting_pipeline "scenario-${SCENARIO_NUM}"
+            generate_summary_report
+            print_final_summary
+            sync_reports_to_git
+        fi
         exit 0
     fi
 
@@ -1011,10 +1022,12 @@ main() {
     if [ "$SKIP_CALIPER" = "false" ] && [ "$SKIP_NETWORK" = "false" ]; then
         run_caliper_benchmarks
     fi
-    reporting_pipeline "standard"
-    generate_summary_report
-    print_final_summary
-    sync_reports_to_git
+    if [ "$SKIP_REPORT" = "false" ]; then
+        reporting_pipeline "standard"
+        generate_summary_report
+        print_final_summary
+        sync_reports_to_git
+    fi
     log "✓ BCMS v13.0 Pipeline complete"
     exit 0
 }

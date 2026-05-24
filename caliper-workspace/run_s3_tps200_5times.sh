@@ -3,7 +3,7 @@
 
 export NODE_OPTIONS="--max-old-space-size=8192"
 
-for i in {1..5}; do
+for i in {3..5}; do
     echo -e "\n\n============================================="
     echo "  Running Scenario 3 (Hybrid) - TPS 200 - Run $i/5"
     echo "============================================="
