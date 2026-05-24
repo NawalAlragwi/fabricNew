@@ -1,22 +1,22 @@
 test:
-  name: bcms-s-hybrid-batch-tps100
-  description: 'Scenario S4 Hybrid-Batch at 100 TPS target (UNIFIED CONFIG)'
+  name: bcms-s-hybrid-batch20-tps200
+  description: 'Scenario S4 Hybrid-Batch at 200 TPS target (Batch Size 20)'
   workers:
     type: local
     number: 4
   rounds:
     - label: IssueCertificate
-      description: 'Issue batch certs at 15 TPS, 60s'
+      description: 'Issue batch certs at 30 TPS, 60s'
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 15
+          tps: 30
       workload:
         module: workload/issueCertificateBatch.js
         arguments:
           contractId: bcms-hybrid-batch
-          batchSize: 10
+          batchSize: 20
           payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
@@ -35,19 +35,19 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
     - label: VerifyCertificate
-      description: 'PRIMARY ROUND - linear 20->100 TPS, 120s'
+      description: 'PRIMARY ROUND - linear 40->200 TPS, 120s'
       txDuration: 120
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 20
-          finishingTps: 100
+          startingTps: 40
+          finishingTps: 200
       workload:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-hybrid-batch
-          totalIssued: 900
+          totalIssued: 1800
           certPrefix: BCERT
-          batchSize: 10
+          batchSize: 20
       txOptions:
         invokerIdentity: User1@org1.example.com

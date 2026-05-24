@@ -1,24 +1,22 @@
 test:
-  name: bcms-s-hybrid-batch-tps50
-  description: 'Scenario S4 Hybrid-Batch at 50 TPS target (UNIFIED CONFIG)'
+  name: bcms-s-hybrid-batch15-tps100
+  description: 'Scenario S4 Hybrid-Batch at 100 TPS target (Batch Size 15)'
   workers:
     type: local
     number: 4
   rounds:
     - label: IssueCertificate
-      description: 'Issue batch certs at 8 TPS, 60s'
+      description: 'Issue batch certs at 15 TPS, 60s'
       txDuration: 60
-      # NOTE: S4 IssueBatch Option 2 - Lower batchSize (5) and higher TPS (8)
-      # to keep the same cert generation rate (40 certs/sec) but with lighter payload (25KB/tx).
       rateControl:
         type: fixed-rate
         opts:
-          tps: 8
+          tps: 15
       workload:
         module: workload/issueCertificateBatch.js
         arguments:
           contractId: bcms-hybrid-batch
-          batchSize: 5
+          batchSize: 15
           payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
@@ -37,19 +35,19 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
     - label: VerifyCertificate
-      description: 'PRIMARY ROUND - linear 10->50 TPS, 120s'
+      description: 'PRIMARY ROUND - linear 20->100 TPS, 120s'
       txDuration: 120
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 10
-          finishingTps: 50
+          startingTps: 20
+          finishingTps: 100
       workload:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-hybrid-batch
-          totalIssued: 480
+          totalIssued: 900
           certPrefix: BCERT
-          batchSize: 10
+          batchSize: 15
       txOptions:
         invokerIdentity: User1@org1.example.com

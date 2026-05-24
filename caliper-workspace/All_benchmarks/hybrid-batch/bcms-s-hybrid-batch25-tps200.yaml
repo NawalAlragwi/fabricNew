@@ -1,6 +1,6 @@
 test:
-  name: bcms-s-hybrid-batch-tps200
-  description: 'Scenario S4 Hybrid-Batch at 200 TPS target (UNIFIED CONFIG)'
+  name: bcms-s-hybrid-batch25-tps200
+  description: 'Scenario S4 Hybrid-Batch at 200 TPS target (Batch Size 25)'
   workers:
     type: local
     number: 4
@@ -16,7 +16,7 @@ test:
         module: workload/issueCertificateBatch.js
         arguments:
           contractId: bcms-hybrid-batch
-          batchSize: 10
+          batchSize: 25
           payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
@@ -48,6 +48,6 @@ test:
           contractId: bcms-hybrid-batch
           totalIssued: 1800
           certPrefix: BCERT
-          batchSize: 10
+          batchSize: 25
       txOptions:
         invokerIdentity: User1@org1.example.com
