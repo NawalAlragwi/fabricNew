@@ -59,7 +59,7 @@ class VerifyCertificateWorkload extends WorkloadModuleBase {
         }
         
         const request = {
-            contractId: this.roundArguments.contractId || 'bcms-sha256',
+            contractId: (this.roundArguments && this.roundArguments.contractId) ? this.roundArguments.contractId : 'bcms-sha256',
             contractFunction: 'VerifyCertificateByID',
             invokerIdentity: 'User1@org1.example.com',
             contractArguments: [certID],
