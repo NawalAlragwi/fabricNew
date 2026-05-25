@@ -57,7 +57,7 @@ const (
 	DocTypeCertificate  = "certificate"
 	DocTypeAuditLog     = "auditLog"
 	KeyPrefixAudit      = "AUDIT_"
-	MagnificationFactor = 3000
+	MagnificationFactor = 500
 )
 
 // --- Data Structures ---------------------------------------------------------

@@ -10,7 +10,7 @@
 //  PROBLEM-4 (FIXED in v16): MagnificationFactor tuned to 3000 (scientific parity with SHA-256)
 //
 //  CURRENT CONFIGURATION (v16.1):
-//    MagnificationFactor = 3000 (identical to SHA-256 v12.1)
+//    MagnificationFactor = 500 (identical to SHA-256 v12.1)
 //    SHA-256:  15us x 3000 = 45ms/tx
 //    BLAKE3:    4us x 3000 = 12ms/tx
 //    Delta per tx = 33ms -> clearly visible in Caliper at 50-200 TPS
@@ -43,7 +43,7 @@ const HashModeBLAKE3 = "blake3"
 // v16.1 FIX: Standardized to 3000 to match SHA-256 (scientific parity)
 // SHA-256: 15us x 3000 = 45ms/tx  BLAKE3: 4us x 3000 = 12ms/tx
 // Difference = 33ms/tx - clearly visible, 3.74x speedup, prevents peer crash
-const MagnificationFactor = 3000
+const MagnificationFactor = 500
 
 // ---- Data Structures -------------------------------------------------------
 

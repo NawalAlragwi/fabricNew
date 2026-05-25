@@ -84,6 +84,7 @@ services:
           memory: 512M
 
   couchdb0:
+    image: couchdb:3.4.2
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw
@@ -97,6 +98,7 @@ services:
           memory: 512M
 
   couchdb1:
+    image: couchdb:3.4.2
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw

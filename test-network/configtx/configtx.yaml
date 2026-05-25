@@ -186,7 +186,7 @@ Orderer: &OrdererDefaults
     - orderer.example.com:7050
   # ── S4 HYBRID-BATCH ORDERER TUNING (Ph.D. Benchmark — mirage-batch) ──────────
   # BatchTimeout: 0.5s → blocks cut every 500 ms, keeps tail latency bounded.
-  BatchTimeout: 500ms
+  BatchTimeout: 100ms
   # Batch Size: Controls the number of messages (transactions) packed per block.
   BatchSize:
     # MaxMessageCount: 100 → allows up to 100 TXs per block.

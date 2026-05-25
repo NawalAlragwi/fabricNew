@@ -672,7 +672,7 @@ func (s *SmartContract) HashOnlyBenchmark(
 	var sha256Result [32]byte
 	current := make([]byte, len(data)+32)
 	copy(current, data)
-	for i := 0; i < 3000; i++ {
+	for i := 0; i < 500; i++ {
 		copy(current[len(data):], sha256Result[:])
 		sha256Result = sha256.Sum256(current)
 	}

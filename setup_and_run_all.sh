@@ -377,7 +377,7 @@ setup_fabric_network() {
     docker volume prune -f 2>/dev/null || true
     docker network prune -f 2>/dev/null || true
     info "Starting Fabric test network with CouchDB..."
-    ./network.sh up createChannel -c mychannel -ca -s couchdb 2>&1 | tee -a "$LOG_FILE" || {
+    ./network.sh up createChannel -c mychannel -ca  2>&1 | tee -a "$LOG_FILE" || {
         error "Failed to start Fabric network"; exit 1
     }
     local wait_count=0
@@ -985,7 +985,7 @@ main() {
             ./network.sh down 2>&1 | tee -a "$LOG_FILE" || true
             docker volume prune -f 2>/dev/null || true
             docker network prune -f 2>/dev/null || true
-            ./network.sh up createChannel -c mychannel -ca -s couchdb \
+            ./network.sh up createChannel -c mychannel -ca  \
                 2>&1 | tee -a "$LOG_FILE" || { error "Network startup failed"; exit 1; }
             cd "${ROOT_DIR}"
         fi

@@ -82,7 +82,7 @@ const HashModeSHA256 = "sha256"
 // MagnificationFactor controls the number of hash iterations per invocation.
 // Identical to BLAKE3 v12 — ensures symmetric benchmark amplification.
 // In production deployment this constant would be set to 1.
-const MagnificationFactor = 3000
+const MagnificationFactor = 500
 
 // ─── Data Structures ────────────────────────────────────────────────────────
 
@@ -172,7 +172,7 @@ func ComputeCertHash(
 	}
 	data := []byte(strings.Join(parts, "|"))
 
-	// Step 2: Magnification loop (k = MagnificationFactor = 3000).
+	// Step 2: Magnification loop (k = MagnificationFactor = 500).
 	// Identical structure to BLAKE3 v16.1 — amplifies the per-hash latency
 	// differential into a Caliper-detectable signal.
 	// SHA-256: 15.0 µs × 3000 = 45,000 µs (45ms) per transaction
@@ -385,7 +385,7 @@ func (s *SmartContract) IssueCertificate(
 // VerifyCertificate is the performance-critical read operation — the function
 // where the SHA-256 vs BLAKE3 latency difference is most measurable at high TPS.
 //
-// CPU cost at 800 TPS (with MagnificationFactor = 3000):
+// CPU cost at 800 TPS (with MagnificationFactor = 500):
 //   SHA-256:  45,000 µs × 800 = 36,000,000 µs/sec per peer  ← this function
 //   BLAKE3:   12,030 µs × 800 =  9,624,000 µs/sec per peer
 //   Saving:   ≈ 26,376,000 µs/sec when using BLAKE3 (Scenario 2)
