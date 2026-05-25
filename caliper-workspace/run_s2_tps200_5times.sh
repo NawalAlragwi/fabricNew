@@ -3,9 +3,9 @@
 
 export NODE_OPTIONS="--max-old-space-size=8192"
 
-for i in {1..5}; do
+for i in 1; do
     echo -e "\n\n============================================="
-    echo "  Running Scenario 2 (BLAKE3) - TPS 200 - Run $i/5"
+    echo "  Running Scenario 2 (BLAKE3) - TPS 200 - Run $i/1"
     echo "============================================="
     
     CONFIG="All_benchmarks/blake3/bcms-s-blake3-tps200.yaml"
@@ -38,5 +38,5 @@ for i in {1..5}; do
 done
 
 echo -e "\n============================================="
-echo " 🎉 All 5 repetitions for S2 (TPS 200) completed successfully!"
+echo " 🎉 The run for S2 (TPS 200) completed successfully!"
 echo "============================================="
