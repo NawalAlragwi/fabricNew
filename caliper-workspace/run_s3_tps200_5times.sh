@@ -32,8 +32,9 @@ for i in {3..5}; do
         echo "❌ ERROR: report.html was not generated for Run $i."
     fi
     
-    # Small pause between runs to let the network stabilize
-    sleep 5
+    # Wait for the network to fully stabilize (Orderer queue flush + CouchDB settle)
+    echo "⏳ Waiting 60s for network to stabilize before next run..."
+    sleep 60
 done
 
 echo -e "\n============================================="

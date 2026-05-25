@@ -3,7 +3,7 @@
 
 export NODE_OPTIONS="--max-old-space-size=8192"
 
-for i in {1..5}; do
+for i in 3 4; do
     echo -e "\n\n============================================="
     echo "  Running Scenario 1 (SHA256) - TPS 200 - Run $i/5"
     echo "============================================="
@@ -32,8 +32,9 @@ for i in {1..5}; do
         echo "❌ ERROR: report.html was not generated for Run $i."
     fi
     
-    # Small pause between runs to let the network stabilize
-    sleep 5
+    # Wait for the network to fully stabilize (Orderer queue flush + CouchDB settle)
+    echo "⏳ Waiting 60s for network to stabilize before next run..."
+    sleep 60
 done
 
 echo -e "\n============================================="
