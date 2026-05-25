@@ -3,7 +3,7 @@
 
 export NODE_OPTIONS="--max-old-space-size=8192"
 
-for i in 3 4; do
+for i in 3 4 5; do
     echo -e "\n\n============================================="
     echo "  Running Scenario 1 (SHA256) - TPS 200 - Run $i/5"
     echo "============================================="
