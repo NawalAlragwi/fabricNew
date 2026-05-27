@@ -4,7 +4,7 @@
   "label": "S4: Hybrid+Batch (batchSize=10, reduced Raft rounds)",
   "chaincode": "chaincode-bcms/hybrid-batch",
   "cc_name": "bcms-hybrid-batch",
-  "batch_size": 10,
+  "batch_size": 5,
   "tps_values": [200],
-  "started": "2026-05-24T11:02:07Z"
+  "started": "2026-05-27T18:44:36Z"
 }

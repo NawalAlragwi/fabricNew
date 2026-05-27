@@ -1,6 +1,6 @@
 test:
-  name: bcms-s-hybrid-batch-tps200
-  description: 'Scenario S4 Hybrid-Batch at 200 TPS target (UNIFIED CONFIG)'
+  name: bcms-s-hybrid-batch5-tps200
+  description: 'Scenario S4 Hybrid-Batch at 200 TPS target with batch size 5'
   workers:
     type: local
     number: 4

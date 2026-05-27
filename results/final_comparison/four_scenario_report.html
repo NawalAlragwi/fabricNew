@@ -99,7 +99,7 @@ tr:last-child td{border-bottom:none}
 <div class="hdr">
   <h1>BCMS — Four-Scenario Benchmark Comparison</h1>
   <div class="sub">Blockchain Certificate Management System · Hyperledger Fabric 2.5.9 · Caliper 0.6.0</div>
-  <div class="ts">Generated: 2026-05-27 01:54:17 · Source: results/final_comparison/comparison_data.json</div>
+  <div class="ts">Generated: 2026-05-27 21:55:07 · Source: results/final_comparison/comparison_data.json</div>
 </div>
 
 
@@ -166,14 +166,14 @@ tr:last-child td{border-bottom:none}
   <div class="sc-hash">hybrid-sha256-blake3</div>
   <div class="sc-metrics">
     <span class="sc-kpi"><b>95.0</b><small>TPS</small></span>
-    <span class="sc-kpi"><b>950</b><small>Eff.TPS</small></span>
+    <span class="sc-kpi"><b>475</b><small>Eff.TPS</small></span>
     <span class="sc-kpi"><b>1420</b><small>ms Lat</small></span>
   </div>
   <div class="sc-badge">
     <span class="badge b-green">+193.2%</span> TPS
     <span class="badge b-red">+26.8%</span> Lat
   </div>
-  <div class="sc-mul">Eff.TPS Multiplier <b>29.32×</b> vs S1</div>
+  <div class="sc-mul">Eff.TPS Multiplier <b>14.66×</b> vs S1</div>
 </div>
 </div>
 
@@ -182,8 +182,8 @@ tr:last-child td{border-bottom:none}
 <div class="kpi-grid g4">
   <div class="kpi">
     <div class="lbl">Best Effective Cert TPS</div>
-    <div class="val">950</div>
-    <div class="sub">S4 Hybrid+Batch · 29.32× baseline</div>
+    <div class="val">475</div>
+    <div class="sub">S4 Hybrid+Batch · 14.66× baseline</div>
   </div>
   <div class="kpi gr">
     <div class="lbl">Total Transactions</div>
@@ -307,17 +307,17 @@ tr:last-child td{border-bottom:none}
 <tr>
   <td><b>Hybrid + Batching Optimization</b></td>
   <td><code>hybrid-sha256-blake3</code></td>
-  <td style="text-align:center">10</td>
+  <td style="text-align:center">5</td>
   <td style="text-align:center">8</td>
   <td style="text-align:right">95.0</td>
-  <td style="text-align:right"><b>950</b></td>
+  <td style="text-align:right"><b>475</b></td>
   <td style="text-align:right">1420</td>
   <td style="text-align:right">11,541</td>
   <td style="text-align:center"><b style="color:#16a34a">0</b></td>
   <td style="text-align:right">68.4%</td>
   <td style="text-align:right">479 MB</td>
   <td style="text-align:center"><span class="badge b-green">+193.2%</span></td>
-  <td style="text-align:center"><span class="badge b-green">+2832.1%</span></td>
+  <td style="text-align:center"><span class="badge b-green">+1366.0%</span></td>
 </tr>
 </tbody>
 </table>
@@ -440,7 +440,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <p style="margin-top:32px;color:#9ca3af;font-size:11px">
-  BCMS Four-Scenario Report · Generated 2026-05-27 01:54:17 · All data from results/final_comparison/comparison_data.json
+  BCMS Four-Scenario Report · Generated 2026-05-27 21:55:07 · All data from results/final_comparison/comparison_data.json
 </p>
 </div><!-- .main -->
 
@@ -448,7 +448,7 @@ tr:last-child td{border-bottom:none}
 (function(){
   const labels = ["SHA-256 Baseline", "BLAKE3 Alternative", "Hybrid SHA-256 + BLAKE3", "Hybrid + Batching Optimization"];
   const tps    = [32.4, 46.5, 38.2, 95.0];
-  const eff    = [32.4, 46.5, 38.2, 950.0];
+  const eff    = [32.4, 46.5, 38.2, 475.0];
   const lat    = [1940.0, 1180.0, 1710.0, 1420.0];
   const cpu    = [38.2, 28.5, 41.6, 68.4];
   const mem    = [312.4, 264.3, 321.8, 478.6];

@@ -10,7 +10,7 @@ VerifyCertificate,Hybrid + Batching Optimization,VerifyCertificate,3822,0,100.0,
 HashOnlyBenchmark,SHA-256 Baseline,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 HashOnlyBenchmark,BLAKE3 Alternative,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 HashOnlyBenchmark,Hybrid SHA-256 + BLAKE3,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,100.0
-HashOnlyBenchmark,Hybrid + Batching Optimization,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,10.0
+HashOnlyBenchmark,Hybrid + Batching Optimization,HashOnlyBenchmark,0,0,100.0,0.0,0.0,0.0,0.0,20.0
 QueryAllCertificates,SHA-256 Baseline,QueryAllCertificates,0,0,100.0,0.0,0.0,0.0,0.0,100.0
 QueryAllCertificates,BLAKE3 Alternative,QueryAllCertificates,75,0,100.0,2.5,2.5,20.8,32.0,100.0
 QueryAllCertificates,Hybrid SHA-256 + BLAKE3,QueryAllCertificates,75,0,100.0,2.5,2.5,20.9,36.0,100.0
