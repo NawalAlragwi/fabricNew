@@ -46,7 +46,7 @@ test:
         module: workload/verifyCertificate.js
         arguments:
           contractId: bcms-hybrid-batch
-          totalIssued: 900
+          totalIssued: 1800
           certPrefix: BCERT
           batchSize: 10
       txOptions:
