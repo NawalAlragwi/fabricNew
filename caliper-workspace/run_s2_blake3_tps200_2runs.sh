@@ -6,6 +6,22 @@
 #  VerifyCertificate: 40->200 TPS (linear) / 30s
 # ============================================================
 
+# ── تحديد مسار مجلد العمل بشكل صريح ─────────────────────────
+WORKSPACE_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$WORKSPACE_DIR" || { echo "❌ Cannot cd to workspace"; exit 1; }
+
+# ── تفعيل nvm ────────────────────────────────────────────────
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# ── استخدام caliper من node_modules مباشرة (يتجاوز system npm) ──
+CALIPER_BIN="$WORKSPACE_DIR/node_modules/.bin/caliper"
+if [ ! -f "$CALIPER_BIN" ]; then
+    echo "❌ ERROR: caliper not found at $CALIPER_BIN"
+    echo "   Run: npm install"
+    exit 1
+fi
+
 export NODE_OPTIONS="--max-old-space-size=8192"
 
 CONFIG="All_benchmarks/blake3/bcms-s2-blake3-tps200.yaml"
@@ -14,7 +30,9 @@ END_RUN=7
 
 echo -e "\n============================================="
 echo "  S2 BLAKE3 TPS-200 — Runs $START_RUN to $END_RUN"
+echo "  Workspace: $WORKSPACE_DIR"
 echo "  Config: $CONFIG"
+echo "  Caliper: $CALIPER_BIN"
 echo "  workers: 15 | Issue 30TPS/30s | Verify 40->200TPS/30s"
 echo "============================================="
 
@@ -23,9 +41,9 @@ for i in $(seq $START_RUN $END_RUN); do
     echo "  Running S2 (BLAKE3) — TPS 200 — Run $i/$END_RUN"
     echo "============================================="
 
-    # Run Caliper Benchmark
-    npx caliper launch manager \
-        --caliper-workspace . \
+    # Run Caliper directly from node_modules (bypasses system npx)
+    node "$CALIPER_BIN" launch manager \
+        --caliper-workspace "$WORKSPACE_DIR" \
         --caliper-networkconfig networks/networkConfig.yaml \
         --caliper-benchconfig "$CONFIG" \
         --caliper-flow-only-test \
@@ -40,8 +58,8 @@ for i in $(seq $START_RUN $END_RUN); do
     mkdir -p "$OUT_DIR"
 
     # Move and rename the report
-    if [ -f report.html ]; then
-        mv report.html "$OUT_DIR/caliper_raw_report.html"
+    if [ -f "$WORKSPACE_DIR/report.html" ]; then
+        mv "$WORKSPACE_DIR/report.html" "$OUT_DIR/caliper_raw_report.html"
         echo "✅ Run $i report saved → $OUT_DIR/caliper_raw_report.html"
     else
         echo "❌ ERROR: report.html was not generated for Run $i (caliper exit code: $EXIT_CODE)"
