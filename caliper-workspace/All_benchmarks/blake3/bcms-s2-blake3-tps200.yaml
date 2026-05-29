@@ -1,17 +1,19 @@
 test:
   name: bcms-s2-blake3-tps200
   description: >
-    Scenario S2 BLAKE3 Alternative at 200 TPS target. VerifyCertificate: linear
-    40->200 TPS (PRIMARY COMPARISON ROUND). MagnificationFactor x3000 = 12ms per
-    tx (3.74x faster than SHA-256 45ms). Expected: BLAKE3 stable at 200 TPS while
-    SHA-256 saturates.
+    Scenario S2 BLAKE3 Alternative at 200 TPS target (UNIFIED CONFIG).
+    VerifyCertificate: linear 40->200 TPS (PRIMARY COMPARISON ROUND).
+    MagnificationFactor x3000 = 12ms per tx (3.74x faster than SHA-256 45ms).
+    workers=4, txDuration unified: Issue=60s, HashOnly=60s, Verify=120s.
+
   workers:
     type: local
-    number: 15
+    number: 4
+
   rounds:
     - label: IssueCertificate
-      description: 'Issue certs at 30 TPS, 60s (parity with SHA-256 config)'
-      txDuration: 30
+      description: 'Issue certs at 30 TPS, 60s — unified config'
+      txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
@@ -24,12 +26,31 @@ test:
       txOptions:
         invokerIdentity: User1@org1.example.com
 
+    - label: HashOnlyBenchmark
+      description: >
+        PURE CPU ROUND — Hash only, zero ledger I/O.
+        Fixed 10 TPS — isolates cryptographic algorithm performance.
+        BLAKE3: 4us x 3000 = 12ms/tx vs SHA-256: 15us x 3000 = 45ms/tx
+        Speedup ratio: 3.74x in favor of BLAKE3.
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-blake3
+          payload: 'benchmark-payload-20kb'
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
     - label: VerifyCertificate
       description: >
-        PRIMARY ROUND — BLAKE3 linear 40->200 TPS, 120s. MagnificationFactor x3000
-        = 12ms per tx (AVX2 SIMD). Expected: BLAKE3 remains extremely fast and
-        stable. Compare directly with SHA-256 which uses same 40->200 TPS range.
-      txDuration: 30
+        PRIMARY ROUND — BLAKE3 linear 40->200 TPS, 120s.
+        MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
+        Unified config — compare directly with SHA-256.
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
@@ -42,3 +63,15 @@ test:
           totalIssued: 1800
       txOptions:
         invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1

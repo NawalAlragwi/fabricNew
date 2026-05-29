@@ -63,3 +63,15 @@ test:
           totalIssued: 1800
       txOptions:
         invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1

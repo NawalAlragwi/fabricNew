@@ -1,4 +1,4 @@
-test:
+﻿test:
   name: bcms-s-sha256-tps100
   description: 'SHA-256 at 100 TPS. MagnificationFactor x3000 = 45ms per tx.'
   workers:
@@ -48,3 +48,15 @@ test:
           totalIssued: 900
       txOptions:
         invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1

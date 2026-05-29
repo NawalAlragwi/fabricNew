@@ -1,4 +1,4 @@
-test:
+﻿test:
   name: bcms-s-hybrid-tps100
   description: 'Scenario hybrid at 100 TPS target (UNIFIED CONFIG). VerifyCertificate:
     linear 20->100 TPS (PRIMARY ROUND). MagnificationFactor x3000 = 45ms per tx (SHA-256
@@ -54,3 +54,15 @@ test:
         totalIssued: 900
     txOptions:
       invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1

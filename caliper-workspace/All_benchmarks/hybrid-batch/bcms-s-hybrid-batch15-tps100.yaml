@@ -1,4 +1,4 @@
-test:
+﻿test:
   name: bcms-s-hybrid-batch15-tps100
   description: 'Scenario S4 Hybrid-Batch at 100 TPS target (Batch Size 15)'
   workers:
@@ -51,3 +51,15 @@ test:
           batchSize: 15
       txOptions:
         invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1
