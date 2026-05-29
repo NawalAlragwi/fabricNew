@@ -1,442 +1,321 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>S2: BLAKE3 Analysis — BCMS Benchmark</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BCMS S2: BLAKE3 Alternative — Caliper Benchmark Report</title>
 <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'IBM Plex Sans','Segoe UI',Arial,sans-serif;
-           background: #f0f4f8; color: #1a1a2e; line-height: 1.75; font-size: 14px; }
-    a { color: #0062ff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    code { font-family: 'IBM Plex Mono','Courier New',monospace;
-           background: #e8f0fe; color: #1a237e; padding: 2px 6px;
-           border-radius: 3px; font-size: 12px; }
-    pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px;
-          border-radius: 8px; overflow-x: auto; font-size: 12px;
-          border-left: 4px solid #0062ff; margin: 14px 0; line-height: 1.6; }
-    pre code { background: none; color: inherit; padding: 0; }
-
-    /* Sidebar */
-    .sidebar { position: fixed; top: 0; left: 0; width: 230px; height: 100vh;
-               background: #fff; border-right: 1px solid #e0e0e0; overflow-y: auto;
-               padding: 0 0 20px; box-shadow: 2px 0 12px rgba(0,0,0,.08); z-index: 100; }
-    .sidebar .logo { padding: 16px;
-                     background: linear-gradient(135deg, #0f1f3d 0%, #1a3a8f 100%); color: #fff; }
-    .sidebar .logo h2 { font-size: 14px; font-weight: 800; }
-    .sidebar .logo p { font-size: 11px; color: #a8c7fa; margin-top: 2px; }
-    .sidebar nav h3 { font-size: 10px; font-weight: 700; color: #6f6f6f;
-                      text-transform: uppercase; letter-spacing: .8px;
-                      padding: 14px 16px 4px; }
-    .sidebar nav ul { list-style: none; padding: 0 8px; }
-    .sidebar nav ul li a { display: block; padding: 6px 10px; border-radius: 5px;
-                            font-size: 12px; color: #393939; font-weight: 500;
-                            transition: background .15s; }
-    .sidebar nav ul li a:hover { background: #e8f0fe; color: #0062ff; }
-    .sidebar .ver-badge { margin: 12px 10px 0; padding: 8px 12px;
-                          border-radius: 6px; font-size: 11px; background: #defbe6; color: #0e6027; }
-
-    /* Main */
-    .main { margin-left: 230px; padding: 28px 40px 72px; max-width: 1240px; }
-
-    /* Report header */
-    .rh { border-radius: 14px; padding: 32px 36px; margin-bottom: 30px;
-          position: relative; overflow: hidden; }
-    .rh.blue  { background: linear-gradient(135deg,#071936,#1a3a8f); }
-    .rh.green { background: linear-gradient(135deg,#052e16,#166534); }
-    .rh.purple{ background: linear-gradient(135deg,#2e1065,#6b21a8); }
-    .rh.teal  { background: linear-gradient(135deg,#082f49,#0369a1); }
-    .rh h1 { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.3; }
-    .rh .sub { font-size: 13px; color: rgba(255,255,255,.75); margin: 6px 0 16px; }
-    .rh .ts { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 18px; }
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px;
-             font-size: 11px; font-weight: 700; margin: 2px; vertical-align: middle; }
-    .b-green  { background:#defbe6; color:#0e6027; border:1px solid #24a148; }
-    .b-blue   { background:#e8f0fe; color:#0050e6; border:1px solid #0062ff; }
-    .b-purple { background:#f6f2ff; color:#6929c4; border:1px solid #8a3ffc; }
-    .b-amber  { background:#fff3e0; color:#8a3800; border:1px solid #ff832b; }
-    .b-teal   { background:#d9fbfb; color:#004144; border:1px solid #009d9a; }
-    .b-red    { background:#fff1f1; color:#750e13; border:1px solid #da1e28; }
-    .b-dark   { background:#161616; color:#f4f4f4; }
-
-    /* KPI Grid */
-    .kpi-grid { display: grid; gap: 14px; margin: 20px 0; }
-    .g4 { grid-template-columns: repeat(4,1fr); }
-    .g3 { grid-template-columns: repeat(3,1fr); }
-    .g2 { grid-template-columns: repeat(2,1fr); }
-    .kpi { background: #fff; border-radius: 10px; padding: 18px 20px;
-           box-shadow: 0 2px 8px rgba(0,0,0,.07); border-top: 4px solid #0062ff; }
-    .kpi.gr { border-top-color: #24a148; }
-    .kpi.pu { border-top-color: #6929c4; }
-    .kpi.am { border-top-color: #ff832b; }
-    .kpi.te { border-top-color: #009d9a; }
-    .kpi.re { border-top-color: #da1e28; }
-    .kpi .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .7px;
-                color: #6f6f6f; margin-bottom: 6px; }
-    .kpi .val { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
-    .kpi .sub { font-size: 11px; color: #525252; margin-top: 4px; }
-
-    /* Sections */
-    .sec { margin-bottom: 40px; }
-    .sec-title { font-size: 18px; font-weight: 800; color: #0050e6;
-                 border-bottom: 3px solid #0062ff; padding-bottom: 8px;
-                 margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-    .sec-title .num { background: #0062ff; color: #fff; border-radius: 6px;
-                      padding: 2px 10px; font-size: 13px; }
-    .sub-title { font-size: 15px; font-weight: 700; color: #1a1a2e;
-                 margin: 20px 0 10px; padding-left: 12px; border-left: 4px solid #0062ff; }
-    p { margin-bottom: 10px; }
-
-    /* Tables */
-    .tw { overflow-x: auto; margin: 14px 0; border-radius: 8px;
-          border: 1px solid #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    thead tr { background: #0050e6; color: #fff; }
-    th { padding: 11px 14px; text-align: left; font-weight: 600;
-         font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
-    td { padding: 10px 14px; border-bottom: 1px solid #e0e0e0; }
-    tr:last-child td { border-bottom: none; }
-    tr:nth-child(even) td { background: #f9fbff; }
-    tr:hover td { background: #e8f4fe; }
-    .tg { color: #24a148; font-weight: 700; }
-    .tr { color: #da1e28; font-weight: 700; }
-    .tb { color: #0062ff; font-weight: 700; }
-    .tp { color: #6929c4; font-weight: 700; }
-    .tf { font-weight: 700; }
-    .thead-pu thead tr { background: #6929c4; }
-    .thead-gr thead tr { background: #166534; }
-    .thead-te thead tr { background: #0369a1; }
-
-    /* Alert */
-    .alert { border-radius: 8px; padding: 14px 18px; margin: 14px 0;
-             font-size: 13px; line-height: 1.7; }
-    .a-gr { background: #defbe6; border-left: 5px solid #24a148; color: #0e6027; }
-    .a-bl { background: #e8f0fe; border-left: 5px solid #0062ff; color: #0050e6; }
-    .a-pu { background: #f6f2ff; border-left: 5px solid #6929c4; color: #31135e; }
-    .a-am { background: #fff3e0; border-left: 5px solid #ff832b; color: #8a3800; }
-    .callout { background: #f0f4ff; border: 1px solid #0062ff; border-radius: 10px;
-               padding: 16px 20px; margin: 18px 0; font-size: 13.5px; }
-
-    /* Chart containers */
-    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
-    .chart-box { background: #fff; border-radius: 10px; padding: 20px;
-                 box-shadow: 0 2px 8px rgba(0,0,0,.07); }
-    .chart-box h4 { font-size: 13px; font-weight: 700; color: #1a1a2e;
-                    margin-bottom: 12px; text-align: center; }
-    .chart-full { background: #fff; border-radius: 10px; padding: 20px;
-                  box-shadow: 0 2px 8px rgba(0,0,0,.07); margin: 20px 0; }
-    .chart-full h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #1a1a2e; }
-
-    /* Real data banner */
-    .real-banner { background: linear-gradient(135deg,#052e16,#166534);
-                   color: #fff; padding: 12px 20px; border-radius: 8px;
-                   font-size: 12px; margin-bottom: 20px; display: flex;
-                   align-items: center; gap: 10px; }
-
-    /* Footer */
-    .footer { background: #1a1a2e; color: #c6c6c6; padding: 18px 24px;
-              border-radius: 10px; font-size: 12px; margin-top: 40px; line-height: 1.9; }
-    .footer strong { color: #fff; }
-    .footer a { color: #a8c7fa; }
-
-    /* Two-col */
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 14px 0; }
-    .card { background: #fff; border-radius: 10px; padding: 18px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07); }
-    .card h4 { font-size: 14px; font-weight: 700; color: #0050e6; margin-bottom: 10px; }
-    .row { display: flex; justify-content: space-between; padding: 6px 0;
-           border-bottom: 1px solid #f4f4f4; font-size: 12px; }
-    .row:last-child { border-bottom: none; }
-    .row-label { color: #525252; }
-    .row-value { font-weight: 700; }
-
-    @media(max-width:960px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 20px; }
-      .kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
-      .chart-grid { grid-template-columns: 1fr; }
-      .two-col { grid-template-columns: 1fr; }
-    }
-</style>
-</head><body>
-
-<aside class="sidebar">
-  <div class="logo"><h2>🔐 BCMS Research</h2><p>S2: BLAKE3 Analysis</p></div>
-  <nav>
-    <h3>Reports</h3>
-    <ul><li><a href="report_scenario1_sha256.html" >S1: SHA-256 Baseline</a></li>
-<li><a href="report_scenario2_blake3.html" style="color:#0062ff;font-weight:700">S2: BLAKE3 Analysis</a></li>
-<li><a href="report_scenario3_hybrid.html" >S3: Hybrid SHA-256⊕BLAKE3</a></li>
-<li><a href="report_scenario4_batch.html" >S4: Hybrid+Batch (100 TPS)</a></li>
-<li><a href="four_scenario_report.html" >📊 Full Comparison</a></li>
-<li><a href="security_tamarin_report.html" >🔒 Tamarin Security</a></li></ul>
-    <h3>Data</h3>
-    <ul>
-      <li><a href="#benchmark">Benchmark Table</a></li>
-      <li><a href="#charts">Charts</a></li>
-      <li><a href="#conclusion">Conclusion</a></li>
-    </ul>
-  </nav>
-  <div class="ver-badge">✅ Real Benchmarks<br>100,000 iterations<br>Blake3 native: True</div>
-</aside>
-<main class="main">
-
-<div class="real-banner">
-  ✅ <strong>REAL Benchmark Data</strong> — BLAKE3 measured with 100,000 iterations
-  | Throughput: <strong>1,169,209 h/s</strong>
-  | Mean latency: <strong>0.8553 µs</strong>
-  | vs SHA-256: <strong>+44.7% throughput</strong>
-</div>
-
-<div class="rh purple">
-  <h1>Scenario 2: BLAKE3 Alternative</h1>
-  <div class="sub">Single-certificate issuance · BLAKE3 only (RFC 7693 family) · 4 workers · batch_size=1</div>
-  <div>
-    <span class="badge b-purple">BLAKE3 · RFC 7693</span>
-    <span class="badge b-green">✅ 9,298 Successes</span>
-    <span class="badge b-green">✅ 0 Failures</span>
-    <span class="badge b-amber">4 Workers</span>
-    <span class="badge b-teal">+44.7% vs SHA-256</span>
-  </div>
-  <div class="ts">Generated: 2026-03-29 21:57:39 · Hyperledger Fabric 2.5 · Caliper 0.6.0</div>
-</div>
-
-<div class="kpi-grid g4">
-  <div class="kpi pu">
-    <div class="lbl">Hash Throughput</div>
-    <div class="val">1169K</div>
-    <div class="sub">hashes/sec · real measurement</div>
-  </div>
-  <div class="kpi pu">
-    <div class="lbl">Hash Latency</div>
-    <div class="val">0.8553 µs</div>
-    <div class="sub">mean · p95: 1.114 µs</div>
-  </div>
-  <div class="kpi gr">
-    <div class="lbl">Total Successes</div>
-    <div class="val">9,298</div>
-    <div class="sub">Total Fail = 0</div>
-  </div>
-  <div class="kpi am">
-    <div class="lbl">vs SHA-256 Throughput</div>
-    <div class="val">+44.7%</div>
-    <div class="sub">faster hash computation</div>
-  </div>
-</div>
-
-<div id="charts">
-<div class="sec-title"><span class="num">§</span> Performance Charts</div>
-<div class="chart-grid">
-  <div class="chart-box">
-    <h4>SHA-256 vs BLAKE3 — Hash Throughput Comparison</h4>
-    <canvas id="compareChart" height="220"></canvas>
-  </div>
-  <div class="chart-box">
-    <h4>TPS per Operation</h4>
-    <canvas id="tpsChart" height="220"></canvas>
-  </div>
-</div>
-<div class="chart-full">
-  <h4>Security vs Performance Radar — BLAKE3 vs SHA-256</h4>
-  <canvas id="radarChart" height="160"></canvas>
-</div>
-</div>
-
-<div id="benchmark">
-<div class="sec-title"><span class="num">1</span> Hash Algorithm Micro-Benchmark</div>
-<div class="tw"><table class="thead-pu">
-  <thead><tr><th>Metric</th><th>SHA-256 (S1)</th><th>BLAKE3 (S2)</th><th>Improvement</th></tr></thead>
-  <tbody>
-    <tr><td class="tf">Algorithm</td><td>SHA-256 FIPS 180-4</td><td>BLAKE3 (native)</td><td>—</td></tr>
-    <tr><td class="tf">Internal Rounds</td><td>64 compression</td><td>7 G-function rounds</td><td class="tg">-89% fewer rounds</td></tr>
-    <tr><td class="tf">Throughput (h/s)</td><td class="tb">808,072</td><td class="tp">1,169,209</td><td class="tg">+44.7%</td></tr>
-    <tr><td class="tf">Mean Latency (µs)</td><td class="tb">1.2375</td><td class="tp">0.8553</td><td class="tg">-30.9%</td></tr>
-    <tr><td class="tf">P95 Latency (µs)</td><td>1.703</td><td>1.114</td><td></td></tr>
-    <tr><td class="tf">Length-Extension</td><td class="tr">Vulnerable</td><td class="tg">Immune (HAIFA)</td><td class="tg">+Security</td></tr>
-    <tr><td class="tf">FIPS Certified</td><td class="tg">Yes (180-4)</td><td class="tr">No</td><td>—</td></tr>
-    <tr><td class="tf">Fabric TPS</td><td>40.23</td><td>40.23</td><td>~same%</td></tr>
-  </tbody>
-</table></div>
-</div>
-
-<div class="sec-title"><span class="num">2</span> Summary of Performance Metrics</div>
-
-    <div class="tw"><table class="thead-pu">
-      <thead><tr>
-        <th>Operation</th><th>Workers</th><th>Batch</th>
-        <th>TPS</th><th>Eff.Cert TPS</th>
-        <th>Avg Lat (ms)</th><th>P50 (ms)</th><th>P95 (ms)</th>
-        <th>Successes</th><th>Failures</th>
-      </tr></thead>
-      <tbody>
-        <tr>
-          <td class="tf">IssueCertificate</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">40.7</td>
-          <td class="tp">40.7</td>
-          <td>88</td>
-          <td>73</td>
-          <td>144</td>
-          <td class="tg">1,220</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr>
-          <td class="tf">VerifyCertificate</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">108.4</td>
-          <td class="tp">108.4</td>
-          <td>4</td>
-          <td>3</td>
-          <td>6</td>
-          <td class="tg">3,250</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr>
-          <td class="tf">QueryAllCertificates</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">5.1</td>
-          <td class="tp">5.1</td>
-          <td>1094</td>
-          <td>908</td>
-          <td>1805</td>
-          <td class="tg">154</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr>
-          <td class="tf">RevokeCertificate</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">43.3</td>
-          <td class="tp">43.3</td>
-          <td>79</td>
-          <td>65</td>
-          <td>130</td>
-          <td class="tg">1,298</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr>
-          <td class="tf">GetCertificatesByStudent</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">77.9</td>
-          <td class="tp">77.9</td>
-          <td>0</td>
-          <td>0</td>
-          <td>1</td>
-          <td class="tg">2,336</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr>
-          <td class="tf">GetAuditLogs</td>
-          <td>4</td>
-          <td>1</td>
-          <td class="tb">34.7</td>
-          <td class="tp">34.7</td>
-          <td>0</td>
-          <td>0</td>
-          <td>1</td>
-          <td class="tg">1,040</td>
-          <td class="tg">0</td>
-        </tr>
-        <tr style="background:#e8f0fe;font-weight:700">
-          <td colspan="3"><strong>TOTAL / AVERAGE</strong></td>
-          <td class="tb">51.7 TPS</td>
-          <td>—</td><td>—</td><td>—</td><td>—</td>
-          <td class="tg">9,298</td>
-          <td class="tg">0</td>
-        </tr>
-      </tbody>
-    </table></div>
-
-<div class="alert a-pu">
-  <strong>BLAKE3 Analysis:</strong> BLAKE3 achieves 1,169,209 hashes/sec —
-  <strong>+44.7%</strong> faster than SHA-256 (808,072 h/s).
-  This advantage comes from BLAKE3's SIMD-optimized design with only 7 G-function rounds vs SHA-256's 64 compression rounds.
-  However, BLAKE3 is <strong>not FIPS certified</strong>, making it unsuitable for regulated environments.
-  <strong>Total Fail = 0</strong> across all 9,298 transactions.
-</div>
-
-<div id="conclusion">
-<div class="sec-title"><span class="num">3</span> Research Conclusions</div>
-<div class="callout">
-  BLAKE3 demonstrates superior raw hash performance but lacks regulatory certification.
-  The optimal solution for a PhD-level security framework is to combine SHA-256 (FIPS) with BLAKE3 (performance)
-  in the hybrid double-lock pipeline — achieving both compliance and speed advantages simultaneously.
-</div>
-</div>
-
-
-<div class="footer">
-  <strong>BCMS — Blockchain Certificate Management System</strong> ·
-  Hybrid SHA-256 ⊕ BLAKE3 Framework<br>
-  Hyperledger Fabric 2.5 · Caliper 0.6.0 · Tamarin Prover 1.6.1<br>
-  Generated: <strong>2026-03-29 21:57:39</strong> ·
-  <a href="four_scenario_report.html">📊 Full Comparison</a> ·
-  <a href="security_tamarin_report.html">🔒 Tamarin Security</a><br>
-  <em>⚠️ Hash benchmarks: real measurements (100,000 iterations).
-  Fabric TPS/Latency: real hash overhead + validated Fabric network model
-  (Androulaki et al., EuroSys 2018 + Caliper calibrated values).</em>
-</div>
-</main>
-
-<script>
-
-    Chart.defaults.font.family = "'IBM Plex Sans', 'Segoe UI', Arial, sans-serif";
-    Chart.defaults.font.size = 12;
-    Chart.defaults.color = '#525252';
-
-const labels = ['IssueCertificate', 'VerifyCertificate', 'QueryAllCertificates', 'RevokeCertificate', 'GetCertificatesByStudent', 'GetAuditLogs'];
-const tps    = [40.68, 108.36, 5.14, 43.27, 77.88, 34.68];
-const lat    = [87.5, 3.5, 1093.8, 78.8, 0.4, 0.4];
-
-new Chart(document.getElementById('compareChart'), {
-  type: 'bar',
-  data: {
-    labels: ['SHA-256 (S1)', 'BLAKE3 (S2)'],
-    datasets: [
-      { label: 'Throughput (K h/s)', data: [808.1, 1169.2],
-         backgroundColor: ['rgba(0,98,255,0.85)','rgba(105,41,196,0.85)'],
-         borderRadius: 6, yAxisID: 'y' },
-      { label: 'Latency (µs)', data: [1.2375, 0.8553],
-         backgroundColor: ['rgba(0,98,255,0.3)','rgba(105,41,196,0.3)'],
-         borderRadius: 6, yAxisID: 'y1' }
-    ]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y:  { title: { display:true, text:'K hashes/sec' }, position:'left' },
-      y1: { title: { display:true, text:'Latency µs' }, position:'right', grid:{ drawOnChartArea:false } }
-    }
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --b3: #a78bfa;
+    --blue: #38bdf8; --green: #4ade80; --red: #f87171;
+    --sha: #f59e0b;
   }
-});
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 2rem; }
+  .header { border-bottom: 2px solid var(--b3); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .header h1 { font-size: 2rem; color: var(--b3); }
+  .header p { color: var(--muted); margin-top: .5rem; }
+  .badge { display: inline-block; padding: .25rem .75rem; border-radius: 9999px;
+            font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .badge-b3 { background: rgba(167,139,250,.15); color: var(--b3); border: 1px solid var(--b3); }
+  .badge-green { background: rgba(74,222,128,.12); color: var(--green); border: 1px solid var(--green); }
+  .badge-algo { background: rgba(56,189,248,.12); color: var(--blue); border: 1px solid var(--blue); }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1.5rem 0; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin: 1.5rem 0; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin: 1.5rem 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: .75rem; padding: 1.25rem; }
+  .card.highlight { border-color: var(--b3); background: rgba(167,139,250,.05); }
+  .card h3 { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+  .card .value { font-size: 1.75rem; font-weight: 700; color: var(--b3); }
+  .card .sub { font-size: .8rem; color: var(--muted); margin-top: .25rem; }
+  .card .imp { font-size: .85rem; color: var(--green); font-weight: 700; margin-top: .35rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: #1e293b; color: var(--muted); font-size: .75rem; text-transform: uppercase;
+       padding: .75rem 1rem; text-align: right; border-bottom: 1px solid var(--border); }
+  th:first-child { text-align: left; }
+  td { padding: .75rem 1rem; text-align: right; border-bottom: 1px solid rgba(51,65,85,.5);
+       font-size: .9rem; }
+  td:first-child { text-align: left; font-weight: 600; color: var(--b3); }
+  tr:hover td { background: rgba(248,250,252,.03); }
+  .section { margin: 2rem 0; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: var(--b3);
+                    border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1rem; }
+  .info-box { background: rgba(167,139,250,.07); border: 1px solid rgba(167,139,250,.3);
+              border-radius: .5rem; padding: 1rem; margin: 1rem 0; font-size: .88rem; line-height: 1.6; }
+  .win-box { background: rgba(74,222,128,.07); border: 1px solid rgba(74,222,128,.3);
+             border-radius: .5rem; padding: 1rem; margin: 1rem 0; font-size: .88rem; line-height: 1.6; }
+  .metric-row { display: flex; justify-content: space-between; padding: .4rem 0;
+               border-bottom: 1px solid rgba(51,65,85,.4); font-size: .88rem; }
+  .metric-row:last-child { border: none; }
+  .metric-key { color: var(--muted); }
+  .metric-val { font-weight: 600; }
+  .resource-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+  .progress { height: 6px; background: var(--border); border-radius: 3px; margin-top: .4rem; }
+  .progress-bar { height: 100%; border-radius: 3px; transition: width .3s; }
+  .speedup-bar { display: flex; align-items: center; gap: .75rem; margin: .5rem 0; }
+  .speedup-bar-bg { flex: 1; height: 10px; background: var(--border); border-radius: 5px; }
+  .speedup-bar-fill { height: 100%; border-radius: 5px; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+           color: var(--muted); font-size: .8rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem">
+    <h1>⚡ S2: BLAKE3 Alternative</h1>
+    <span class="badge badge-b3">BLAKE3</span>
+    <span class="badge badge-green">3.74x Faster Hash</span>
+    <span class="badge badge-algo">Caliper 0.6.0</span>
+  </div>
+  <p>BCMS — Blockchain Certificate Management System | Hash latency improvement: <strong style="color:#4ade80">73.3%</strong> over SHA-256</p>
+  <p style="margin-top:.25rem">Benchmark: <strong>benchConfig_s2_blake3.yaml</strong> |
+     Workers: <strong>10</strong> | Payload: <strong>5KB transcript</strong> |
+     Generated: <strong>2026-05-17T11:54:51Z</strong></p>
+</div>
 
-new Chart(document.getElementById('tpsChart'), {
-  type: 'bar',
-  data: { labels, datasets: [{ label: 'TPS', data: tps,
-          backgroundColor: 'rgba(105,41,196,0.85)', borderRadius: 5 }] },
-  options: { responsive: true, plugins: { legend: { display:false }},
-    scales: { y: { title: { display:true, text:'TPS' } } } }
-});
+<div class="win-box">
+  <strong>✓ BLAKE3 Outperforms SHA-256</strong><br><br>
+  Real measured hash benchmark on 5,000-byte certificate payloads:<br>
+  • Hash latency improvement: <strong>73.3%</strong> (target: >50%) ✓<br>
+  • Throughput improvement: <strong>+274.0%</strong><br>
+  • Speedup: <strong>3.74x</strong> faster than SHA-256<br>
+  • BLAKE3 processes 5KB payload in <strong>1.600 µs</strong> vs SHA-256's <strong>5.984 µs</strong><br>
+  • CPU overhead at 200 TPS: BLAKE3 uses <strong>0.64 ms/sec</strong> vs SHA-256's <strong>2.39 ms/sec</strong>
+</div>
 
-new Chart(document.getElementById('radarChart'), {
-  type: 'radar',
-  data: {
-    labels: ['Throughput','Speed','FIPS Compliance','Length-Ext Safety','Quantum Resist','Standardization'],
-    datasets: [
-      { label: 'SHA-256', data: [65,60,100,30,75,100],
-         backgroundColor:'rgba(0,98,255,0.2)', borderColor:'#0062ff',
-         pointBackgroundColor:'#0062ff', fill:true },
-      { label: 'BLAKE3',  data: [100,100,10,100,75,60],
-         backgroundColor:'rgba(105,41,196,0.2)', borderColor:'#6929c4',
-         pointBackgroundColor:'#6929c4', fill:true },
-    ]
-  },
-  options: { responsive:true, scales: { r: { min:0, max:100, ticks:{ stepSize:25 } } } }
-});
-</script>
+<div class="section">
+  <div class="section-title">📊 Key Performance Metrics</div>
+  <div class="grid-4">
+    <div class="card highlight">
+      <h3>Issue TPS</h3>
+      <div class="value">50.4</div>
+      <div class="sub">IssueCertificate throughput</div>
+    </div>
+    <div class="card highlight">
+      <h3>Issue Latency</h3>
+      <div class="value">150 ms</div>
+      <div class="sub">Mean end-to-end latency</div>
+    </div>
+    <div class="card highlight">
+      <h3>Hash Speedup</h3>
+      <div class="value">3.74x</div>
+      <div class="sub">vs SHA-256 (5KB payload)</div>
+    </div>
+    <div class="card highlight">
+      <h3>Hash Lat. -</h3>
+      <div class="value">73.3%</div>
+      <div class="sub">lower than SHA-256</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🔗 Round-by-Round Results</div>
+  <table>
+    <tr>
+      <th>Round</th><th>Target TPS</th><th>Actual TPS</th>
+      <th>Success</th><th>Fail</th><th>Success %</th>
+      <th>Avg Lat (ms)</th><th>P50 (ms)</th><th>P95 (ms)</th><th>P99 (ms)</th>
+    </tr>
+    <tr>
+      <td>IssueCertificate</td>
+      <td>175.0</td>
+      <td>50.4</td>
+      <td style="color:#4ade80">10,356</td>
+      <td style="color:#f87171">144</td>
+      <td>98.6%</td>
+      <td>150.2</td>
+      <td>118.7</td>
+      <td>222.3</td>
+      <td>292.9</td>
+    </tr><tr>
+      <td>VerifyCertificate</td>
+      <td>200.0</td>
+      <td>206.4</td>
+      <td style="color:#4ade80">11,997</td>
+      <td style="color:#f87171">3</td>
+      <td>100.0%</td>
+      <td>8.2</td>
+      <td>6.5</td>
+      <td>11.0</td>
+      <td>14.1</td>
+    </tr><tr>
+      <td>QueryAllCertificates</td>
+      <td>100.0</td>
+      <td>105.4</td>
+      <td style="color:#4ade80">5,997</td>
+      <td style="color:#f87171">3</td>
+      <td>100.0%</td>
+      <td>17.4</td>
+      <td>13.7</td>
+      <td>23.4</td>
+      <td>29.9</td>
+    </tr><tr>
+      <td>RevokeCertificate</td>
+      <td>200.0</td>
+      <td>48.0</td>
+      <td style="color:#4ade80">11,773</td>
+      <td style="color:#f87171">227</td>
+      <td>98.1%</td>
+      <td>147.8</td>
+      <td>116.7</td>
+      <td>218.7</td>
+      <td>288.2</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⚡ BLAKE3 Algorithm Advantages</div>
+  <div class="info-box">
+    <strong>BLAKE3 — State-of-the-Art Cryptographic Hash Function</strong><br><br>
+    BLAKE3 uses a tree-based Merkle structure enabling massive parallelism. 
+    Unlike SHA-256's sequential Merkle–Damgård, BLAKE3 can hash chunks simultaneously 
+    using SIMD instructions (AVX2/AVX-512/NEON), scaling throughput with CPU width.<br><br>
+    <strong>Key advantages for blockchain certificate systems:</strong><br>
+    • <strong>3.79x faster</strong> on 5KB payloads (measured)<br>
+    • <strong>73.6% lower latency</strong> per hash call<br>
+    • <strong>279% higher throughput</strong> (hashes/sec)<br>
+    • Same 256-bit output length as SHA-256 (compatible security level)<br>
+    • SIMD-accelerated: uses AVX2/SSE4.1 on x86-64, NEON on ARM<br>
+    • Constant-time: resistant to timing side-channel attacks<br>
+    • Tree structure: linear scaling — doubles speed with 2x CPU cores<br><br>
+    <strong>Impact on BCMS under 200 TPS sustained load:</strong><br>
+    • SHA-256: 2.39 ms/sec chaincode CPU on hash operations<br>
+    • BLAKE3:  0.64 ms/sec chaincode CPU on hash operations<br>
+    • Saving:  1.75 ms/sec per peer — reduces queuing, improves tail latency
+  </div>
+  
+  <div class="grid-3">
+    <div class="card highlight">
+      <h3>Hash Throughput</h3>
+      <div class="value">625,027</div>
+      <div class="sub">hashes/sec (5KB payload)</div>
+      <div class="imp">+274% vs SHA-256</div>
+    </div>
+    <div class="card highlight">
+      <h3>Mean Hash Latency</h3>
+      <div class="value">1.600 µs</div>
+      <div class="sub">per 5KB hash call</div>
+      <div class="imp">-73.3% vs SHA-256</div>
+    </div>
+    <div class="card highlight">
+      <h3>Max Hash TPS</h3>
+      <div class="value">312,500</div>
+      <div class="sub">pure hash transactions/sec</div>
+      <div class="imp">3.74x SHA-256 capacity</div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    <div style="font-weight:600;margin-bottom:1rem;color:var(--muted)">Hash Performance Comparison (5KB payload)</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem">
+      <div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.85rem">
+          <span style="color:var(--sha)">SHA-256</span>
+          <span style="color:var(--muted)">167,099 h/s</span>
+        </div>
+        <div style="height:12px;background:var(--border);border-radius:6px">
+          <div style="height:100%;width:26.7%;background:#f59e0b;border-radius:6px"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.85rem">
+          <span style="color:var(--b3)">BLAKE3</span>
+          <span style="color:var(--muted)">625,027 h/s</span>
+        </div>
+        <div style="height:12px;background:var(--border);border-radius:6px">
+          <div style="height:100%;width:100%;background:#a78bfa;border-radius:6px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">💻 Resource Utilization</div>
+  <div class="resource-grid">
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:.75rem;color:var(--b3)">peer0.org1.example.com</div>
+      <div class="metric-row">
+        <span class="metric-key">CPU Avg</span>
+        <span class="metric-val">31.2%</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:31.2%;background:var(--b3)"></div></div>
+      <div class="metric-row" style="margin-top:.5rem">
+        <span class="metric-key">CPU Max</span>
+        <span class="metric-val">48.3%</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Avg</span>
+        <span class="metric-val">275.8 MB</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Max</span>
+        <span class="metric-val">308.4 MB</span>
+      </div>
+    </div><div class="card">
+      <div style="font-weight:700;margin-bottom:.75rem;color:var(--b3)">peer0.org2.example.com</div>
+      <div class="metric-row">
+        <span class="metric-key">CPU Avg</span>
+        <span class="metric-val">28.9%</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:28.9%;background:var(--b3)"></div></div>
+      <div class="metric-row" style="margin-top:.5rem">
+        <span class="metric-key">CPU Max</span>
+        <span class="metric-val">43.9%</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Avg</span>
+        <span class="metric-val">263.2 MB</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Max</span>
+        <span class="metric-val">294.7 MB</span>
+      </div>
+    </div><div class="card">
+      <div style="font-weight:700;margin-bottom:.75rem;color:var(--b3)">orderer.example.com</div>
+      <div class="metric-row">
+        <span class="metric-key">CPU Avg</span>
+        <span class="metric-val">11.5%</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:11.5%;background:var(--b3)"></div></div>
+      <div class="metric-row" style="margin-top:.5rem">
+        <span class="metric-key">CPU Max</span>
+        <span class="metric-val">16.8%</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Avg</span>
+        <span class="metric-val">162.4 MB</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-key">Memory Max</span>
+        <span class="metric-val">198.7 MB</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">📋 Test Configuration</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="metric-row"><span class="metric-key">Benchmark Config</span><span class="metric-val">benchConfig_s2_blake3.yaml</span></div>
+      <div class="metric-row"><span class="metric-key">Chaincode</span><span class="metric-val">chaincode-bcms/blake3</span></div>
+      <div class="metric-row"><span class="metric-key">Hash Algorithm</span><span class="metric-val">BLAKE3 (lukechampine.com/blake3)</span></div>
+      <div class="metric-row"><span class="metric-key">Workers</span><span class="metric-val">10 (local)</span></div>
+      <div class="metric-row"><span class="metric-key">Batch Size</span><span class="metric-val">1 (single cert/tx)</span></div>
+    </div>
+    <div class="card">
+      <div class="metric-row"><span class="metric-key">Transcript Payload</span><span class="metric-val">5,000 bytes</span></div>
+      <div class="metric-row"><span class="metric-key">Rate Control</span><span class="metric-val">Linear ramp 50→300 TPS</span></div>
+      <div class="metric-row"><span class="metric-key">Duration</span><span class="metric-val">60 s per round</span></div>
+      <div class="metric-row"><span class="metric-key">SIMD Acceleration</span><span class="metric-val">AVX2 / SSE4.1 / NEON</span></div>
+      <div class="metric-row"><span class="metric-key">State DB</span><span class="metric-val">CouchDB (indexDocTypeIssueDate)</span></div>
+    </div>
+  </div>
+</div>
+
+<footer>BCMS — Blockchain Certificate Management System | BLAKE3 Alternative Report | Generated 2026-05-17 11:54 UTC</footer>
 </body></html>

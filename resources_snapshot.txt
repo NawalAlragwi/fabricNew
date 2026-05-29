@@ -1,0 +1,13 @@
+CONTAINER ID   NAME                                                                                                    CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O   PIDS
+193b9c1e7485   dev-peer0.org2.example.com-basic_1.0-e8fec986b9818f4ace0db0e3ed55c529bda4fd1df625968c9958194a36bab2b4   0.00%     26.3MiB / 2GiB        1.28%     649MB / 11.3MB    0B / 0B     9
+9c502c8d3cd2   dev-peer0.org1.example.com-basic_1.0-e8fec986b9818f4ace0db0e3ed55c529bda4fd1df625968c9958194a36bab2b4   0.00%     28.5MiB / 2GiB        1.39%     814MB / 111MB     0B / 0B     10
+460a0c7a3c9c   cadvisor                                                                                                4.29%     41.71MiB / 7.761GiB   0.52%     4.28MB / 119MB    0B / 0B     13
+359a5ba6d54c   prometheus                                                                                              1.10%     57.95MiB / 7.761GiB   0.73%     119MB / 4.28MB    0B / 0B     9
+5bdc956f4716   peer0.org2.example.com                                                                                  1.74%     882.6MiB / 7.761GiB   11.11%    1.48GB / 1.4GB    0B / 0B     14
+af3cebf06f81   peer0.org1.example.com                                                                                  1.77%     951.3MiB / 7.761GiB   11.97%    2GB / 2.15GB      0B / 0B     14
+2fd2dc6bf6be   orderer.example.com                                                                                     0.08%     221MiB / 7.761GiB     2.78%     778MB / 1.54GB    0B / 0B     13
+419b3fb8fe65   couchdb1                                                                                                0.24%     120.7MiB / 7.761GiB   1.52%     9.23MB / 7.73MB   0B / 0B     37
+97842c07178f   couchdb0                                                                                                0.39%     118.9MiB / 7.761GiB   1.50%     20.6MB / 178MB    0B / 0B     37
+f65398237c25   ca_org1                                                                                                 0.00%     21.35MiB / 7.761GiB   0.27%     21.9kB / 39.6kB   0B / 0B     9
+9be1df6bb489   ca_org2                                                                                                 0.00%     16.04MiB / 7.761GiB   0.20%     20.8kB / 35.2kB   0B / 0B     9
+734d205c28bc   ca_orderer                                                                                              0.00%     27MiB / 7.761GiB      0.34%     35kB / 69.3kB     0B / 0B     9

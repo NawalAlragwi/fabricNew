@@ -15,7 +15,7 @@ SCENARIOS = [
     ("scenario_3_merged",   "S3: Hybrid",          "#e67e22"),
     ("scenario_4_batching", "S4: Hybrid+Batch",    "#9b59b6"),
 ]
-OPERATIONS = ["IssueCertificate","VerifyCertificate","QueryAllCertificates",
+OPERATIONS = ["IssueCertificate","VerifyCertificate","HashOnlyBenchmark","QueryAllCertificates",
               "RevokeCertificate","GetCertsByStudent","GetAuditLogs"]
 
 def load_agg():

@@ -1,1 +1,10 @@
-{"scenario":3,"key":"scenario_3_merged","label":"S3: Hybrid SHA-256+BLAKE3","chaincode":"chaincode-bcms/hybrid-batch","batch_size":1,"tps":50,"started":"2026-04-16T18:06:50Z"}
+{
+  "scenario": 3,
+  "key": "scenario_3_merged",
+  "label": "S3: Hybrid SHA-256+BLAKE3 (adaptive routing)",
+  "chaincode": "chaincode-bcms/hybrid",
+  "cc_name": "bcms-hybrid",
+  "batch_size": 1,
+  "tps_values": [200],
+  "started": "2026-05-25T22:51:36Z"
+}

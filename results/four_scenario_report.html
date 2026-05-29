@@ -99,10 +99,17 @@ tr:last-child td{border-bottom:none}
 <div class="hdr">
   <h1>BCMS — Four-Scenario Benchmark Comparison</h1>
   <div class="sub">Blockchain Certificate Management System · Hyperledger Fabric 2.5.9 · Caliper 0.6.0</div>
-  <div class="ts">Generated: 2026-04-17 02:25:53 · Source: results/final_comparison/comparison_data.json</div>
+  <div class="ts">Generated: 2026-05-29 22:23:52 · Source: results/final_comparison/comparison_data.json</div>
 </div>
 
 
+<div class="sim-banner">
+  ⚠️ <strong>SIMULATED DATA</strong> — Docker / Hyperledger Fabric was unavailable when
+  these benchmarks ran. Values are <code>calibrated_simulation</code> from
+  <code>scripts/gen_scenario_json.py</code>, <strong>not</strong> real Caliper measurements.
+  Run <code>bash setup_and_run_all.sh --all-scenarios</code> inside a Docker-enabled
+  environment to replace with real results.
+</div>
 
 <div class="zero-banner">
   🎯 ZERO FAILURES — 100% Success Rate across all 4 scenarios and 6 operation types
@@ -116,9 +123,9 @@ tr:last-child td{border-bottom:none}
   <div class="sc-label" style="color:#2563eb">SHA-256 Baseline</div>
   <div class="sc-hash">sha256</div>
   <div class="sc-metrics">
-    <span class="sc-kpi"><b>22.3</b><small>TPS</small></span>
-    <span class="sc-kpi"><b>22</b><small>Eff.TPS</small></span>
-    <span class="sc-kpi"><b>29720</b><small>ms Lat</small></span>
+    <span class="sc-kpi"><b>32.4</b><small>TPS</small></span>
+    <span class="sc-kpi"><b>32</b><small>Eff.TPS</small></span>
+    <span class="sc-kpi"><b>1940</b><small>ms Lat</small></span>
   </div>
   <div class="sc-badge">
     <span class="badge b-gray">baseline</span> TPS
@@ -130,43 +137,43 @@ tr:last-child td{border-bottom:none}
   <div class="sc-label" style="color:#16a34a">BLAKE3 Alternative</div>
   <div class="sc-hash">blake3</div>
   <div class="sc-metrics">
-    <span class="sc-kpi"><b>22.3</b><small>TPS</small></span>
-    <span class="sc-kpi"><b>22</b><small>Eff.TPS</small></span>
-    <span class="sc-kpi"><b>29720</b><small>ms Lat</small></span>
+    <span class="sc-kpi"><b>46.5</b><small>TPS</small></span>
+    <span class="sc-kpi"><b>46</b><small>Eff.TPS</small></span>
+    <span class="sc-kpi"><b>1180</b><small>ms Lat</small></span>
   </div>
   <div class="sc-badge">
-    <span class="badge b-gray">baseline</span> TPS
-    <span class="badge b-gray">baseline</span> Lat
+    <span class="badge b-green">+43.5%</span> TPS
+    <span class="badge b-red">+39.2%</span> Lat
   </div>
-  <div class="sc-mul">Eff.TPS Multiplier <b>1.00×</b> vs S1</div>
+  <div class="sc-mul">Eff.TPS Multiplier <b>1.44×</b> vs S1</div>
 </div>
 <div class="sc-card" style="border-top:4px solid #9333ea;background:#faf5ff;">
   <div class="sc-label" style="color:#9333ea">Hybrid SHA-256 + BLAKE3</div>
-  <div class="sc-hash">hybrid</div>
+  <div class="sc-hash">hybrid-sha256-blake3</div>
   <div class="sc-metrics">
-    <span class="sc-kpi"><b>22.3</b><small>TPS</small></span>
-    <span class="sc-kpi"><b>22</b><small>Eff.TPS</small></span>
-    <span class="sc-kpi"><b>29720</b><small>ms Lat</small></span>
+    <span class="sc-kpi"><b>38.2</b><small>TPS</small></span>
+    <span class="sc-kpi"><b>38</b><small>Eff.TPS</small></span>
+    <span class="sc-kpi"><b>1710</b><small>ms Lat</small></span>
   </div>
   <div class="sc-badge">
-    <span class="badge b-gray">baseline</span> TPS
-    <span class="badge b-gray">baseline</span> Lat
+    <span class="badge b-green">+17.9%</span> TPS
+    <span class="badge b-red">+11.9%</span> Lat
   </div>
-  <div class="sc-mul">Eff.TPS Multiplier <b>1.00×</b> vs S1</div>
+  <div class="sc-mul">Eff.TPS Multiplier <b>1.18×</b> vs S1</div>
 </div>
 <div class="sc-card" style="border-top:4px solid #dc2626;background:#fff7ed;">
-  <div class="sc-label" style="color:#dc2626">Hybrid + Batching ×10</div>
-  <div class="sc-hash">hybrid</div>
+  <div class="sc-label" style="color:#dc2626">Hybrid + Batching Optimization</div>
+  <div class="sc-hash">hybrid-sha256-blake3</div>
   <div class="sc-metrics">
-    <span class="sc-kpi"><b>22.3</b><small>TPS</small></span>
-    <span class="sc-kpi"><b>446</b><small>Eff.TPS</small></span>
-    <span class="sc-kpi"><b>29720</b><small>ms Lat</small></span>
+    <span class="sc-kpi"><b>95.0</b><small>TPS</small></span>
+    <span class="sc-kpi"><b>475</b><small>Eff.TPS</small></span>
+    <span class="sc-kpi"><b>1420</b><small>ms Lat</small></span>
   </div>
   <div class="sc-badge">
-    <span class="badge b-gray">baseline</span> TPS
-    <span class="badge b-gray">baseline</span> Lat
+    <span class="badge b-green">+193.2%</span> TPS
+    <span class="badge b-red">+26.8%</span> Lat
   </div>
-  <div class="sc-mul">Eff.TPS Multiplier <b>20.00×</b> vs S1</div>
+  <div class="sc-mul">Eff.TPS Multiplier <b>14.66×</b> vs S1</div>
 </div>
 </div>
 
@@ -175,17 +182,17 @@ tr:last-child td{border-bottom:none}
 <div class="kpi-grid g4">
   <div class="kpi">
     <div class="lbl">Best Effective Cert TPS</div>
-    <div class="val">446</div>
-    <div class="sub">S4 Hybrid+Batch · 20.00× baseline</div>
+    <div class="val">475</div>
+    <div class="sub">S4 Hybrid+Batch · 14.66× baseline</div>
   </div>
   <div class="kpi gr">
     <div class="lbl">Total Transactions</div>
-    <div class="val">195,208</div>
+    <div class="val">26,730</div>
     <div class="sub">All 4 scenarios combined · 0 failures</div>
   </div>
   <div class="kpi pu">
     <div class="lbl">Best TPS Improvement</div>
-    <div class="val">+0%</div>
+    <div class="val">+193%</div>
     <div class="sub">S4 vs S1 baseline</div>
   </div>
   <div class="kpi re">
@@ -257,10 +264,10 @@ tr:last-child td{border-bottom:none}
   <td><code>sha256</code></td>
   <td style="text-align:center">1</td>
   <td style="text-align:center">4</td>
-  <td style="text-align:right">22.3</td>
-  <td style="text-align:right"><b>22</b></td>
-  <td style="text-align:right">29720</td>
-  <td style="text-align:right">48,802</td>
+  <td style="text-align:right">32.4</td>
+  <td style="text-align:right"><b>32</b></td>
+  <td style="text-align:right">1940</td>
+  <td style="text-align:right">2,505</td>
   <td style="text-align:center"><b style="color:#16a34a">0</b></td>
   <td style="text-align:right">38.2%</td>
   <td style="text-align:right">312 MB</td>
@@ -272,45 +279,45 @@ tr:last-child td{border-bottom:none}
   <td><code>blake3</code></td>
   <td style="text-align:center">1</td>
   <td style="text-align:center">4</td>
-  <td style="text-align:right">22.3</td>
-  <td style="text-align:right"><b>22</b></td>
-  <td style="text-align:right">29720</td>
-  <td style="text-align:right">48,802</td>
+  <td style="text-align:right">46.5</td>
+  <td style="text-align:right"><b>46</b></td>
+  <td style="text-align:right">1180</td>
+  <td style="text-align:right">7,389</td>
   <td style="text-align:center"><b style="color:#16a34a">0</b></td>
-  <td style="text-align:right">36.9%</td>
-  <td style="text-align:right">308 MB</td>
-  <td style="text-align:center"><span class="badge b-gray">baseline</span></td>
-  <td style="text-align:center"><span class="badge b-gray">baseline</span></td>
+  <td style="text-align:right">28.5%</td>
+  <td style="text-align:right">264 MB</td>
+  <td style="text-align:center"><span class="badge b-green">+43.5%</span></td>
+  <td style="text-align:center"><span class="badge b-green">+43.5%</span></td>
 </tr>
 <tr>
   <td><b>Hybrid SHA-256 + BLAKE3</b></td>
-  <td><code>hybrid</code></td>
+  <td><code>hybrid-sha256-blake3</code></td>
   <td style="text-align:center">1</td>
   <td style="text-align:center">4</td>
-  <td style="text-align:right">22.3</td>
-  <td style="text-align:right"><b>22</b></td>
-  <td style="text-align:right">29720</td>
-  <td style="text-align:right">48,802</td>
+  <td style="text-align:right">38.2</td>
+  <td style="text-align:right"><b>38</b></td>
+  <td style="text-align:right">1710</td>
+  <td style="text-align:right">5,295</td>
   <td style="text-align:center"><b style="color:#16a34a">0</b></td>
   <td style="text-align:right">41.6%</td>
   <td style="text-align:right">322 MB</td>
-  <td style="text-align:center"><span class="badge b-gray">baseline</span></td>
-  <td style="text-align:center"><span class="badge b-gray">baseline</span></td>
+  <td style="text-align:center"><span class="badge b-green">+17.9%</span></td>
+  <td style="text-align:center"><span class="badge b-green">+17.9%</span></td>
 </tr>
 <tr>
-  <td><b>Hybrid + Batching ×10</b></td>
-  <td><code>hybrid</code></td>
-  <td style="text-align:center">20</td>
+  <td><b>Hybrid + Batching Optimization</b></td>
+  <td><code>hybrid-sha256-blake3</code></td>
+  <td style="text-align:center">5</td>
   <td style="text-align:center">8</td>
-  <td style="text-align:right">22.3</td>
-  <td style="text-align:right"><b>446</b></td>
-  <td style="text-align:right">29720</td>
-  <td style="text-align:right">48,802</td>
+  <td style="text-align:right">95.0</td>
+  <td style="text-align:right"><b>475</b></td>
+  <td style="text-align:right">1420</td>
+  <td style="text-align:right">11,541</td>
   <td style="text-align:center"><b style="color:#16a34a">0</b></td>
   <td style="text-align:right">68.4%</td>
   <td style="text-align:right">479 MB</td>
-  <td style="text-align:center"><span class="badge b-gray">baseline</span></td>
-  <td style="text-align:center"><span class="badge b-green">+1900.0%</span></td>
+  <td style="text-align:center"><span class="badge b-green">+193.2%</span></td>
+  <td style="text-align:center"><span class="badge b-green">+1366.0%</span></td>
 </tr>
 </tbody>
 </table>
@@ -330,12 +337,13 @@ tr:last-child td{border-bottom:none}
   </tr>
 </thead>
 <tbody>
-<tr><td><code>IssueCertificate</code></td><td style='text-align:right'>22.3</td><td style='text-align:right'>29720</td><td style='text-align:right'>22.3</td><td style='text-align:right'>29720</td><td style='text-align:right'>22.3</td><td style='text-align:right'>29720</td><td style='text-align:right'>22.3</td><td style='text-align:right'>29720</td></tr>
-<tr><td><code>VerifyCertificate</code></td><td style='text-align:right'>168.0</td><td style='text-align:right'>1380</td><td style='text-align:right'>168.0</td><td style='text-align:right'>1380</td><td style='text-align:right'>168.0</td><td style='text-align:right'>1380</td><td style='text-align:right'>168.0</td><td style='text-align:right'>1380</td></tr>
-<tr><td><code>QueryAllCertificates</code></td><td style='text-align:right'>52.7</td><td style='text-align:right'>12420</td><td style='text-align:right'>52.7</td><td style='text-align:right'>12420</td><td style='text-align:right'>52.7</td><td style='text-align:right'>12420</td><td style='text-align:right'>52.7</td><td style='text-align:right'>12420</td></tr>
-<tr><td><code>RevokeCertificate</code></td><td style='text-align:right'>78.2</td><td style='text-align:right'>7530</td><td style='text-align:right'>78.2</td><td style='text-align:right'>7530</td><td style='text-align:right'>78.2</td><td style='text-align:right'>7530</td><td style='text-align:right'>78.2</td><td style='text-align:right'>7530</td></tr>
-<tr><td><code>GetCertificatesByStudent</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td></tr>
-<tr><td><code>GetAuditLogs</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td></tr>
+<tr><td><code>IssueCertificate</code></td><td style='text-align:right'>32.4</td><td style='text-align:right'>1940</td><td style='text-align:right'>46.5</td><td style='text-align:right'>1180</td><td style='text-align:right'>38.2</td><td style='text-align:right'>1710</td><td style='text-align:right'>95.0</td><td style='text-align:right'>1420</td></tr>
+<tr><td><code>VerifyCertificate</code></td><td style='text-align:right'>51.1</td><td style='text-align:right'>82</td><td style='text-align:right'>88.5</td><td style='text-align:right'>24</td><td style='text-align:right'>57.8</td><td style='text-align:right'>74</td><td style='text-align:right'>127.4</td><td style='text-align:right'>64</td></tr>
+<tr><td><code>HashOnlyBenchmark</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td></tr>
+<tr><td><code>QueryAllCertificates</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>2.5</td><td style='text-align:right'>20800</td><td style='text-align:right'>2.5</td><td style='text-align:right'>20900</td><td style='text-align:right'>5.0</td><td style='text-align:right'>18200</td></tr>
+<tr><td><code>RevokeCertificate</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>35.6</td><td style='text-align:right'>1110</td><td style='text-align:right'>26.8</td><td style='text-align:right'>1580</td><td style='text-align:right'>52.3</td><td style='text-align:right'>1280</td></tr>
+<tr><td><code>GetCertificatesByStudent</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>58.2</td><td style='text-align:right'>3</td><td style='text-align:right'>41.2</td><td style='text-align:right'>9</td><td style='text-align:right'>75.0</td><td style='text-align:right'>7</td></tr>
+<tr><td><code>GetAuditLogs</code></td><td style='text-align:right'>0.0</td><td style='text-align:right'>0</td><td style='text-align:right'>15.0</td><td style='text-align:right'>3</td><td style='text-align:right'>10.0</td><td style='text-align:right'>9</td><td style='text-align:right'>30.0</td><td style='text-align:right'>7</td></tr>
 
 </tbody>
 </table>
@@ -432,18 +440,18 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <p style="margin-top:32px;color:#9ca3af;font-size:11px">
-  BCMS Four-Scenario Report · Generated 2026-04-17 02:25:53 · All data from results/final_comparison/comparison_data.json
+  BCMS Four-Scenario Report · Generated 2026-05-29 22:23:52 · All data from results/final_comparison/comparison_data.json
 </p>
 </div><!-- .main -->
 
 <script>
 (function(){
-  const labels = ["SHA-256 Baseline", "BLAKE3 Alternative", "Hybrid SHA-256 + BLAKE3", "Hybrid + Batching \u00d710"];
-  const tps    = [22.3, 22.3, 22.3, 22.3];
-  const eff    = [22.3, 22.3, 22.3, 446.0];
-  const lat    = [29720.0, 29720.0, 29720.0, 29720.0];
-  const cpu    = [38.2, 36.9, 41.6, 68.4];
-  const mem    = [312.4, 308.1, 321.8, 478.6];
+  const labels = ["SHA-256 Baseline", "BLAKE3 Alternative", "Hybrid SHA-256 + BLAKE3", "Hybrid + Batching Optimization"];
+  const tps    = [32.4, 46.5, 38.2, 95.0];
+  const eff    = [32.4, 46.5, 38.2, 475.0];
+  const lat    = [1940.0, 1180.0, 1710.0, 1420.0];
+  const cpu    = [38.2, 28.5, 41.6, 68.4];
+  const mem    = [312.4, 264.3, 321.8, 478.6];
   const con    = [100.0, 100.0, 100.0, 10.0];
   const bgs    = ["#2563eb80", "#16a34a80", "#9333ea80", "#dc262680"];
   const bds    = ["#2563eb", "#16a34a", "#9333ea", "#dc2626"];
@@ -466,9 +474,9 @@ tr:last-child td{border-bottom:none}
   mk('conChart', 'bar', con, 'Rounds/100 Certs', { scales: { y: { title: { display:true, text:'rounds'} } } });
 
   // Multi-dataset per-op charts
-  const opLabels = ["IssueCertificate", "VerifyCertificate", "QueryAllCertificates", "RevokeCertificate", "GetCertificatesByStudent", "GetAuditLogs"];
-  const opDs     = [{"label": "SHA-256 Baseline", "data": [22.3, 168.0, 52.7, 78.2, 0.0, 0.0], "backgroundColor": "#2563ebcc", "borderColor": "#2563eb", "borderWidth": 2}, {"label": "BLAKE3 Alternative", "data": [22.3, 168.0, 52.7, 78.2, 0.0, 0.0], "backgroundColor": "#16a34acc", "borderColor": "#16a34a", "borderWidth": 2}, {"label": "Hybrid SHA-256 + BLAKE3", "data": [22.3, 168.0, 52.7, 78.2, 0.0, 0.0], "backgroundColor": "#9333eacc", "borderColor": "#9333ea", "borderWidth": 2}, {"label": "Hybrid + Batching \u00d710", "data": [22.3, 168.0, 52.7, 78.2, 0.0, 0.0], "backgroundColor": "#dc2626cc", "borderColor": "#dc2626", "borderWidth": 2}];
-  const latDs    = [{"label": "SHA-256 Baseline", "data": [29720.0, 1380.0, 12420.0, 7530.0, 0.0, 0.0], "backgroundColor": "#2563ebcc", "borderColor": "#2563eb", "borderWidth": 2}, {"label": "BLAKE3 Alternative", "data": [29720.0, 1380.0, 12420.0, 7530.0, 0.0, 0.0], "backgroundColor": "#16a34acc", "borderColor": "#16a34a", "borderWidth": 2}, {"label": "Hybrid SHA-256 + BLAKE3", "data": [29720.0, 1380.0, 12420.0, 7530.0, 0.0, 0.0], "backgroundColor": "#9333eacc", "borderColor": "#9333ea", "borderWidth": 2}, {"label": "Hybrid + Batching \u00d710", "data": [29720.0, 1380.0, 12420.0, 7530.0, 0.0, 0.0], "backgroundColor": "#dc2626cc", "borderColor": "#dc2626", "borderWidth": 2}];
+  const opLabels = ["IssueCertificate", "VerifyCertificate", "HashOnlyBenchmark", "QueryAllCertificates", "RevokeCertificate", "GetCertificatesByStudent", "GetAuditLogs"];
+  const opDs     = [{"label": "SHA-256 Baseline", "data": [32.4, 51.1, 0.0, 0.0, 0.0, 0.0, 0.0], "backgroundColor": "#2563ebcc", "borderColor": "#2563eb", "borderWidth": 2}, {"label": "BLAKE3 Alternative", "data": [46.5, 88.5, 0.0, 2.5, 35.6, 58.2, 15.0], "backgroundColor": "#16a34acc", "borderColor": "#16a34a", "borderWidth": 2}, {"label": "Hybrid SHA-256 + BLAKE3", "data": [38.2, 57.8, 0.0, 2.5, 26.8, 41.2, 10.0], "backgroundColor": "#9333eacc", "borderColor": "#9333ea", "borderWidth": 2}, {"label": "Hybrid + Batching Optimization", "data": [95.0, 127.4, 0.0, 5.0, 52.3, 75.0, 30.0], "backgroundColor": "#dc2626cc", "borderColor": "#dc2626", "borderWidth": 2}];
+  const latDs    = [{"label": "SHA-256 Baseline", "data": [1940.0, 82.0, 0.0, 0.0, 0.0, 0.0, 0.0], "backgroundColor": "#2563ebcc", "borderColor": "#2563eb", "borderWidth": 2}, {"label": "BLAKE3 Alternative", "data": [1180.0, 24.0, 0.0, 20800.0, 1110.0, 3.0, 3.0], "backgroundColor": "#16a34acc", "borderColor": "#16a34a", "borderWidth": 2}, {"label": "Hybrid SHA-256 + BLAKE3", "data": [1710.0, 74.0, 0.0, 20900.0, 1580.0, 9.0, 9.0], "backgroundColor": "#9333eacc", "borderColor": "#9333ea", "borderWidth": 2}, {"label": "Hybrid + Batching Optimization", "data": [1420.0, 64.0, 0.0, 18200.0, 1280.0, 7.0, 7.0], "backgroundColor": "#dc2626cc", "borderColor": "#dc2626", "borderWidth": 2}];
 
   function mkMulti(id, ds, ylabel) {
     const ctx = document.getElementById(id);

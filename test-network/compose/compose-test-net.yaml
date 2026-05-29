@@ -16,7 +16,7 @@ services:
 
   orderer.example.com:
     container_name: orderer.example.com
-    image: hyperledger/fabric-orderer:latest
+    image: hyperledger/fabric-orderer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
@@ -52,6 +52,10 @@ services:
       - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
       - ORDERER_OPERATIONS_LISTENADDRESS=orderer.example.com:9443
       - ORDERER_METRICS_PROVIDER=prometheus
+      - ORDERER_GENERAL_GRPC_MAXRECVMSGSIZE=104857600
+      - ORDERER_GENERAL_GRPC_MAXSENDMSGSIZE=104857600
+      - ORDERER_GENERAL_GRPC_KEEPALIVE_INTERVAL=120000
+      - ORDERER_GENERAL_GRPC_KEEPALIVE_TIMEOUT=20000
     working_dir: /root
     command: orderer
     volumes:
@@ -67,7 +71,7 @@ services:
 
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
@@ -76,7 +80,7 @@ services:
     # Full CPU access is MANDATORY: any cpu_quota would cap hash throughput,
     # making infrastructure — not the hash algorithm — the bottleneck.
     environment:
-      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
       - FABRIC_LOGGING_SPEC=INFO
       # GOMAXPROCS=0 → Go runtime auto-detects ALL host CPUs.
       # Endorsement of 10-cert batch TX requires parallel SHA-256/BLAKE3
@@ -101,12 +105,29 @@ services:
       - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.example.com:9444
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org1"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      # OOM-FIX: was 5000 → 200. At 100 TPS×45ms each peer only needs
+      # ~5 concurrent goroutines at steady state. 5000 allowed unbounded
+      # queue growth that filled RAM and triggered OOM kill.
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=200
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120000
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20000
     volumes:
       - ../organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/etc/hyperledger/fabric
       - peer0.org1.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
+    # ── OOM-FIX: cap peer memory to prevent crash under 100–200 TPS load ────
+    # WSL2 has 12GB total. Orderer≈512MB, CouchDB×2≈1GB, Caliper≈1GB.
+    # Each peer gets 3.5GB hard cap + 1GB swap → survives VerifyCertificate.
+    deploy:
+      resources:
+        limits:
+          memory: 3500M
+        reservations:
+          memory: 1024M
     ports:
       - 7051:7051
       - 9444:9444
@@ -115,14 +136,14 @@ services:
 
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     # ── S4 HYBRID-BATCH: CPU LIMITS REMOVED ────────────────────────────────────
     # peer0.org2 handles Org2MSP RevokeCertificate (write) and all read queries.
     # Under S4 1000-TPS read rounds, CouchDB-backed queries require full CPU.
     environment:
-      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
       - FABRIC_LOGGING_SPEC=INFO
       # GOMAXPROCS=0 → auto-detect all host CPUs.
       # Revocation writes at 1000 TPS need full goroutine scheduling capacity.
@@ -146,12 +167,25 @@ services:
       - CORE_OPERATIONS_LISTENADDRESS=peer0.org2.example.com:9445
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org2"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      # OOM-FIX: same limit as peer0org1 — symmetric allocation
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=200
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120000
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20000
     volumes:
       - ../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com:/etc/hyperledger/fabric
       - peer0.org2.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
+    # ── OOM-FIX: same cap as peer0.org1 for symmetric resource allocation ───
+    deploy:
+      resources:
+        limits:
+          memory: 3500M
+        reservations:
+          memory: 1024M
     ports:
       - 9051:9051
       - 9445:9445

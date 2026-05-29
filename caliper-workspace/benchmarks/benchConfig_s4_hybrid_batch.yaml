@@ -1,133 +1,70 @@
-# ============================================================================
-#  BCMS — Scenario S4: Hybrid-Batch (SHA-256 + BLAKE3 + Batching)
-#  Hyperledger Caliper Benchmark Configuration
-#
-#  Hash algorithm : Hybrid — BLAKE3(SHA-256(data))
-#  Batch size     : 10 (ten certificates per Fabric transaction)
-#  Workers        : 8 (local)
-#  IssueCertificate: linear-rate 50 → 200 TPS over 60 s
-#  Read rounds    : fixed-rate 200 TPS, 60 s
-#
-#  This is the PRIMARY/OPTIMIZED scenario. Effective certificate throughput
-#  = IssueCertificate TPS × batchSize (10×).
-# ============================================================================
-
 monitors:
   resource:
-    - module: docker
-      options:
-        interval: 1
-        containers:
-          - orderer.example.com
-          - peer0.org1.example.com
-          - couchdb0
-          - peer0.org2.example.com
-          - couchdb1
-          - ca_org1
-          - ca_org2
-          - ca_orderer
-
+  - module: docker
+    options:
+      interval: 1
+      containers:
+      - orderer.example.com
+      - peer0.org1.example.com
+      - couchdb0
+      - peer0.org2.example.com
+      - couchdb1
+      - ca_org1
+      - ca_org2
+      - ca_orderer
 test:
-  name: bcms-s4-hybrid-batch
-  description: >
-    Scenario S4 — Hybrid-Batch (SHA-256 + BLAKE3 + Batch=10).
-    batchSize: 10 (ten certificates per Fabric transaction).
-    IssueCertificate: linear-rate ramp 50→200 TPS, 60 s, 8 workers.
-    All read rounds: fixed-rate 200 TPS.
-    Effective cert throughput = TPS × 20.
-    This is the peak-performance research scenario.
+  name: bcms-s4-hybrid-batch-v9
+  description: "Scenario S4 \u2014 Hybrid-Batch. Payload: 5 KB transcript per certificate.\
+    \ batchSize: 10. Issue: 20 TPS (Stabilized). Verify: 100-500 TPS linear ramp.\
+    \ Query/Revoke: 50 TPS.\n"
   workers:
     type: local
-    number: 5
-
+    number: 10
   rounds:
-
-    - label: WarmupIndexing
-      description: Warm-up round to trigger CouchDB index building and container startup.
-      txDuration: 15
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: IssueCertificate
-      description: >
-        S4 Hybrid-Batch — Issue 10 certificates per Fabric transaction.
-        Linear ramp 10→100 TPS (200→2000 certs/sec).
-        Effective cert throughput at 100 TPS = 2,000 certs/sec.
-      txDuration: 60
-      rateControl:
-        type: linear-rate
-        opts:
-          startingTps: 10
-          finishingTps: 100
-      workload:
-        module: workload/issueCertificateBatch.js
-        arguments:
-          batchSize: 20
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: VerifyCertificate
-      description: Fixed-rate 200 TPS read-only verify.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/verifyCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: QueryAllCertificates
-      description: Fixed-rate 200 TPS full ledger scan.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-
-    - label: RevokeCertificate
-      description: Fixed-rate 200 TPS revocation (idempotent).
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/revokeCertificate.js
-      txOptions:
-        invokerIdentity: User1@org2.example.com
-
-#    - label: GetCertificatesByStudent
-#      description: Fixed-rate 200 TPS per-student query.
-#      txDuration: 60
-#      rateControl:
-#        type: fixed-rate
-#        opts:
-#          tps: 200
-#      workload:
-#        module: workload/getCertificatesByStudent.js
-#      txOptions:
-#        invokerIdentity: User1@org1.example.com
-#
-#    - label: GetAuditLogs
-#      description: Fixed-rate 200 TPS audit trail query.
-#      txDuration: 60
-#      rateControl:
-#        type: fixed-rate
-#        opts:
-#          tps: 200
-#      workload:
-#        module: workload/getAuditLogs.js
-#      txOptions:
-#        invokerIdentity: User1@org1.example.com
+  - label: HashOnlyBenchmark
+    description: HashOnlyBenchmark pure CPU test
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 10
+    workload:
+      module: workload/hashOnlyBenchmark.js
+      arguments:
+        contractId: bcms-hybrid-batch
+        payloadSize: 20000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: IssueCertificate
+    description: "S4 Hybrid-Batch \u2014 Issue batch certificates (batchSize=10).\
+      \ Fixed-rate 20 TPS, 60 s, 10 workers.\n"
+    txDuration: 60
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 20
+    workload:
+      module: workload/issueCertificateBatch.js
+      arguments:
+        contractId: bcms-hybrid-batch
+        batchSize: 10
+        payloadSize: 5000
+    txOptions:
+      invokerIdentity: User1@org1.example.com
+  - label: VerifyCertificate
+    description: "S4 Hybrid-Batch \u2014 Linear-rate 100-500 TPS verify (read-only).\n"
+    txDuration: 60
+    rateControl:
+      type: linear-rate
+      opts:
+        startingTps: 100
+        finishingTps: 500
+    workload:
+      module: workload/verifyCertificate.js
+      arguments:
+        contractId: bcms-hybrid-batch
+        totalIssued: 1000
+        certPrefix: BCERT
+        batchSize: 10
+    txOptions:
+      invokerIdentity: User1@org1.example.com

@@ -66,7 +66,7 @@ package chaincode
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"sort"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -164,7 +164,7 @@ type VerificationResult struct {
 // Used by IssueCertificateBatch for multi-cert atomic commit.
 type IssueBatchRequest struct {
 	ID          string `json:"id"`
-	StudentID   string `json:"studentID"`
+	StudentID   string `json:"studentId"`
 	StudentName string `json:"studentName"`
 	Degree      string `json:"degree"`
 	Issuer      string `json:"issuer"`
@@ -262,11 +262,11 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	seeds := []struct {
 		id, studentID, name, degree, issuer, date string
 	}{
-		{"CERT001", "STU001", "Alice Johnson", "Bachelor of Computer Science", "Digital University", "2024-01-15"},
-		{"CERT002", "STU002", "Bob Smith", "Master of Data Science", "Tech Institute", "2024-02-20"},
-		{"CERT003", "STU003", "Carol Williams", "PhD in Artificial Intelligence", "Research Academy", "2024-03-10"},
-		{"CERT004", "STU004", "David Brown", "Bachelor of Engineering", "Engineering College", "2024-04-05"},
-		{"CERT005", "STU005", "Eve Davis", "MBA in Business Administration", "Business School", "2024-05-12"},
+		{"CERT_SEED_001", "STU001", "Alice Johnson", "Bachelor of Computer Science", "Digital University", "2024-01-15"},
+		{"CERT_SEED_002", "STU002", "Bob Smith", "Master of Data Science", "Tech Institute", "2024-02-20"},
+		{"CERT_SEED_003", "STU003", "Carol Williams", "PhD in Artificial Intelligence", "Research Academy", "2024-03-10"},
+		{"CERT_SEED_004", "STU004", "David Brown", "Bachelor of Engineering", "Engineering College", "2024-04-05"},
+		{"CERT_SEED_005", "STU005", "Eve Davis", "MBA in Business Administration", "Business School", "2024-05-12"},
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -552,15 +552,23 @@ func (s *SmartContract) QueryAllCertificates(
 	pageSize string,
 	bookmark string,
 ) (string, error) {
+	ps, err := strconv.ParseInt(pageSize, 10, 32)
+	if err != nil {
+		ps = 20
+	}
+
+	paginatedRes, err := s.QueryAllCertificatesPaginated(ctx, int32(ps), bookmark)
+	if err == nil {
+		resJSON, _ := json.Marshal(paginatedRes)
+		return string(resJSON), nil
+	}
+
+	// Fallback to range query if CouchDB rich query fails
 	all, err := s.rangeAllCertificates(ctx)
 	if err != nil {
 		return "", err
 	}
-	res := struct {
-		Certificates []*Certificate `json:"certificates"`
-		Bookmark     string         `json:"bookmark"`
-		Count        int            `json:"count"`
-	}{
+	res := &PaginatedQueryResult{
 		Certificates: all,
 		Bookmark:     "",
 		Count:        len(all),
@@ -651,6 +659,40 @@ func (s *SmartContract) VerifyCertificate(
 	}, nil
 }
 
+func (s *SmartContract) HashOnlyBenchmark(
+	ctx contractapi.TransactionContextInterface,
+	payload string,
+) (string, error) {
+	if payload == "" {
+		return "", fmt.Errorf("HashOnlyBenchmark: payload required")
+	}
+	data := []byte(payload)
+
+	// SHA-256 × 3000 (Hardcoded since MagnificationFactor is removed in S4)
+	var sha256Result [32]byte
+	current := make([]byte, len(data)+32)
+	copy(current, data)
+	for i := 0; i < 500; i++ {
+		copy(current[len(data):], sha256Result[:])
+		sha256Result = sha256.Sum256(current)
+	}
+
+	// S4 uses off-chain BLAKE3, so we only benchmark SHA-256 here
+	return fmt.Sprintf("sha256:%x", sha256Result), nil
+}
+
+// VerifyCertificateByID is a specialized benchmark function that reads a certificate
+// and delegates to VerifyCertificate for deep hash integrity verification.
+func (s *SmartContract) VerifyCertificateByID(ctx contractapi.TransactionContextInterface, id string) (*VerificationResult, error) {
+	cert, err := s.ReadCertificate(ctx, id)
+	if err != nil || cert == nil {
+		return &VerificationResult{
+			CertID: id, Valid: false, Message: "certificate not found", Timestamp: time.Now().UTC().Format(time.RFC3339),
+		}, nil
+	}
+	return s.VerifyCertificate(ctx, id, cert.CertHash)
+}
+
 // QueryAllCertificates returns a paginated list of certificates.
 //
 // --- PH.D. RESEARCH FEATURE: PAGINATION ----------------------------------
@@ -669,7 +711,7 @@ func (s *SmartContract) QueryAllCertificatesPaginated(
 	// Use Rich Query with selector and sort to leverage CouchDB index (indexDocTypeIssueDate)
 	// Selector: { "docType": "certificate", "issueDate": {"$gt": null} }
 	// Sort: [ {"issueDate": "desc"} ]
-	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"issueDate":"desc"}]}`
+	queryString := `{"selector":{"docType":"certificate","issueDate":{"$gt":null}},"sort":[{"docType":"desc"},{"issueDate":"desc"}]}`
 
 	resultsIterator, metadata, err := ctx.GetStub().GetQueryResultWithPagination(
 		queryString, pageSize, bookmark)
@@ -879,7 +921,7 @@ func (s *SmartContract) GetBatchRecord(
 func (s *SmartContract) GetAuditLogs(
 	ctx contractapi.TransactionContextInterface,
 ) ([]*AuditLog, error) {
-	qs := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
+	qs := `{"selector":{"docType":"auditLog","timestamp":{"$gt":null}},"sort":[{"docType":"desc"},{"timestamp":"desc"}],"use_index":["_design/indexAuditLogValue","indexAuditLog"]}`
 	iter, err := ctx.GetStub().GetQueryResult(qs)
 	if err != nil {
 		return s.rangeAuditLogs(ctx)

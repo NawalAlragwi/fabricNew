@@ -1,0 +1,79 @@
+# ============================================================
+#  S2 — BLAKE3 Alternative  |  Target TPS: 150
+#  VerifyCertificate: 30 -> 150 TPS (PRIMARY ROUND)
+#
+#  PARITY with benchConfig_s1_sha256_tps150.yaml:
+#  - workers: 2 (same as SHA-256)
+#  - IssueCertificate: 22 TPS (same as SHA-256)
+#  - QueryAllCertificates: 12 TPS (same as SHA-256)
+#  - RevokeCertificate: 12 TPS (same as SHA-256)
+#  - HashOnlyBenchmark: 75 TPS (same as SHA-256)
+#  - VerifyCertificate: 30->150 TPS (same as SHA-256 - PRIMARY ROUND)
+#
+#  ONLY DIFFERENCE vs SHA-256: contractId = bcms-blake3
+#  This guarantees any performance gap = algorithm difference only.
+# ============================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: bcms-s2-blake3-tps150
+  description: >
+    Scenario S2 BLAKE3 Alternative at 150 TPS target.
+    VerifyCertificate: linear 30->150 TPS (PRIMARY COMPARISON ROUND).
+    MagnificationFactor x3000 = 12ms per tx (3.74x faster than SHA-256 45ms).
+    Expected: BLAKE3 stable at 150 TPS while SHA-256 saturates.
+  workers:
+    type: local
+    number: 2
+
+  rounds:
+
+    # ── Round 1: Issue (identical to SHA-256 config) ──────────────────
+    - label: IssueCertificate
+      description: Issue certs at 22 TPS, 60s (parity with SHA-256 config)
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 22
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ── Round 2: PRIMARY COMPARISON ROUND (identical range to SHA-256) ──
+    - label: VerifyCertificate
+      description: >
+        PRIMARY ROUND — BLAKE3 linear 30->150 TPS, 120s.
+        MagnificationFactor x3000 = 12ms per tx (AVX2 SIMD).
+        Expected: BLAKE3 remains extremely fast and stable.
+        Compare directly with SHA-256 which uses same 30->150 TPS range.
+      txDuration: 30
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 30
+          finishingTps: 150
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          totalIssued: 1320
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+

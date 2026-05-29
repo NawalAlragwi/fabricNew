@@ -1,0 +1,21 @@
+test:
+  name: hashOnly-hybrid-test
+  description: HashOnlyBenchmark for bcms-hybrid at 10 TPS
+  workers:
+    type: local
+    number: 1
+  rounds:
+    - label: HashOnlyBenchmark
+      description: 'HashOnlyBenchmark pure CPU test at 10 TPS'
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-hybrid
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

@@ -1,0 +1,99 @@
+# ============================================================================
+#  Docker Compose Environment Additions — HP ProBook 450 G9 (i7-1255U)
+#  Add these environment variables and resource limits to your existing
+#  test-network/docker/docker-compose-test-net.yaml
+#
+#  CRITICAL FIX: gRPC message size increased to handle 5KB payloads
+#  PERFORMANCE:  Resource limits prevent container memory competition
+#                that would mask the BLAKE3 vs SHA-256 difference
+# ============================================================================
+
+# ── Add to EACH peer service (peer0.org1, peer0.org2) ──
+# Under: services → peer0.org1.example.com → environment:
+
+  peer0.org1.example.com:
+    environment:
+      # ── gRPC size fix (resolves IssueCertificate 98.5% failure) ──
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+
+      # ── gRPC keepalive for WSL2 network stability ──
+      - CORE_PEER_GRPC_KEEPALIVE_MINTIME=60s
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120s
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20s
+
+      # ── CouchDB connection pool (prevents timeout under 150 TPS) ──
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=5
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=20
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=120s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_INTERNALQUERYLIMIT=1000
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXBATCHUPDATESIZE=500
+
+    # ── Resource limits for i7-1255U (prevents CPU starvation) ──
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  peer0.org2.example.com:
+    environment:
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+      - CORE_PEER_GRPC_KEEPALIVE_MINTIME=60s
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120s
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=5
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=120s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXBATCHUPDATESIZE=500
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ── Orderer ──
+  orderer.example.com:
+    environment:
+      - ORDERER_GENERAL_GRPC_MAXRECVMSGSIZE=104857600
+      - ORDERER_GENERAL_GRPC_MAXSENDMSGSIZE=104857600
+      - ORDERER_GENERAL_KEEPALIVE_SERVERKEEPALIVE_INTERVAL=120s
+      - ORDERER_GENERAL_KEEPALIVE_SERVERKEEPALIVE_TIMEOUT=20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # ── CouchDB instances ──
+  couchdb0:
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      # Increase CouchDB connection limits for 150 TPS
+      - ERL_FLAGS=-setcookie monster
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  couchdb1:
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 512M

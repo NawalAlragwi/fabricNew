@@ -1,8 +1,11 @@
 {
-    "index": {
-        "fields": ["docType", "issueDate"]
-    },
-    "ddoc": "indexCertificatesValue",
-    "name": "indexCertificates",
-    "type": "json"
+  "index": {
+    "fields": [
+      {"docType": "desc"},
+      {"issueDate": "desc"}
+    ]
+  },
+  "ddoc": "indexCertificatesValue",
+  "name": "indexCertificates",
+  "type": "json"
 }

@@ -22,6 +22,13 @@ services:
     # for example map it to utilize Fauxton User Interface in dev environments.
     ports:
       - "5984:5984"
+    # OOM-FIX: cap CouchDB to 1.5GB — enough for 900-1800 certs + index cache
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 256M
     networks:
       - test
 
@@ -51,6 +58,13 @@ services:
     # for example map it to utilize Fauxton User Interface in dev environments.
     ports:
       - "7984:5984"
+    # OOM-FIX: same cap as couchdb0 for symmetric allocation
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 256M
     networks:
       - test
 

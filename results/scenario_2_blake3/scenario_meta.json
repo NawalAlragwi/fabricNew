@@ -1,1 +1,10 @@
-{"scenario":2,"key":"scenario_2_blake3","label":"S2: BLAKE3 Alternative","chaincode":"chaincode-bcms/blake3","batch_size":1,"tps":50,"started":"2026-04-16T19:38:08Z"}
+{
+  "scenario": 2,
+  "key": "scenario_2_blake3",
+  "label": "S2: BLAKE3 Alternative (4.01 us/hash x1500)",
+  "chaincode": "chaincode-bcms/blake3",
+  "cc_name": "bcms-blake3",
+  "batch_size": 1,
+  "tps_values": [200],
+  "started": "2026-05-29T19:12:37Z"
+}

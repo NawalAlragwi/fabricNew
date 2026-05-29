@@ -1,9 +1,9 @@
 # ============================================================================
-#  BCMS — Scenario S3: Hybrid (SHA-256 + BLAKE3), No Batch  (v6.2)
-#  Hash algorithm : Hybrid — BLAKE3(SHA-256(data))
+#  BCMS — Scenario S3: Hybrid (v9.0 — PERFORMANCE FIXES)
+#  Hash algorithm : Hybrid (SHA-256 on-chain + BLAKE3 advisory)
 #  Batch size     : 1 (one certificate per Fabric transaction)
-#  Workers        : 5 (local)
-#  TPS Target     : 200 (Standardized for fair comparison)
+#  Workers        : 10
+#  Transcript     : 5 KB per certificate (Reduced from 50 KB for stability)
 # ============================================================================
 
 monitors:
@@ -17,79 +17,57 @@ monitors:
           - couchdb0
           - peer0.org2.example.com
           - couchdb1
+          - ca_org1
+          - ca_org2
+          - ca_orderer
 
 test:
-  name: bcms-s3-hybrid-fixed-200tps
+  name: bcms-s3-hybrid-baseline-v9
   description: >
-    Scenario S3 — Hybrid Hash, No Batching. Specialized for academic comparison.
-    TPS fixed at 200 for all rounds. Standardized for academic comparison.
+    Scenario S3 — Hybrid Baseline.
+    Payload: 5 KB transcript per certificate.
+    Issue: 20 TPS (Stabilized).
+    Verify: 100-500 TPS linear ramp.
+    Query/Revoke: 50 TPS.
   workers:
     type: local
-    number: 5
+    number: 10
 
   rounds:
-
-    - label: WarmupIndexing
-      description: Warm-up round to trigger CouchDB index building and container startup.
-      txDuration: 15
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
-    # ── ROUND 1: ISSUANCE ──────────────────────────────────────────────────
     - label: IssueCertificate
-      description: Issue single certificates at fixed 150 TPS.
+      description: >
+        S3 Hybrid Baseline — Issue single certificates (batchSize=1).
+        Fixed-rate 20 TPS, 60 s, 10 workers.
       txDuration: 60
       rateControl:
         type: fixed-rate
         opts:
-          tps: 150
+          tps: 20
       workload:
         module: workload/issueCertificate.js
         arguments:
+          contractId: bcms-hybrid
           batchSize: 1
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 2: VERIFICATION ──────────────────────────────────────────────
     - label: VerifyCertificate
-      description: Read-only verification at 150 TPS.
+      description: >
+        S3 Hybrid — Linear-rate 100-500 TPS verify (read-only).
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 150
+          startingTps: 100
+          finishingTps: 500
       workload:
         module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          totalIssued: 1000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 3: FULL QUERY ────────────────────────────────────────────────
-    - label: QueryAllCertificates
-      description: Query with 200 TPS (limited to 100 results per tx).
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workload/queryAllCertificates.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
 
-    # ── ROUND 4: REVOCATION ────────────────────────────────────────────────
-    - label: RevokeCertificate
-      description: Mark certificates as revoked at 200 TPS.
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 200
-      workload:
-        module: workload/revokeCertificate.js
-      txOptions:
-        invokerIdentity: User1@org1.example.com
+

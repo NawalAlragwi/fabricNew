@@ -6,26 +6,106 @@
 services:
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     environment:
       #Generic peer variables
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - DOCKER_BUILDKIT=0
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_test
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
+      # ── gRPC size fix (resolves IssueCertificate 98.5% failure) ──
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+      # ── gRPC keepalive for WSL2 network stability ──
+      - CORE_PEER_GRPC_KEEPALIVE_MINTIME=60s
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120s
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20s
+      # ── CouchDB connection pool (prevents timeout under 150 TPS) ──
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=5
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=20
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=120s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_INTERNALQUERYLIMIT=1000
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXBATCHUPDATESIZE=500
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     volumes:
-      - ./docker/peercfg:/etc/hyperledger/peercfg
+      - ../../../config:/etc/hyperledger/peercfg
       - ${DOCKER_SOCK}:/host/var/run/docker.sock
 
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     labels:
       service: hyperledger-fabric
     environment:
       #Generic peer variables
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - DOCKER_BUILDKIT=0
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric_test
+      - CORE_PEER_HANDLERS_ENDORSER_CONCURRENCYLIMIT=5000
+      - CORE_PEER_GRPC_MAXRECVMSGSIZE=104857600
+      - CORE_PEER_GRPC_MAXSENDMSGSIZE=104857600
+      - CORE_PEER_GRPC_KEEPALIVE_MINTIME=60s
+      - CORE_PEER_GRPC_KEEPALIVE_INTERVAL=120s
+      - CORE_PEER_GRPC_KEEPALIVE_TIMEOUT=20s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=5
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=120s
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXBATCHUPDATESIZE=500
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     volumes:
-      - ./docker/peercfg:/etc/hyperledger/peercfg
+      - ../../../config:/etc/hyperledger/peercfg
       - ${DOCKER_SOCK}:/host/var/run/docker.sock
+
+  orderer.example.com:
+    environment:
+      - ORDERER_GENERAL_GRPC_MAXRECVMSGSIZE=104857600
+      - ORDERER_GENERAL_GRPC_MAXSENDMSGSIZE=104857600
+      - ORDERER_GENERAL_KEEPALIVE_SERVERKEEPALIVE_INTERVAL=120s
+      - ORDERER_GENERAL_KEEPALIVE_SERVERKEEPALIVE_TIMEOUT=20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  couchdb0:
+    image: couchdb:3.4.2
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - ERL_FLAGS=-setcookie monster
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  couchdb1:
+    image: couchdb:3.4.2
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 512M

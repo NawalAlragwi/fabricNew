@@ -1,0 +1,67 @@
+﻿test:
+  name: bcms-s-hybrid-batch-tps50
+  description: 'Scenario S4 Hybrid-Batch at 50 TPS target (UNIFIED CONFIG)'
+  workers:
+    type: local
+    number: 4
+  rounds:
+    - label: IssueCertificate
+      description: 'Issue batch certs at 8 TPS, 60s'
+      txDuration: 60
+      # NOTE: S4 IssueBatch Option 2 - Lower batchSize (5) and higher TPS (8)
+      # to keep the same cert generation rate (40 certs/sec) but with lighter payload (25KB/tx).
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 8
+      workload:
+        module: workload/issueCertificateBatch.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          batchSize: 5
+          payloadSize: 5000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+    - label: HashOnlyBenchmark
+      description: 'PURE CPU ROUND - isolate crypto overhead'
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/hashOnlyBenchmark.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          payloadSize: 20000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+    - label: VerifyCertificate
+      description: 'PRIMARY ROUND - linear 10->50 TPS, 120s'
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 10
+          finishingTps: 50
+      workload:
+        module: workload/verifyCertificate.js
+        arguments:
+          contractId: bcms-hybrid-batch
+          totalIssued: 480
+          certPrefix: BCERT
+          batchSize: 10
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
+          - couchdb0
+          - couchdb1

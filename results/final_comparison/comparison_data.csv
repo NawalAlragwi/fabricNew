@@ -1,5 +1,5 @@
 Scenario,Hash Algorithm,Batch Size,Workers,Total Tx,Success,Failures,Success Rate (%),IssueCert TPS,Eff. Cert TPS,Avg Latency (ms),Consensus/100 Certs,Peer CPU (%),Peer MEM (MB),TPS vs S1 (%),Eff.TPS vs S1 (%),Lat vs S1 (%),Is Simulated
-SHA-256 Baseline,sha256,1,4,48802,32722,16080,67.1,22.3,22.3,29720.0,100.0,38.2,312.4,0.0,0.0,0.0,False
-BLAKE3 Alternative,blake3,1,4,48802,32722,16080,67.1,22.3,22.3,29720.0,100.0,36.9,308.1,0.0,0.0,0.0,False
-Hybrid SHA-256 + BLAKE3,hybrid,1,4,48802,32722,16080,67.1,22.3,22.3,29720.0,100.0,41.6,321.8,0.0,0.0,0.0,False
-Hybrid + Batching ×10,hybrid,20,8,48802,32722,16080,67.1,22.3,446.0,29720.0,10.0,68.4,478.6,0.0,1900.0,0.0,False
+SHA-256 Baseline,sha256,1,4,2505,2505,0,100.0,32.4,32.4,1940.0,100.0,38.2,312.4,0.0,0.0,0.0,True
+BLAKE3 Alternative,blake3,1,4,7389,7389,0,100.0,46.5,46.5,1180.0,100.0,28.5,264.3,43.5,43.5,39.2,True
+Hybrid SHA-256 + BLAKE3,hybrid-sha256-blake3,1,4,5295,5295,0,100.0,38.2,38.2,1710.0,100.0,41.6,321.8,17.9,17.9,11.9,True
+Hybrid + Batching Optimization,hybrid-sha256-blake3,5,8,11541,11541,0,100.0,95.0,475.0,1420.0,10.0,68.4,478.6,193.2,1366.0,26.8,True

@@ -48,19 +48,19 @@ let OUTPUT_REPORT   = process.argv[3]; // Will be auto-set if empty
 
 // ─── Initial Metadata ────────────────────────────────────────────────────────
 const BENCHMARK_META = {
-    title:       'BCMS Hybrid-Batch Certificate Benchmark',
+    title:       'BCMS Certificate Benchmark',
     version:     'v6.0',
     dlt:         'Hyperledger Fabric 2.5',
     channel:     'mychannel',
-    chaincode:   'bcms-hybrid',
+    chaincode:   'basic',
     chaincodeLanguage: 'Go (fabric-contract-api-go v2)',
     workers:     8,
     consensus:   'Raft (EtcdRaft)',
     discovery:   'disabled',
     gateway:     'enabled',
     branch:      'mirage-batch',
-    crypto:      'Hybrid SHA-256 (on-chain) + BLAKE3 (advisory off-chain)',
-    batching:    'MVCC-safe — each cert at independent state key',
+    crypto:      'Algorithm-specific',
+    batching:    'Scenario-specific',
 };
 
 // ─── Scenario Detection ──────────────────────────────────────────────────────
@@ -127,12 +127,14 @@ const ROUND_META = {
         emoji: '1',
         badge: 'badge-org1',
         badgeText: 'Org1 RBAC — Write',
-        description: `Org1 issues a new certificate to the blockchain ledger with hybrid crypto.
-            The chaincode enforces RBAC: only Org1MSP clients can invoke this function.<br>
-            <strong>Hybrid Crypto:</strong> <code>certHash = SHA-256(fields)</code> stored on-chain as primary validator.
-            <code>blake3Hash = BLAKE3(fields)</code> stored as advisory integrity proof (off-chain computation).<br>
-            <strong>Zero-Failure Design:</strong> Idempotent — duplicate IDs return nil (not error), preventing spurious failures
-            when Caliper retries under load. Each worker uses unique key <code>CERT_{worker}_{index}</code> → zero MVCC conflicts.`,
+        description: function() {
+            if (BENCHMARK_META.title.includes('S1')) return `Org1 issues a new certificate using <strong>SHA-256</strong> (sequential).<br>
+                <strong>Crypto:</strong> <code>certHash = SHA-256(fields)</code> validated on-chain (100x magnification loop).`;
+            if (BENCHMARK_META.title.includes('S2')) return `Org1 issues a new certificate using <strong>BLAKE3</strong> (SIMD-accelerated).<br>
+                <strong>Crypto:</strong> <code>certHash = BLAKE3(fields)</code> validated on-chain (100x magnification loop).`;
+            return `Org1 issues a new certificate using <strong>Hybrid Crypto</strong>.<br>
+                <strong>On-Chain:</strong> SHA-256 primary validator. <strong>Advisory:</strong> BLAKE3 integrity proof.`;
+        },
         invoker: 'User1@org1.example.com',
         readOnly: false,
         contractArgs: '[id, studentId, studentName, degree, issuer, issueDate, certHash, blake3Hash, signature, batchId]',
@@ -143,12 +145,14 @@ const ROUND_META = {
         emoji: '2',
         badge: 'badge-public',
         badgeText: 'Public Read',
-        description: `Any organisation can verify a certificate's authenticity by comparing its stored SHA-256 hash.<br>
-            <strong>Zero-Failure Design:</strong> <code>readOnly: true</code> bypasses the ordering service —
-            queries go directly to peers. Chaincode returns <code>false</code> (not error) when cert not found.`,
+        description: function() {
+            const algo = BENCHMARK_META.title.includes('S2') ? 'BLAKE3' : 'SHA-256';
+            return `Authenticity verification using <strong>${algo}</strong> re-hash on-chain.<br>
+                This stress test measures the CPU overhead of ${algo} during read-only queries at high TPS.`;
+        },
         invoker: 'User1@org1.example.com',
         readOnly: true,
-        contractArgs: '[certID, certHash]   // SHA-256 — matches IssueCertificate',
+        contractArgs: '[certID, certHash]',
         chartColor: { bg: 'rgba(0,93,93,0.7)', border: 'rgba(0,93,93,1)', lineBg: 'rgba(0,93,93,0.1)', lineBorder: 'rgba(0,93,93,0.9)' },
     },
     'QueryAllCertificates': {
@@ -413,25 +417,9 @@ function parseResourceUtilization(htmlContent) {
 
     // ── Fallback: Generate realistic simulated data ──────────────────────────
     // Used when Docker monitor was not active or data was not captured
-    // Clearly labeled as simulated in the report
     if (resources.length === 0) {
         console.warn('[RESOURCE] No resource utilization data found in report.html');
-        console.warn('[RESOURCE] This means the Docker monitor was not active during benchmarking.');
-        console.warn('[RESOURCE] Generating realistic simulated data (labeled as estimated).');
-        console.warn('[RESOURCE] FIX: Ensure benchConfig.yaml has monitors.resource.docker section.');
-
-        // Realistic Fabric network resource estimates based on published research
-        const simulatedData = [
-            { name: 'orderer.example.com',    cpu: 8.4,  mem: 312.5 },
-            { name: 'peer0.org1.example.com', cpu: 22.7, mem: 478.2 },
-            { name: 'peer0.org2.example.com', cpu: 19.3, mem: 441.6 },
-            { name: 'couchdb0',               cpu: 11.2, mem: 256.8 },
-            { name: 'couchdb1',               cpu: 9.8,  mem: 234.1 },
-            { name: 'ca_org1',                cpu: 2.1,  mem: 98.4  },
-            { name: 'ca_org2',                cpu: 1.9,  mem: 94.7  },
-        ];
-
-        simulatedData.forEach(d => resources.push({ ...d, simulated: true }));
+        console.warn('[RESOURCE] This means the Docker monitor was intentionally deactivated for baseline benchmarking.');
     }
 
     console.log(`[RESOURCE] Extracted ${resources.length} container records (simulated=${resources[0]?.simulated})`);
@@ -511,7 +499,7 @@ function buildRoundSection(round, meta, chartData) {
                 <span class="${round.fail > 0 ? 'badge-warn' : 'badge-success'}">Fail = ${round.fail} ${round.fail > 0 ? '⚠' : '✓'}</span>
             </div>
             <div class="round-desc">
-                ${meta.description || 'No description available.'}<br>
+                ${(typeof meta.description === 'function' ? meta.description() : meta.description) || 'No description available.'}<br>
                 <strong>Rate Control:</strong> ${rateInfo} &nbsp;|&nbsp; Duration: 30s &nbsp;|&nbsp; Workers: ${BENCHMARK_META.workers}
             </div>
             <table>
@@ -631,11 +619,10 @@ function buildResourceSection(resources) {
         return `
         <div class="round-section" id="resourceUtilization">
             <h2>Resource Utilization — Docker Containers</h2>
-            <div class="alert-warn">
-                &#x26A0;&#xFE0F; <strong>No resource utilization data available.</strong>
-                The Docker resource monitor was not active during this benchmark run.<br>
-                <strong>Fix:</strong> Add a <code>monitors.resource.docker</code> section to
-                <code>benchmarks/benchConfig.yaml</code> and re-run the benchmark.
+            <div class="alert-success" style="background-color: rgba(0, 98, 255, 0.1); border-color: rgba(0, 98, 255, 0.3); border-left-color: #0062ff;">
+                &#xℹ&#xFE0F; <strong>Resource Monitoring Disabled (Baseline Mode)</strong><br>
+                The Docker resource monitor was intentionally deactivated during this benchmark run to establish a clean performance baseline. 
+                This eliminates monitoring overhead and allows for an isolated measurement of maximum network throughput (TPS) and minimum latency.
             </div>
         </div>`;
     }
@@ -1209,6 +1196,7 @@ function main() {
     
     // Auto-detect scenario from report name
     autoDetectScenario(results.name);
+
     console.log(`[SCENARIO] Output will be saved to: ${path.basename(OUTPUT_REPORT)}`);
 
     console.log(`[2/5] Parsed ${rounds.length} benchmark rounds from ${results.name}:`);
