@@ -1,0 +1,115 @@
+# ============================================================================
+#  Table 9 — S3: Hybrid (SHA-256 + BLAKE3) — Concurrent User Load Test
+#  Tests: 10, 50, 100 Concurrent Users
+#
+#  Target Results (Table 9):
+#    10  users → Avg Latency ~8.92s
+#    50  users → Avg Latency ~11.34s
+#    100 users → Avg Latency ~15.61s
+#    100 users → Max Latency ~21.43s
+#
+#  Why Hybrid has HIGHEST latency (single-tx)?
+#    Each tx computes BOTH SHA-256 AND BLAKE3 on-chain.
+#    Double hashing overhead = highest per-tx CPU cost = highest latency.
+#    S3 > S1 > S2 in latency (consistent with Table 9).
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: table9-S3-Hybrid-concurrent-users
+  description: >
+    Table 9 Concurrent User Load Test — S3 (Hybrid SHA-256+BLAKE3).
+    Three rounds simulating 10, 50, and 100 concurrent users.
+    Hybrid computes both SHA-256 and BLAKE3 per tx — highest latency in Table 9.
+
+  workers:
+    type: local
+    number: 10
+
+  rounds:
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 1 — 10 Concurrent Users
+    # Expected Avg Latency: ~8.92s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: Hybrid-10-Users
+      description: >
+        10 concurrent users. fixed-rate 10 TPS.
+        Hybrid: SHA-256 + BLAKE3 per tx. Target avg latency ~8.92s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 2 — 50 Concurrent Users
+    # Expected Avg Latency: ~11.34s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: Hybrid-50-Users
+      description: >
+        50 concurrent users. fixed-rate 20 TPS.
+        Target avg latency ~11.34s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 3 — 100 Concurrent Users
+    # Expected Avg Latency: ~15.61s | Max Latency: ~21.43s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: Hybrid-100-Users
+      description: >
+        100 concurrent users. fixed-rate 30 TPS.
+        Target avg latency ~15.61s. Max latency ~21.43s.
+      txDuration: 90
+      workers:
+        type: local
+        number: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-hybrid
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

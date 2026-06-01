@@ -1,4 +1,4 @@
-test:
+﻿test:
   name: bcms-s-blake3-tps200
   description: 'BLAKE3 at 200 TPS. MagnificationFactor x3000 = 12ms per tx.'
   workers:
@@ -54,9 +54,10 @@ monitors:
     - module: docker
       options:
         interval: 5
-        containers:
+        cpuUsageNormalization: true
+                containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com
-          - couchdb0
-          - couchdb1
+          - compose-couchdb0-1
+          - compose-couchdb1-1

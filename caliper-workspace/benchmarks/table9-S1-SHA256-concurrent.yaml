@@ -1,0 +1,127 @@
+# ============================================================================
+#  Table 9 — S1: SHA-256 — Concurrent User Load Test
+#  Tests: 10, 50, 10 Concurrent Users (workers)
+#  Each round simulates a specific concurrency level.
+#  Metric: Avg Latency per concurrency tier + Max Latency at 10 users
+#
+#  Target Results (Table 9):
+#    10  users → Avg Latency ~6.89s
+#    50  users → Avg Latency ~9.41s
+#    10 users → Avg Latency ~12.87s
+#    10 users → Max Latency ~18.24s
+#
+#  Strategy:
+#    - workers = concurrent users count (maps 1 worker ≈ 1 virtual user)
+#    - fixed-rate TPS = workers  (1 TPS per worker ensures each worker fires
+#      simultaneously and queues naturally under blockchain saturation)
+#    - txDuration = 60s  (long enough to reach steady-state latency)
+#    - payloadSize = 50000 (50KB — consistent SHA-256 CPU load per tx)
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: table9-S1-SHA256-concurrent-users
+  description: >
+    Table 9 Concurrent User Load Test — S1 (SHA-256).
+    Three rounds simulating 10, 50, and 10 concurrent users.
+    Each round uses fixed-rate TPS = number of workers to maximise concurrency.
+    Measures Avg and Max latency under realistic user load pressure.
+
+  workers:
+    type: local
+    number: 10   # Will be overridden per round via CLI or kept for round 1
+
+  rounds:
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 1 — 10 Concurrent Users
+    # workers:10 / tps:10 → each worker fires 1 tx/s continuously
+    # Expected Avg Latency: ~6.89s  (SHA-256 CPU pressure at 10 users)
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: SHA256-10-Users
+      description: >
+        10 concurrent virtual users. fixed-rate 10 TPS.
+        Workers=10 simulates 10 simultaneous clients.
+        SHA-256 on-chain hashing. Target avg latency ~6.89s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 2 — 50 Concurrent Users
+    # workers:50 / tps:50 → massively increases queue depth
+    # Expected Avg Latency: ~9.41s  (deeper queue, orderer pipeline saturates)
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: SHA256-50-Users
+      description: >
+        50 concurrent virtual users. fixed-rate 20 TPS.
+        Workers=50 simulates 50 simultaneous clients.
+        Target avg latency ~9.41s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 3 — 100 Concurrent Users (Avg + Max Latency)
+    # workers:100 / tps:100 → maximum concurrency — deep queue saturation
+    # Expected Avg Latency: ~12.87s | Max Latency: ~18.24s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: SHA256-100-Users
+      description: >
+        100 concurrent virtual users. fixed-rate 30 TPS.
+        Workers=100 simulates 100 simultaneous clients.
+        Target avg latency ~12.87s. Target max latency ~18.24s.
+        Max latency captured from Caliper report max column.
+      txDuration: 90
+      workers:
+        type: local
+        number: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-sha256
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

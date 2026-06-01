@@ -1,0 +1,115 @@
+# ============================================================================
+#  Table 9 — S2: BLAKE3 — Concurrent User Load Test
+#  Tests: 10, 50, 100 Concurrent Users
+#
+#  Target Results (Table 9):
+#    10  users → Avg Latency ~2.14s
+#    50  users → Avg Latency ~3.18s
+#    100 users → Avg Latency ~4.92s
+#    100 users → Max Latency ~7.13s
+#
+#  Why BLAKE3 has LOWER latency than SHA-256?
+#    BLAKE3 is ~3× faster than SHA-256 on modern CPUs.
+#    Less time per endorsement → shorter queue wait times → lower latency
+#    under the same concurrency pressure.
+# ============================================================================
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - orderer.example.com
+          - peer0.org1.example.com
+          - couchdb0
+          - peer0.org2.example.com
+          - couchdb1
+
+test:
+  name: table9-S2-BLAKE3-concurrent-users
+  description: >
+    Table 9 Concurrent User Load Test — S2 (BLAKE3).
+    Three rounds simulating 10, 50, and 100 concurrent users.
+    BLAKE3 is ~3× faster than SHA-256 — produces lowest latency in Table 9.
+
+  workers:
+    type: local
+    number: 10
+
+  rounds:
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 1 — 10 Concurrent Users
+    # Expected Avg Latency: ~2.14s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: BLAKE3-10-Users
+      description: >
+        10 concurrent users. fixed-rate 10 TPS.
+        BLAKE3 on-chain hashing. Target avg latency ~2.14s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 2 — 50 Concurrent Users
+    # Expected Avg Latency: ~3.18s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: BLAKE3-50-Users
+      description: >
+        50 concurrent users. fixed-rate 20 TPS.
+        Target avg latency ~3.18s.
+      txDuration: 60
+      workers:
+        type: local
+        number: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Round 3 — 100 Concurrent Users
+    # Expected Avg Latency: ~4.92s | Max Latency: ~7.13s
+    # ─────────────────────────────────────────────────────────────────────────
+    - label: BLAKE3-100-Users
+      description: >
+        100 concurrent users. fixed-rate 30 TPS.
+        Target avg latency ~4.92s. Max latency ~7.13s.
+      txDuration: 90
+      workers:
+        type: local
+        number: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/issueCertificate.js
+        arguments:
+          contractId: bcms-blake3
+          batchSize: 1
+          payloadSize: 2000
+      txOptions:
+        invokerIdentity: User1@org1.example.com

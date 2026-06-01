@@ -1,4 +1,4 @@
-test:
+﻿test:
   name: bcms-s-sha256-tps200
   description: >
     Scenario sha256 at 200 TPS target (UNIFIED CONFIG).
@@ -69,9 +69,10 @@ monitors:
     - module: docker
       options:
         interval: 5
-        containers:
+        cpuUsageNormalization: true
+                containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com
-          - couchdb0
-          - couchdb1
+          - compose-couchdb0-1
+          - compose-couchdb1-1
