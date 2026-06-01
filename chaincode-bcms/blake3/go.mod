@@ -1,6 +1,6 @@
 module github.com/NawalAlragwi/fabricNew/chaincode-bcms/blake3
 
-go 1.21.0
+go 1.22.0
 
 require (
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0

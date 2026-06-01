@@ -22,7 +22,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 20000
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 

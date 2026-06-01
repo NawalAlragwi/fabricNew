@@ -8,7 +8,7 @@
 #                     (2 P-cores + 3 E-cores for Caliper,
 #                      remaining cores for Docker containers + scheduler)
 #
-#  payloadSize: 20000 — 20 KB: stresses SIMD vs sequential hashing.
+#  payloadSize: 5000 — 20 KB: stresses SIMD vs sequential hashing.
 #                      SHA-256 ×1000: 60.0µs × 1000 = 60,000µs per tx at this size
 #                      BLAKE3 ×1000:  16.0µs × 1000 = 16,000µs per tx at this size
 #
@@ -67,7 +67,7 @@ test:
         module: workload/issueCertificate.js
         arguments:
           contractId: bcms-sha256
-          payloadSize: 20000
+          payloadSize: 5000
       txOptions:
         invokerIdentity: User1@org1.example.com
 
