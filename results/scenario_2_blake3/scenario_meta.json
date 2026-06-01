@@ -5,6 +5,6 @@
   "chaincode": "chaincode-bcms/blake3",
   "cc_name": "bcms-blake3",
   "batch_size": 1,
-  "tps_values": [200],
-  "started": "2026-05-29T19:12:37Z"
+  "tps_values": [50,100,150,200,250],
+  "started": "2026-06-01T17:50:47Z"
 }

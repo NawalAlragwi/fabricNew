@@ -154,13 +154,13 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>33.65</td> <td>0.92</td> <td>17.86</td> <td>13.2</td>
+                         <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>0.35</td> <td>0.12</td> <td>0.18</td> <td>15.0</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.54</td> <td>0.07</td> <td>0.14</td> <td>10.0</td>
+                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.12</td> <td>0.01</td> <td>0.03</td> <td>10.1</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>4171</td> <td>0</td> <td>34.8</td> <td>16.56</td> <td>0.05</td> <td>3.67</td> <td>30.8</td>
+                         <td>VerifyCertificate</td> <td>4566</td> <td>0</td> <td>38.1</td> <td>0.16</td> <td>0.01</td> <td>0.02</td> <td>38.1</td>
                     </tr>
                 </table>
             </div>
@@ -179,10 +179,37 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>33.65</td> <td>0.92</td> <td>17.86</td> <td>13.2</td>
+                                     <td>IssueCertificate</td> <td>904</td> <td>0</td> <td>15.1</td> <td>0.35</td> <td>0.12</td> <td>0.18</td> <td>15.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [B]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>orderer.example.com</td> <td>0.1925</td> <td>0.10375</td> <td>74.2</td> <td>56.0</td> <td>11.5</td> <td>22.9</td> <td>24.7</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org1.example.com</td> <td>0.41125</td> <td>0.29125</td> <td>126</td> <td>116</td> <td>20.7</td> <td>18.0</td> <td>18.8</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org2.example.com</td> <td>0.4075</td> <td>0.2575</td> <td>101</td> <td>92.6</td> <td>20.6</td> <td>17.6</td> <td>18.8</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb1-1</td> <td>0.0175</td> <td>0.005</td> <td>70.1</td> <td>70.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb0-1</td> <td>0.01875</td> <td>0.00625</td> <td>69.9</td> <td>69.7</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
@@ -200,10 +227,37 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.54</td> <td>0.07</td> <td>0.14</td> <td>10.0</td>
+                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.12</td> <td>0.01</td> <td>0.03</td> <td>10.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [KB]</th> <th>Disc Read [B]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>orderer.example.com</td> <td>0.0025</td> <td>0.00125</td> <td>48.8</td> <td>48.8</td> <td>0.0167</td> <td>0.0201</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org1.example.com</td> <td>0.15125</td> <td>0.1075</td> <td>127</td> <td>126</td> <td>13.0</td> <td>25.4</td> <td>4.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org2.example.com</td> <td>0.07375</td> <td>0.055</td> <td>100</td> <td>100</td> <td>0.0718</td> <td>0.0747</td> <td>4.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb1-1</td> <td>0.01375</td> <td>0.00375</td> <td>70.1</td> <td>70.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb0-1</td> <td>0.0125</td> <td>0.00375</td> <td>69.7</td> <td>69.7</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
@@ -222,10 +276,37 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>4171</td> <td>0</td> <td>34.8</td> <td>16.56</td> <td>0.05</td> <td>3.67</td> <td>30.8</td>
+                                     <td>VerifyCertificate</td> <td>4566</td> <td>0</td> <td>38.1</td> <td>0.16</td> <td>0.01</td> <td>0.02</td> <td>38.1</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>orderer.example.com</td> <td>0.02625</td> <td>0.0025</td> <td>48.9</td> <td>48.9</td> <td>0.0222</td> <td>0.0252</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org1.example.com</td> <td>0.67125</td> <td>0.31125</td> <td>127</td> <td>124</td> <td>12.6</td> <td>42.4</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>peer0.org2.example.com</td> <td>0.08375</td> <td>0.04625</td> <td>100</td> <td>72.5</td> <td>0.137</td> <td>0.140</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb1-1</td> <td>0.01125</td> <td>0.00375</td> <td>70.3</td> <td>70.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>compose-couchdb0-1</td> <td>0.0175</td> <td>0.00375</td> <td>69.7</td> <td>69.7</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
             </div>
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
@@ -248,7 +329,7 @@ rounds:
       module: workload&#x2F;issueCertificate.js
       arguments:
         contractId: bcms-blake3
-        payloadSize: 20000
+        payloadSize: 5000
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: HashOnlyBenchmark
