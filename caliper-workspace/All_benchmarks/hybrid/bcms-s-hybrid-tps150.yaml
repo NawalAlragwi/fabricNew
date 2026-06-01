@@ -1,4 +1,4 @@
-﻿test:
+test:
   name: bcms-s-hybrid-tps150
   description: 'Scenario hybrid at 150 TPS target (UNIFIED CONFIG). VerifyCertificate:
     linear 30->150 TPS (PRIMARY ROUND). MagnificationFactor x3000 = 45ms per tx (SHA-256
@@ -61,7 +61,7 @@ monitors:
       options:
         interval: 5
         cpuUsageNormalization: true
-                containers:
+        containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com

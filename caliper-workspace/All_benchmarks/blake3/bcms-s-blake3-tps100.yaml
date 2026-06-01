@@ -1,4 +1,4 @@
-﻿test:
+test:
   name: bcms-s-blake3-tps100
   description: 'BLAKE3 at 100 TPS. MagnificationFactor x3000 = 12ms per tx.'
   workers:
@@ -55,7 +55,7 @@ monitors:
       options:
         interval: 5
         cpuUsageNormalization: true
-                containers:
+        containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com

@@ -126,9 +126,8 @@
             <ul>
                 <h3>&nbspBasic information</h3>
                 <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
-                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-sha256-tps250</span></li>
-                <li>Description: &nbsp<span style="font-weight: 500;">Scenario sha256 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear 50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 45ms per tx (no SIMD). workers&#x3D;4, txDuration unified: Issue&#x3D;60s, Verify&#x3D;120s.
-</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bcms-s-sha256-tps150</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">SHA-256 at 150 TPS. MagnificationFactor x3000 &#x3D; 45ms per tx.</span></li>
                 <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">3</span></li>
                 <li><a href="#benchmarkInfo">Details</a></li>
             </ul>
@@ -155,24 +154,24 @@
                     </tr>
 
                     <tr>
-                         <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>0.23</td> <td>0.04</td> <td>0.10</td> <td>38.0</td>
+                         <td>IssueCertificate</td> <td>1324</td> <td>0</td> <td>22.0</td> <td>0.65</td> <td>0.06</td> <td>0.18</td> <td>22.0</td>
                     </tr>
                     <tr>
-                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.06</td> <td>0.03</td> <td>0.04</td> <td>10.0</td>
+                         <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.20</td> <td>0.09</td> <td>0.12</td> <td>10.0</td>
                     </tr>
                     <tr>
-                         <td>VerifyCertificate</td> <td>11465</td> <td>0</td> <td>95.6</td> <td>0.04</td> <td>0.01</td> <td>0.01</td> <td>95.6</td>
+                         <td>VerifyCertificate</td> <td>6345</td> <td>0</td> <td>52.9</td> <td>0.22</td> <td>0.02</td> <td>0.05</td> <td>52.9</td>
                     </tr>
                 </table>
             </div>
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="IssueCertificate">
                 <h2>Benchmark round: IssueCertificate</h2>
-                <p>Issue certs at 38 TPS, 60s — unified config</p>
+                <p>Issue certs at 22 TPS, 60s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
   opts:
-    tps: 38
+    tps: 22
 </pre>
                         <h3>Performance metrics for IssueCertificate</h3>
                             <table style="min-width: 100%;">
@@ -180,7 +179,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>IssueCertificate</td> <td>2284</td> <td>0</td> <td>38.1</td> <td>0.23</td> <td>0.04</td> <td>0.10</td> <td>38.0</td>
+                                     <td>IssueCertificate</td> <td>1324</td> <td>0</td> <td>22.0</td> <td>0.65</td> <td>0.06</td> <td>0.18</td> <td>22.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for IssueCertificate</h3>
@@ -189,22 +188,22 @@ rateControl:
                                 <tr>
                                 <table>
                                     <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [B]</th>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [KB]</th>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org1.example.com</td> <td>0.43</td> <td>0.3475</td> <td>228</td> <td>211</td> <td>45.1</td> <td>44.5</td> <td>41.4</td> <td>0.00</td>
+                                         <td>peer0.org1.example.com</td> <td>1.3875</td> <td>0.5375</td> <td>162</td> <td>150</td> <td>28.1</td> <td>26.1</td> <td>25.4</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org2.example.com</td> <td>0.4225</td> <td>0.315</td> <td>133</td> <td>121</td> <td>44.9</td> <td>43.6</td> <td>41.4</td> <td>0.00</td>
+                                         <td>peer0.org2.example.com</td> <td>0.7625</td> <td>0.43</td> <td>115</td> <td>102</td> <td>28.0</td> <td>25.6</td> <td>25.4</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>orderer.example.com</td> <td>0.1625</td> <td>0.1125</td> <td>132</td> <td>109</td> <td>25.4</td> <td>50.9</td> <td>55.6</td> <td>0.00</td>
+                                         <td>orderer.example.com</td> <td>0.3175</td> <td>0.18625</td> <td>93.9</td> <td>68.8</td> <td>15.6</td> <td>31.3</td> <td>34.6</td> <td>64.0</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb0-1</td> <td>0.00875</td> <td>0.005</td> <td>73.1</td> <td>73.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb0-1</td> <td>0.0225</td> <td>0.0125</td> <td>73.3</td> <td>73.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb1-1</td> <td>0.00875</td> <td>0.00625</td> <td>77.5</td> <td>77.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb1-1</td> <td>0.03125</td> <td>0.01375</td> <td>77.5</td> <td>77.3</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                 </table>
                                 </tr>
@@ -215,8 +214,7 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="HashOnlyBenchmark">
                 <h2>Benchmark round: HashOnlyBenchmark</h2>
-                <p>PURE CPU ROUND — Hash only, zero ledger I&#x2F;O. Fixed 10 TPS — isolates cryptographic algorithm performance. SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx vs BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx Speedup ratio: 3.74x in favor of BLAKE3.
-</p>
+                <p>PURE CPU — SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 60
 rateControl:
   type: fixed-rate
@@ -229,7 +227,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.06</td> <td>0.03</td> <td>0.04</td> <td>10.0</td>
+                                     <td>HashOnlyBenchmark</td> <td>604</td> <td>0</td> <td>10.1</td> <td>0.20</td> <td>0.09</td> <td>0.12</td> <td>10.0</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for HashOnlyBenchmark</h3>
@@ -238,22 +236,22 @@ rateControl:
                                 <tr>
                                 <table>
                                     <tr>
-                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [KB]</th> <th>Disc Read [B]</th>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org1.example.com</td> <td>0.09875</td> <td>0.07875</td> <td>228</td> <td>228</td> <td>13.0</td> <td>25.4</td> <td>4.00</td> <td>0.00</td>
+                                         <td>peer0.org1.example.com</td> <td>0.22125</td> <td>0.12625</td> <td>163</td> <td>162</td> <td>13.0</td> <td>25.4</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org2.example.com</td> <td>0.0725</td> <td>0.0475</td> <td>133</td> <td>133</td> <td>0.0755</td> <td>0.0770</td> <td>4.00</td> <td>0.00</td>
+                                         <td>peer0.org2.example.com</td> <td>0.09625</td> <td>0.05875</td> <td>115</td> <td>115</td> <td>0.0736</td> <td>0.0759</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>orderer.example.com</td> <td>0.00625</td> <td>0.0025</td> <td>132</td> <td>132</td> <td>0.0191</td> <td>0.0223</td> <td>0.00</td> <td>0.00</td>
+                                         <td>orderer.example.com</td> <td>0.0175</td> <td>0.00375</td> <td>93.9</td> <td>93.9</td> <td>0.0191</td> <td>0.0223</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb0-1</td> <td>0.0075</td> <td>0.00625</td> <td>73.2</td> <td>73.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb0-1</td> <td>0.03875</td> <td>0.0125</td> <td>73.3</td> <td>73.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb1-1</td> <td>0.00875</td> <td>0.00625</td> <td>77.6</td> <td>77.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb1-1</td> <td>0.03375</td> <td>0.01125</td> <td>77.5</td> <td>77.3</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                 </table>
                                 </tr>
@@ -264,14 +262,13 @@ rateControl:
 
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="VerifyCertificate">
                 <h2>Benchmark round: VerifyCertificate</h2>
-                <p>PRIMARY ROUND — sha256 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000 &#x3D; 45ms per tx (no SIMD). Unified config — compare directly with all algorithms.
-</p>
+                <p>PRIMARY ROUND — sha256 linear 30-&gt;150 TPS, 120s</p>
                 <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 120
 rateControl:
   type: linear-rate
   opts:
-    startingTps: 50
-    finishingTps: 250
+    startingTps: 30
+    finishingTps: 150
 </pre>
                         <h3>Performance metrics for VerifyCertificate</h3>
                             <table style="min-width: 100%;">
@@ -279,7 +276,7 @@ rateControl:
                                      <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
                                 </tr>
                                 <tr>
-                                     <td>VerifyCertificate</td> <td>11465</td> <td>0</td> <td>95.6</td> <td>0.04</td> <td>0.01</td> <td>0.01</td> <td>95.6</td>
+                                     <td>VerifyCertificate</td> <td>6345</td> <td>0</td> <td>52.9</td> <td>0.22</td> <td>0.02</td> <td>0.05</td> <td>52.9</td>
                                 </tr>
                             </table>
                         <h3>Resource utilization for VerifyCertificate</h3>
@@ -291,19 +288,19 @@ rateControl:
                                          <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [B]</th>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org1.example.com</td> <td>0.97625</td> <td>0.43375</td> <td>228</td> <td>214</td> <td>31.6</td> <td>106</td> <td>0.00</td> <td>0.00</td>
+                                         <td>peer0.org1.example.com</td> <td>1.38625</td> <td>0.6175</td> <td>162</td> <td>151</td> <td>17.4</td> <td>58.6</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>peer0.org2.example.com</td> <td>0.07625</td> <td>0.02875</td> <td>133</td> <td>114</td> <td>0.136</td> <td>0.136</td> <td>0.00</td> <td>0.00</td>
+                                         <td>peer0.org2.example.com</td> <td>0.09</td> <td>0.06125</td> <td>115</td> <td>95.1</td> <td>0.135</td> <td>0.137</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>orderer.example.com</td> <td>0.005</td> <td>0.00125</td> <td>132</td> <td>121</td> <td>0.0247</td> <td>0.0275</td> <td>0.00</td> <td>0.00</td>
+                                         <td>orderer.example.com</td> <td>0.055</td> <td>0.00375</td> <td>93.9</td> <td>70.2</td> <td>0.0254</td> <td>0.0273</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb0-1</td> <td>0.01</td> <td>0.00375</td> <td>73.2</td> <td>73.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb0-1</td> <td>0.01125</td> <td>0.005</td> <td>73.1</td> <td>73.1</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                     <tr>
-                                         <td>compose-couchdb1-1</td> <td>0.00875</td> <td>0.00375</td> <td>77.6</td> <td>77.6</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                         <td>compose-couchdb1-1</td> <td>0.0125</td> <td>0.005</td> <td>77.2</td> <td>77.2</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
                                     </tr>
                                 </table>
                                 </tr>
@@ -315,22 +312,19 @@ rateControl:
             <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
                 <h2>Test Environment</h2>
                 <h3>benchmark config</h3>
-                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-sha256-tps250
-description: &gt;
-  Scenario sha256 at 250 TPS target (UNIFIED CONFIG). VerifyCertificate: linear
-  50-&gt;250 TPS (PRIMARY ROUND). MagnificationFactor x3000 &#x3D; 45ms per tx (no
-  SIMD). workers&#x3D;4, txDuration unified: Issue&#x3D;60s, Verify&#x3D;120s.
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bcms-s-sha256-tps150
+description: SHA-256 at 150 TPS. MagnificationFactor x3000 &#x3D; 45ms per tx.
 workers:
   type: local
   number: 4
 rounds:
   - label: IssueCertificate
-    description: &#39;Issue certs at 38 TPS, 60s — unified config&#39;
+    description: &#39;Issue certs at 22 TPS, 60s&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
       opts:
-        tps: 38
+        tps: 22
     workload:
       module: workload&#x2F;issueCertificate.js
       arguments:
@@ -339,10 +333,7 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: HashOnlyBenchmark
-    description: &gt;
-      PURE CPU ROUND — Hash only, zero ledger I&#x2F;O. Fixed 10 TPS — isolates
-      cryptographic algorithm performance. SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx vs
-      BLAKE3: 4us x 3000 &#x3D; 12ms&#x2F;tx Speedup ratio: 3.74x in favor of BLAKE3.
+    description: &#39;PURE CPU — SHA-256: 15us x 3000 &#x3D; 45ms&#x2F;tx&#39;
     txDuration: 60
     rateControl:
       type: fixed-rate
@@ -356,21 +347,18 @@ rounds:
     txOptions:
       invokerIdentity: User1@org1.example.com
   - label: VerifyCertificate
-    description: &gt;
-      PRIMARY ROUND — sha256 linear 50-&gt;250 TPS, 120s. MagnificationFactor x3000
-      &#x3D; 45ms per tx (no SIMD). Unified config — compare directly with all
-      algorithms.
+    description: &#39;PRIMARY ROUND — sha256 linear 30-&gt;150 TPS, 120s&#39;
     txDuration: 120
     rateControl:
       type: linear-rate
       opts:
-        startingTps: 50
-        finishingTps: 250
+        startingTps: 30
+        finishingTps: 150
     workload:
       module: workload&#x2F;verifyCertificate.js
       arguments:
         contractId: bcms-sha256
-        totalIssued: 2280
+        totalIssued: 1320
     txOptions:
       invokerIdentity: User1@org1.example.com
 </pre>

@@ -1,4 +1,4 @@
-﻿test:
+test:
   name: bcms-s-sha256-tps200
   description: >
     Scenario sha256 at 200 TPS target (UNIFIED CONFIG).
@@ -70,7 +70,7 @@ monitors:
       options:
         interval: 5
         cpuUsageNormalization: true
-                containers:
+        containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com

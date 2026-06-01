@@ -1,4 +1,4 @@
-﻿test:
+test:
   name: bcms-s-hybrid-batch5-custom
   description: 'Scenario S4 Hybrid-Batch custom characteristics (Issue TPS 15, Linear 20->100)'
   workers:
@@ -58,7 +58,7 @@ monitors:
       options:
         interval: 5
         cpuUsageNormalization: true
-                containers:
+        containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com

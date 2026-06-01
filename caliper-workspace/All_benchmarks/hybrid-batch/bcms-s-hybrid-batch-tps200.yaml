@@ -1,4 +1,4 @@
-﻿test:
+test:
   name: bcms-s-hybrid-batch-tps200
   description: 'Scenario S4 Hybrid-Batch at 200 TPS target (UNIFIED CONFIG)'
   workers:
@@ -58,7 +58,7 @@ monitors:
       options:
         interval: 5
         cpuUsageNormalization: true
-                containers:
+        containers:
           - peer0.org1.example.com
           - peer0.org2.example.com
           - orderer.example.com
